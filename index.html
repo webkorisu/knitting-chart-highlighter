@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <!-- © 2026 YUCCHI. 無断複製・再配布禁止 -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light only">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>【test版】編み図のための蛍光ペン｜Knitting Chart Highlighter</title>
+  <meta name="description" content="どこまで編んだかがわかるように、読み込んだ編み図に蛍光ペンでマーカーを引けるアプリ。編んだところを塗って消し込めます。段数カウンター付き。無料・実験中のtest版です。">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ===== ✿ YUCCHI ✿ 編み図蛍光ペン（test版）／パレット 06 Crystal Blue =====
+       背景だけくすみブルー。パネル・カード・ボタンは、白・ピンク・クリーム色で受け持つ */
+    :root {
+      color-scheme: light only;
+      --bg: #CBDDE3;          /* 背景（くすみブルー。パレット06の水色を少し落ち着かせた色） */
+      --surface: #FFFFFF;     /* カード・パネル（白固定） */
+      --primary: #D4E6EB;     /* 水色：ボタン・アクセント */
+      --primary-line: #BCD5DD;/* 水色の縁（水色より少し濃い） */
+      --secondary: #F0E8ED;   /* やさしいピンクラベンダー：説明エリア */
+      --mint: #DCE8E8;        /* くすみミント：ホバー・アクセント */
+      --cream: #FFFDE8;       /* うすいクリーム：お知らせ・バッジ（パレット06のクリームを、さらにうすくした色） */
+      --cream-line: #F1EBC6;
+      --sel-line: #6F9AAA;        /* 選択中の縁（水色より濃い青グレー） */
+      --sel-bg: #E8F2F5;          /* 選択中の塗り（水色をうすめた色） */
+      --text: #6B5258;
+      --text-sub: #8A7279;
+      --border: #CFDFE4;           /* 白いカードの中の縁 */
+      --edge: #BBD0D8;             /* 背景に直接のるカード・ボタンの縁（やわらかめ） */
+      --brand: #A07080;
+      --radius: 20px;
+      --radius-sm: 12px;
+      --shadow: 0 2px 6px rgba(70, 105, 120, .16);
+    }
+    @media (prefers-color-scheme: dark) {
+      html { background: #CBDDE3 !important; }
+      body { background-color: #CBDDE3 !important; color: #6B5258 !important; }
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body {
+      margin: 0; height: 100%;
+      overflow: hidden; overscroll-behavior: none;
+      background: var(--bg); color: var(--text);
+      font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Hiragino Sans', sans-serif;
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button { font-family: inherit; }
+    :focus-visible { outline: 2.5px solid var(--primary-line); outline-offset: 2px; }
+
+    /* ===== 編み図の表示エリア ===== */
+    #viewer { position: fixed; inset: 0; z-index: 1; touch-action: none; cursor: crosshair; user-select: none; -webkit-user-select: none; }
+    #viewer.panmode, #viewer.inpen { cursor: grab; }
+    #viewer.dragging { cursor: grabbing; }
+    #viewer.empty { cursor: default; }
+    #viewer canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+    #marker-canvas { pointer-events: none; mix-blend-mode: multiply; }   /* 乗算：記号や線が透けて見える */
+
+    /* ===== 画像を開く前の案内 ===== */
+    #placeholder {
+      position: fixed; inset: 0; z-index: 5; display: flex; overflow-y: auto;
+      padding: 40px 16px calc(40px + 8vh); background: var(--bg);         /* 下の余白をほんの少し多めにして、全体を少し上寄りに */
+    }
+    .start-wrap { width: 100%; max-width: 380px; margin: auto; }       /* タイトルは背景の上、白いカードはその下（ほかのYUCCHIのアプリと同じ） */
+    .start-wrap > header { margin-bottom: 22px; }
+    /* 画像を閉じたあと：編み図ルーラーと同じ、文字だけの「編み図エリア」（画像は、左上のボタンから開ける） */
+    #placeholder.work { padding: 68px 16px 68px; }
+    #placeholder.work .start-wrap { display: none; }
+    #work-hint { display: none; margin: auto; text-align: center; }
+    #placeholder.work #work-hint { display: block; }
+    .wh-main { font-size: 15px; font-weight: 700; color: var(--text); opacity: .8; letter-spacing: .12em; margin-bottom: 14px; }
+    .wh-en { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(17px, 5vw, 26px); font-weight: 400; color: var(--brand); letter-spacing: .14em; line-height: 1.3; margin-bottom: 18px; }
+    .wh-note { font-size: 12px; color: var(--text); opacity: .7; letter-spacing: .08em; line-height: 1.9; }
+    .start-card {
+      width: 100%; background: var(--surface); border: 1.5px solid var(--edge); border-radius: 24px;
+      padding: 20px; text-align: center;
+      box-shadow: 0 3px 10px rgba(70, 105, 120, .16);
+    }
+
+    /* タイトルブロック（日本語→英語→サブ→ブランド→データ注意書き） */
+    header { text-align: center; }
+    header h1 {
+      font-family: 'Zen Maru Gothic', sans-serif; font-size: clamp(17px, 4vw, 22px); font-weight: 500;
+      color: var(--text); letter-spacing: .10em; line-height: 1.4; margin: 0 0 5px;
+    }
+    header h2 {
+      font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(19px, 5.2vw, 32px); font-weight: 400;
+      color: var(--text); letter-spacing: .12em; line-height: 1.2; margin: 0 0 10px;
+    }
+    header .title-ja-sub {
+      font-family: 'Zen Maru Gothic', sans-serif; font-size: clamp(12px, 3.3vw, 14px); font-weight: 500;
+      color: var(--text); letter-spacing: .05em; opacity: .78; margin-bottom: 14px; line-height: 1.7;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    header .title-ja-sub::before, header .title-ja-sub::after {
+      content: ''; display: block; width: 18px; height: 1px; background: currentColor; opacity: .45; flex-shrink: 0;
+    }
+    header .title-ja-sub .sub-text { text-align: center; }
+    header .title-ja-sub span { display: inline-block; }
+    header .brand {
+      display: inline-block; text-decoration: none; transition: opacity .15s;
+      font-family: 'Cormorant Garamond', Georgia, serif; font-size: 14px; font-weight: 400;
+      color: var(--brand); padding-top: 10px;
+    }
+    header .brand .brand-deco { font-size: 11px; }
+    @media (hover: hover) { header .brand:hover { opacity: .65; } }
+    header .data-hint {
+      font-size: 10px; color: var(--text); opacity: .72; letter-spacing: .04em;
+      margin-top: 10px; line-height: 1.7; text-align: center; padding: 0 8px;
+    }
+
+    /* タブレット向け：カードを広げて、文字もひとまわり大きくする（スマホは、いまのまま） */
+    @media (min-width: 600px) {
+      .start-wrap { max-width: 560px; }
+      .start-wrap > header { margin-bottom: 28px; }
+      .start-card { padding: 30px 36px 30px; border-radius: 28px; }
+      header .title-ja-sub { font-size: 15px; }
+      header .brand { font-size: 15px; }
+      header .data-hint { font-size: 11px; }
+      .drop-frame { padding: 40px 24px 36px; border-radius: 22px; }
+      .drop-frame b { font-size: 19px; margin-bottom: 10px; }
+      .drop-frame span { font-size: 14px; }
+      .keep-note { padding: 10px 18px; font-size: 12px; }
+      .keep-note br { display: none; }                    /* スマホ以外は、改行しないで1行に */
+      .wh-main { font-size: 17px; }
+      .wh-en { font-size: 32px; }
+      .wh-note { font-size: 13px; }
+    }
+
+    /* 点線の枠（編み図ルーラーと同じ。「ここに読み込む」感が出る。押すと、ファイル選びが開く） */
+    .drop-frame {
+      display: block; width: 100%; padding: 28px 16px 26px; text-align: center; color: var(--text); cursor: pointer;
+      background: var(--surface); border: 1.5px dashed var(--sel-line); border-radius: 18px;
+      transition: background .15s, transform .1s;
+    }
+    .drop-frame b { display: block; font-size: 16px; font-weight: 700; letter-spacing: .05em; line-height: 1.6; margin-bottom: 8px; }
+    .drop-frame span { display: block; font-size: 12px; line-height: 1.8; color: var(--text-sub); }
+    .drop-frame .nb { display: inline-block; font-style: normal; }       /* 読みやすい切れ目で、折り返す */
+    .drop-frame:active { transform: scale(.985); }
+    @media (hover: hover) { .drop-frame:hover { background: #F2F7F8; } }
+    .keep-note { padding: 10px 18px; font-size: 12px; }
+    }
+
+    .guide { padding: 14px 4px 0; margin: 0 0 16px; line-height: 1.9; font-size: 13px; }       /* 枠なし：文字だけにして、ボタンと見間違えないようにする */
+    .guide b { display: block; font-size: 16px; font-weight: 700; letter-spacing: .06em; margin-bottom: 4px; }
+    .keep-note {
+      background: var(--cream); border: 1px solid var(--cream-line); border-radius: 10px;
+      padding: 8px 12px; margin-top: 14px; font-size: 11px; line-height: 1.8; color: var(--text-sub);
+    }
+    .keep-note span { display: inline-block; }
+
+    /* ===== ボタン ===== */
+    .pill-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 40px; padding: 8px 16px 10px;            /* 文字が下寄りに見えないよう、上を1px減らして下を1px増やす */
+      background: var(--surface); color: var(--text);
+      border: 1.5px solid var(--edge); border-radius: 999px;
+      font-size: 13px; font-weight: 700; letter-spacing: .06em; white-space: nowrap;
+      box-shadow: var(--shadow); cursor: pointer;
+      transition: background .15s, transform .1s; user-select: none; -webkit-user-select: none;
+    }
+    .pill-btn:active { transform: scale(.96); }
+    @media (hover: hover) { .pill-btn:hover { background: #EEF4F4; } }
+    .pill-btn.on { background: var(--sel-bg); border-color: var(--sel-line); }
+
+    /* ===== 右上：蛍光ペンの操作盤 ===== */
+    #mk-panel {
+      position: fixed; z-index: 20;
+      top: calc(env(safe-area-inset-top, 0px) + 12px);
+      right: calc(env(safe-area-inset-right, 0px) + 12px);
+    }
+    /* 操作盤は、1枚のカードにまとめる：いちばん上の「つかむ帯」→ 見出し行（タイトル＋もどす・やりなおす・削除）→ 中身 */
+    #mk-card {
+      width: min(300px, calc(100vw - 24px)); background: var(--surface); border: 1.5px solid var(--edge); border-radius: 18px;
+      box-shadow: 0 4px 12px rgba(70, 105, 120, .20); user-select: none; -webkit-user-select: none;
+      cursor: grab; touch-action: none;                 /* 白いところは、どこでもつかんで動かせる */
+    }
+    #mk-card.dragging { cursor: grabbing; }
+    #mk-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 12px 12px 12px 8px; }
+    .mk-title {
+      display: inline-flex; align-items: center; gap: 6px; flex: 0 1 auto; min-width: 0; min-height: 40px; padding: 6px 8px 8px; background: transparent; border: none; border-radius: 12px;
+      font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: .02em; cursor: pointer; white-space: nowrap; transition: background .15s;
+    }
+    .mk-label { overflow: hidden; text-overflow: ellipsis; }
+    .mk-now { flex: none; }
+    .mk-arrow { flex: none; }
+    @media (hover: hover) { .mk-title:hover { background: #F2F7F8; } }
+    .mk-acts { display: flex; gap: 5px; flex: none; }
+    .round-btn {
+      position: relative; width: 36px; height: 36px; padding: 0 0 2px; border-radius: 50%; flex: none;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--surface); color: var(--text); border: 1.5px solid var(--border);
+      font-size: 19px; line-height: 1; cursor: pointer;
+      transition: background .15s, transform .1s, opacity .15s; user-select: none; -webkit-user-select: none;
+    }
+    .round-btn.emoji { font-size: 16px; padding-bottom: 0; }
+    .round-btn:active { transform: scale(.94); }
+    .round-btn:disabled { opacity: .4; cursor: default; transform: none; }
+    @media (hover: hover) {
+      .round-btn:not(:disabled):hover { background: #EEF4F4; }
+      .round-btn::after {
+        content: attr(data-tip); position: absolute; top: calc(100% + 6px); right: 0;
+        background: var(--text); color: #fff; font-size: 10px; font-weight: 500; letter-spacing: .04em; line-height: 1.4;
+        padding: 4px 8px; border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 25;
+      }
+      .round-btn:hover::after { opacity: .88; }
+    }
+    .mk-now { display: block; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 0 0 1.5px var(--text-sub); }
+    .mk-arrow { font-size: 10px; opacity: .6; transition: transform .2s; display: inline-block; }
+    #mk-panel.closed .mk-arrow { transform: rotate(180deg); }
+    #mk-panel.closed #mk-bar { display: none; }
+
+    #mk-bar {
+      display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 10px 12px; border-top: 1px solid var(--border);
+      max-height: 70vh; max-height: calc(100dvh - 190px); overflow-y: auto; touch-action: none;   /* スクロール領域でも、指の動きを、ブラウザに取られないようにする */
+    }
+    .mk-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-sub); letter-spacing: .05em; }
+    .mk-seg { display: flex; gap: 8px; flex: 1; }
+    .mk-seg-b {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      min-height: 38px; padding: 4px 2px 3px; background: #fff; border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 10px; font-weight: 700; color: var(--text-sub); cursor: pointer; transition: background .15s;
+    }
+    .mk-seg-b.tl { min-height: 34px; letter-spacing: 0; white-space: nowrap; }
+    /* 点と文字：点の大きさがちがっても、文字の高さがそろうよう、点の枠を同じ高さにして、上下の余白を同じにする */
+    .mk-seg-sq {
+      flex: 1; min-width: 0; height: 40px; min-height: 0; padding: 0 2px; line-height: 1.2;
+      --dot-slot: 20px;
+      display: grid; grid-template-rows: var(--dot-slot) auto; align-content: center; justify-items: center; align-items: center; gap: 0;
+    }
+    /* 「細」「中」は、点が小さいので、文字だけを少し上げる（点の枠を4px低くすると、点は動かず、文字だけが2px上がる） */
+    .mk-w[data-w="8"], .mk-w[data-w="18"] { grid-template-rows: calc(var(--dot-slot) - 4px) auto; }
+    /* 「濃さ」の3つは、点と文字をまとめて、1px上げる（下の余白を2px足すと、中身が1px上がる） */
+    .mk-a { padding-bottom: 2px; }
+    .mk-seg-sq i { display: block; flex: none; border-radius: 50%; background: var(--text-sub); }
+    #mk-card button, #mk-card label { cursor: pointer; }
+    #mk-card button:disabled { cursor: default; }
+    #mk-bar.scrolls { touch-action: pan-y; }              /* 中身が長くて、スクロールが必要な時だけ、縦スクロールを優先する */
+    .mk-seg-b.on { background: var(--sel-bg); border-color: var(--sel-line); box-shadow: inset 0 0 0 1px var(--sel-line); color: var(--text); }
+    @media (hover: hover) { .mk-seg-b:not(.on):hover { background: #EEF4F4; } }
+    #mk-colors { display: flex; flex: 1; flex-wrap: wrap; gap: 3px; align-items: center; justify-content: space-between; }
+    .mk-dot {
+      box-sizing: border-box; flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent;
+      padding: 0; cursor: pointer; transition: transform .15s;
+    }
+    .mk-dot.on { border-color: #fff; box-shadow: 0 0 0 2px var(--text); transform: scale(1.05); }
+    #mk-custom { position: absolute; width: 0; height: 0; opacity: 0; border: none; padding: 0; }
+    /* 好きな色を追加するボタン：点線の丸に「＋」（押すと、色選びが開く）。選んだ色は、となりの丸い見本に残る */
+    #mk-custom-label {
+      position: relative; box-sizing: border-box; display: block; flex: none; width: 24px; height: 24px; border-radius: 50%;
+      border: 1.5px dashed #8AA5AF; background: transparent; cursor: pointer; transition: border-color .15s, background .15s;
+    }
+    #mk-custom-label::before, #mk-custom-label::after { content: ''; position: absolute; left: 50%; top: 50%; background: #8AA5AF; transform: translate(-50%, -50%); transition: background .15s; }
+    #mk-custom-label::before { width: 10px; height: 1.5px; }
+    #mk-custom-label::after { width: 1.5px; height: 10px; }
+    @media (hover: hover) { #mk-custom-label:hover { border-color: #6F9AAA; background: #F2F7F8; } #mk-custom-label:hover::before, #mk-custom-label:hover::after { background: #6F9AAA; } }
+    #mk-bar > * { flex: 0 0 100%; }
+    #mk-row-w, #mk-row-a { flex: 0 0 calc(50% - 4px); min-width: 0; }              /* 「太さ」と「濃さ」は、横に並べる */
+    #mk-wseg, #mk-aseg { gap: 4px; }
+    @media (max-width: 559px), (max-height: 559px) {          /* 狭い画面：さらに、ぎゅっとまとめる */
+      #mk-bar { gap: 6px; padding: 8px; }
+      #mk-row-w, #mk-row-a { flex-basis: calc(50% - 3px); }
+      .mk-seg-b.tl { min-height: 28px; }
+      .mk-seg-sq { height: 34px; font-size: 9px; --dot-slot: 16px; }
+      .mk-seg-sq i { transform: scale(.8); }
+    }
+
+    @media (max-width: 430px) { #top-left { gap: 6px; } #top-left .pill-btn { padding: 8px 10px 10px; font-size: 12px; letter-spacing: .02em; } }     /* スマホ：4つのボタンが1段に収まるよう、余白を詰める */
+    #top-left {
+      position: fixed; z-index: 20; display: flex; gap: 8px; flex-wrap: wrap;
+      top: calc(env(safe-area-inset-top, 0px) + 12px);
+      left: calc(env(safe-area-inset-left, 0px) + 12px);
+      max-width: calc(100vw - 24px);
+    }
+
+    /* ===== メニュー ===== */
+    #menu-panel {
+      position: fixed; z-index: 30; display: none; overflow-y: auto;
+      top: calc(env(safe-area-inset-top, 0px) + 62px);
+      left: calc(env(safe-area-inset-left, 0px) + 12px);
+      width: min(340px, calc(100vw - 24px));
+      max-height: 70vh;
+      max-height: calc(100dvh - 130px);
+      background: var(--surface); border: 1.5px solid var(--edge); border-radius: var(--radius);
+      padding: 10px; box-shadow: 0 4px 12px rgba(70, 105, 120, .20);
+    }
+    #menu-panel.open { display: block; }
+    .acc-list { display: flex; flex-direction: column; gap: 6px; }
+    /* メニューの中は「使い方」だけ。「このアプリについて」「データについて」とアイコン列は、最初の画面（カードの下）だけに出す */
+    #menu-info-slot #aboutNote, #menu-info-slot #dataNote, #menu-info-slot .x-footer-row { display: none; }
+    /* スタート画面：カードの下に、使い方・このアプリについて・データについて と、アイコン列（ほかのYUCCHIのアプリと同じ） */
+    #start-info-slot { margin-top: 14px; }
+    #start-info-slot .data-note { border-color: var(--edge); }
+    #start-info-slot .x-footer-row { padding: 12px 2px 4px; }
+    #start-info-slot .last-updated { color: var(--text); opacity: .75; }
+    /* ファイル枠（編み図ルーラーと同じ：開く前は「開く」ボタン、開いたあとは ファイル名＋✕） */
+    #file-slot { margin-bottom: 8px; }
+    /* 押して動かす操作：水色の丸いボタン（✿の付いた白い行は、開いて読むもの、と見た目を分ける） */
+    .menu-act {
+      display: block; width: 100%; margin-bottom: 6px; padding: 11px 16px 13px; text-align: center;
+      background: var(--primary); border: 1.5px solid var(--primary-line); border-radius: 999px;
+      font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: .08em; cursor: pointer;
+      transition: background .15s, transform .1s;
+    }
+    #top-btn { margin-bottom: 14px; }
+    .menu-act:active { transform: scale(.98); }
+    @media (hover: hover) { .menu-act:hover { background: #C8DEE4; } }
+    .file-pick, .file-box {
+      width: 100%; min-height: 56px; padding: 10px 12px; background: var(--surface);
+      border: 1.5px dashed var(--sel-line); border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .file-pick { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: .04em; cursor: pointer; transition: background .15s; }
+    .file-pick:active { transform: scale(.98); }
+    @media (hover: hover) { .file-pick:hover { background: #F2F7F8; } }
+    .file-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--text); letter-spacing: .02em; }
+    .file-close {
+      flex: none; width: 34px; height: 34px; padding: 0 0 2px; border-radius: 50%;
+      background: var(--surface); border: 1.5px solid var(--sel-line); color: var(--text-sub);
+      font-size: 15px; line-height: 1; cursor: pointer; transition: background .15s, transform .1s;
+    }
+    .file-close:active { transform: scale(.92); }
+    @media (hover: hover) { .file-close:hover { background: #F2F7F8; } }
+    .data-note { width: 100%; border-radius: var(--radius-sm); overflow: hidden; border: 1.5px solid var(--border); background: var(--surface); }
+    .data-note-btn {
+      width: 100%; background: none; border: none; padding: 11px 16px;
+      font-size: 12px; font-weight: 700; color: var(--text-sub); cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between; letter-spacing: .06em;
+      transition: background .15s;
+    }
+    @media (hover: hover) { .data-note-btn:hover { background: #F2F7F8; } }
+    .data-note-arrow { font-size: 10px; transition: transform .25s ease; display: inline-block; color: var(--text-sub); opacity: .6; }
+    .data-note.open .data-note-arrow { transform: rotate(180deg); }
+    .data-note-body {
+      display: none; padding: 12px 16px 14px; font-size: 11px; color: var(--text-sub);
+      line-height: 2.0; border-top: 1px solid var(--border);
+    }
+    .data-note.open .data-note-body { display: block; }
+    .data-note-body p { margin: 0 0 6px; }
+    .data-note-body p:last-child { margin-bottom: 0; }
+    .data-note-body ol { margin: 0 0 6px; padding-left: 1.4em; }
+    .data-note-body .test-line { background: var(--cream); border-radius: 8px; padding: 6px 10px; color: var(--text); }
+    .reload-latest-btn {
+      display: block; width: 100%; margin-top: 8px; padding: 9px 12px 11px;
+      background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 11px; font-weight: 700; color: var(--text-sub); letter-spacing: .04em; cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+    @media (hover: hover) { .reload-latest-btn:hover { background: #EEF4F4; border-color: var(--primary-line); } }
+    .reload-latest-btn:active { transform: scale(.97); }
+
+    .x-footer-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 2px 2px; }
+    .x-footer-icons { display: flex; align-items: center; gap: 6px; }
+    .x-icon-btn {
+      position: relative; display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border-radius: 6px; border: 1.5px solid var(--border);
+      background: var(--surface); text-decoration: none; transition: background .2s, border-color .2s;
+    }
+    .x-icon-btn svg { fill: var(--text-sub); }
+    @media (hover: hover) {
+      .x-icon-btn:hover { background: #EEF4F4; border-color: var(--border); }
+      .x-icon-btn::after {
+        content: attr(data-tooltip); position: absolute; bottom: calc(100% + 6px); left: 0;
+        transform: translateY(4px); background: var(--text); color: #fff; font-size: 10px; letter-spacing: .04em;
+        padding: 4px 8px; border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none;
+        transition: opacity .15s, transform .15s; z-index: 20;
+      }
+      .x-icon-btn:hover::after { opacity: .88; transform: translateY(0); }
+    }
+    .last-updated { font-size: 10px; color: var(--text-sub); letter-spacing: .04em; }
+
+    /* ===== 確認ウィンドウ ===== */
+    #modal {
+      position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+      padding: 20px; background: rgba(70, 105, 120, .30);
+    }
+    .modal-card {
+      width: 100%; max-width: 320px; background: var(--surface); border: 1.5px solid var(--edge);
+      border-radius: var(--radius); padding: 22px 20px 18px; text-align: center; box-shadow: 0 4px 12px rgba(70, 105, 120, .24);
+    }
+    .modal-card p { white-space: pre-line; margin: 0 0 18px; font-size: 13px; line-height: 1.9; color: var(--text); letter-spacing: .03em; }
+    .modal-btns { display: flex; gap: 10px; justify-content: center; }
+    .modal-btns .pill-btn { flex: 1; box-shadow: none; }
+    .pill-btn.accent { background: var(--primary); border-color: var(--primary-line); }
+    @media (hover: hover) { .pill-btn.accent:hover { background: #C8DEE4; } }
+
+    /* ===== test版バッジ・お知らせ ===== */
+    #test-badge {
+      position: fixed; z-index: 15; pointer-events: none;
+      left: calc(env(safe-area-inset-left, 0px) + 12px);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+      background: var(--cream); border: 1px solid var(--cream-line); border-radius: 999px;
+      padding: 3px 11px 5px; font-size: 10px; font-weight: 700; color: var(--text-sub); letter-spacing: .08em;
+    }
+    /* ===== 選んだ線の、つまみ（リサイズ・移動）。編み図ルーラーの四角定規と同じ：角・辺をドラッグ＝リサイズ、中をドラッグ＝移動 ===== */
+    #sel-layer { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+    #sel-layer[hidden] { display: none; }
+    .sel-frame { position: fixed; box-sizing: border-box; border: 1.5px dashed #6F9AAA; box-shadow: 0 0 0 1px rgba(255, 255, 255, .9); }
+    .sel-h, .sel-end { position: fixed; box-sizing: border-box; background: #fff; border: 1.5px solid #6F9AAA; transform: translate(-50%, -50%); box-shadow: 0 1px 3px rgba(70, 105, 120, .3); }
+    .sel-h.c { width: 14px; height: 14px; border-radius: 50%; }
+    .sel-h.eh { width: 20px; height: 8px; border-radius: 4px; }
+    .sel-h.ev { width: 8px; height: 20px; border-radius: 4px; }
+    .sel-end { width: 16px; height: 16px; border-radius: 50%; }
+    .sel-rot { position: fixed; box-sizing: border-box; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 1.5px solid #6F9AAA; transform: translate(-50%, -50%); box-shadow: 0 1px 3px rgba(70, 105, 120, .3); display: flex; align-items: center; justify-content: center; color: #6B5258; }
+    .sel-rot svg { width: 13px; height: 13px; display: block; }
+    .sel-rotl { position: fixed; width: 1.5px; background: #6F9AAA; transform: translateX(-50%); }
+    .sel-angle { position: fixed; transform: translate(0, -50%); background: #6B5258; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 3px 9px 4px; border-radius: 999px; }
+    .sel-poly { position: fixed; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
+    .sel-poly polygon { fill: none; stroke: #6F9AAA; stroke-width: 1.5; stroke-dasharray: 4 3; }
+    #sel-arrows { position: fixed; inset: 0; z-index: 24; pointer-events: none; }
+    #sel-arrows[hidden] { display: none; }
+    .sel-arrow { position: fixed; width: 30px; height: 30px; padding: 0; border-radius: 50%; background: #fff; border: 1.5px solid #6F9AAA; color: #6B5258; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; pointer-events: auto; cursor: pointer; box-shadow: 0 1px 3px rgba(70, 105, 120, .3); transition: background .15s; }
+    .sel-arrow svg { width: 16px; height: 16px; display: block; }
+    .sel-arrow[data-d="b"] svg { transform: rotate(90deg); }
+    .sel-arrow[data-d="l"] svg { transform: rotate(180deg); }
+    .sel-arrow[data-d="t"] svg { transform: rotate(-90deg); }
+    .sel-arrow:active { background: #F2F7F8; }
+    .sel-arrow:disabled { opacity: .35; cursor: not-allowed; }
+    #sel-bar { position: fixed; z-index: 25; display: flex; gap: 6px; transform: translateX(-50%); }
+    #sel-bar[hidden] { display: none; }
+    #sel-bar .pill-btn { min-height: 34px; padding: 6px 14px 8px; font-size: 12px; }
+    #viewer.insel { cursor: default; }
+
+    /* ===== 右下：段数カウンター（編み図ルーラーのカウンターから、数字と＋／－を取り出したもの） ===== */
+    #counter-panel {
+      position: fixed; z-index: 20; width: 192px; padding: 14px 10px;
+      right: calc(env(safe-area-inset-right, 0px) + 12px);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+      background: var(--surface); border: 1.5px solid var(--edge); border-radius: 22px;
+      box-shadow: 0 4px 12px rgba(70, 105, 120, .20);
+      user-select: none; -webkit-user-select: none; touch-action: none; cursor: grab;      /* 白いところは、どこでもつかんで動かせる */
+    }
+    #counter-panel.dragging { cursor: grabbing; }
+    #cp-counter-row { display: flex; align-items: center; justify-content: center; gap: 4px; }
+    /* 大人かわいく：ボタンは、細い線の丸（−も＋もローズ色）。数字は、丸みのあるやさしい書体（Zen Maru Gothic）の太め */
+    .cp-btn {
+      position: relative; isolation: isolate; flex: none; width: 44px; height: 44px; margin: 0 -2px; padding: 0; background: none; border: none; box-sizing: border-box;      /* 場所は40px分、押せる範囲は44px */
+      color: #A07080; font-size: 0; cursor: pointer; display: block; transition: transform .12s;
+      -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;      /* 長押しで、文字選択やメニューが出ないように */
+    }
+    .cp-btn::before {                               /* 細い線の丸（押せる範囲は44px、見える丸は34px）。いちばん奥に置く */
+      content: ''; position: absolute; inset: 5px; z-index: -1; border: 1px solid #BBD0D8; border-radius: 50%; background: transparent; transition: background .15s, border-color .15s;
+    }
+    .cp-btn::after {                                /* 「−」は線1本、「＋」は線2本。文字ではなく線で描くので、フォントに関係なく、丸のまんなかにそろう */
+      content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; transform: translate(-50%, -50%); border-radius: 1px;
+      background: linear-gradient(currentColor, currentColor) center / 100% 1.5px no-repeat;
+    }
+    #cp-plus::after {
+      background: linear-gradient(currentColor, currentColor) center / 100% 1.5px no-repeat, linear-gradient(currentColor, currentColor) center / 1.5px 100% no-repeat;
+    }
+    .cp-btn:active { transform: scale(.92); }
+    .cp-btn:active::before { background: #F2F7F8; border-color: #9DB9C4; }
+    @media (hover: hover) { .cp-btn:not(:disabled):hover::before { border-color: #9DB9C4; background: #F8FBFB; } }
+    .cp-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .cp-btn:disabled:active { transform: none; }
+    .cp-btn:disabled:active::before { background: transparent; border-color: #BBD0D8; }
+    #cp-num {
+      flex: none; width: 78px; box-sizing: border-box; text-align: center; overflow: hidden; white-space: nowrap; pointer-events: none;
+      font-family: 'Zen Maru Gothic', sans-serif; font-size: 30px; font-weight: 700; letter-spacing: .02em; line-height: 1;
+      padding-bottom: 3px; color: var(--text);      /* 3桁（999）まで入る幅 */
+    }
+    body.has-cp #note { bottom: calc(env(safe-area-inset-bottom, 0px) + 104px); }     /* カウンターに、お知らせが重ならないように */
+
+    #note {
+      position: fixed; z-index: 40; display: none; left: 50%; transform: translateX(-50%);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 56px);
+      width: max-content; max-width: calc(100vw - 32px); background: var(--surface); border: 1.5px solid var(--edge); border-radius: 14px;
+      padding: 9px 16px 11px; font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: .04em;
+      line-height: 1.7; box-shadow: var(--shadow); text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== 編み図の表示エリア ===== -->
+<div id="viewer" class="empty"><canvas id="chart-canvas"></canvas><canvas id="marker-canvas"></canvas></div>
+
+<!-- ===== 画像を開く前の案内（スタート画面） ===== -->
+<div id="placeholder">
+  <div class="start-wrap">
+    <header>
+      <h1>編み図のための蛍光ペン</h1>
+      <h2>Knitting Chart Highlighter</h2>
+      <div class="title-ja-sub"><div class="sub-text"><span>編み図に蛍光ペンが引けるアプリ</span></div></div>
+      <a class="brand" href="https://webkorisu.github.io/yucchis-portal/" target="_blank" rel="noopener noreferrer" aria-label="✿ YUCCHIのアプリ一覧を開く"><span class="brand-deco">✿</span>&nbsp;&nbsp;&nbsp;&nbsp;Y&nbsp;&nbsp;U&nbsp;&nbsp;C&nbsp;&nbsp;C&nbsp;&nbsp;H&nbsp;&nbsp;I&nbsp;&nbsp;&nbsp;&nbsp;<span class="brand-deco">✿</span></a>
+      <div class="data-hint">
+        データはこの端末に保存されます<br>
+        詳細は ✿ データについて をご確認ください
+      </div>
+    </header>
+    <div class="start-card">
+    <button type="button" class="drop-frame" id="start-open-btn">
+      <b>📂 ファイルを選択して編み図を開く</b>
+      <span><em class="nb">写真やスクリーンショットを開くと、</em><em class="nb">蛍光ペンで塗れるようになります。</em></span>
+    </button>
+    <div class="keep-note"><span>※ブラウザを開き直した場合は</span> <br><span>再度画像を読み込んでください</span></div>
+    </div>
+    <div id="start-info-slot">
+  <div id="info-block">
+  <div class="acc-list">
+
+    <div class="data-note" id="howNote">
+      <button type="button" class="data-note-btn" aria-expanded="false"><span>✿ 使い方</span><span class="data-note-arrow">▼</span></button>
+      <div class="data-note-body">
+        <ol>
+          <li>最初の画面の枠（またはメニューの上のほう）から、編み図の画像を開きます。</li>
+          <li>指（またはペン・マウス）でなぞると、蛍光ペンで塗れます。右上の操作盤で、道具（なぞる・直線・四角・消しゴム）、色、太さ、濃さを選べます。色は、いちばん右の点線の「＋」で、好きな色を追加できます（追加した色は、丸い見本として残ります）。</li>
+          <li>「なぞる」で塗ったあと、ペンや指を止めて少し待つと（約0.5秒）、きれいな直線・円・四角に整います。直線は、止めたまま動かすと、向きや長さを変えられます。円や四角は、そのまま動かし続けると、整える前のなぞった線にもどります。</li>
+          <li>「四角」「直線」で描いた直後は、角や辺（直線は両端の丸）をドラッグして、大きさを変えられます。中をドラッグすると、動きます。「選択」の道具では、どの線もタップで選べて、同じように動かしたり、大きさを変えたりできます。枠の上の丸いつまみをドラッグすると、回せます（15度ごとに止まります）。「複製」「反転」「削除」のボタンも出ます。「反転」を押すと、四方に矢印が出て、押した側に、ひっくり返したコピーを、ぴったり並べて置きます。何もない所をドラッグすると、編み図が動きます。</li>
+          <li>ペンで触れると、操作盤に「入力」の行が出ます。「ペンモード」は、ペンで塗って、指で編み図を動かします。「指モード」は、指でもペンでも塗れます。</li>
+          <li>操作盤は、白いところや「選択中の蛍光ペン」の文字をつかんでドラッグすると、好きな場所に動かせます（白いところを2回タップすると、もとの位置にもどります）。</li>
+          <li>右下のカウンターで、段数を数えられます。＋で1つ増やし、－で1つ減らします（0〜999）。「−」を長押し（約1秒）すると、0にもどします（確認が出ます）。数は、編み図ごとに自動で保存されます。カウンターも、白いところをつかんで動かせます。</li>
+          <li>↺で1つ前に戻り、↻でやり直せます。🗑️で、塗った内容を一括削除します。「蛍光ペン」を押すと、操作盤を閉じたり開いたりできます。</li>
+          <li>2本指で広げると拡大、つまむと縮小します。2本指のまま動かすと、編み図が動きます。</li>
+          <li>パソコンのトラックパッドは、2本指でなぞると編み図が動き、ピンチ（つまむ・広げる）で拡大・縮小します。マウスは、ホイールで上下に動き、Ctrl（Macは⌘）を押しながらホイールで拡大・縮小します。右ボタン（またはスペースキーを押しながら）のドラッグでも動かせます。</li>
+          <li>メニューの一番上に、開いている画像の名前が出ます。✕を押すと、画像だけ閉じます（塗った内容は、自動で保存されています）。画像を変えたいときは「画像を選び直す」、アプリを開いた直後の画面にもどりたいときは「最初の画面にもどる」を押します。</li>
+        </ol>
+        <p>塗った内容は、自動で保存されます。次の日も、前回と同じ画像を選ぶと、続きから再開できます。</p>
+        <p>「このアプリについて」「データについて」と、アプリ一覧へのリンクは、アプリを開いた直後の最初の画面にあります。</p>
+        <p>※カウンターは、このあと追加していきます。</p>
+      </div>
+    </div>
+
+    <div class="data-note" id="aboutNote">
+      <button type="button" class="data-note-btn" aria-expanded="false"><span>✿ このアプリについて</span><span class="data-note-arrow">▼</span></button>
+      <div class="data-note-body">
+        <p class="test-line">※いまは実験中のtest版です。予告なく内容が変わったり、保存したデータが使えなくなったりすることがあります。</p>
+        <p>このアプリは、編み物や日々の暮らしをちょっと便利にするために作られた個人制作のツールです。</p>
+        <p>計算結果・提案内容はすべて参考情報としてお使いください。編み物の仕上がりや作業結果はゲージ・素材・個人差によって異なります。必ずご自身でご確認のうえお使いください。</p>
+        <p>作者（YUCCHI）は、アプリの内容・結果によって生じたいかなる損害についても責任を負いかねます。あらかじめご了承ください。</p>
+        <p>このアプリのコード・デザインは、作者（YUCCHI）が制作したものです。コードやデザインをそのまま複製・再配布・販売することはご遠慮ください。</p>
+      </div>
+    </div>
+
+    <div class="data-note" id="dataNote">
+      <button type="button" class="data-note-btn" aria-expanded="false"><span>✿ データについて</span><span class="data-note-arrow">▼</span></button>
+      <div class="data-note-body">
+        <p>データはこの端末のブラウザに保存されます。スマホとPCなど、端末が異なると記録は共有されません。</p>
+        <p>編み図の画像そのものは保存されません。また、画像が端末の外に送られることもありません。</p>
+        <p>塗った内容と、段数のカウンターの数は、編み図の画像ごとに、この端末のブラウザに自動で保存されます。ファイル名・大きさ・更新日時が同じ画像を選ぶと、続きから再開できます（コピーした画像や、保存し直した画像は、別の画像として扱われます）。</p>
+        <p>保存の容量がいっぱいになったときは、古い編み図の分から整理して、お知らせを出します。</p>
+        <p>ブラウザの「履歴を消去」や「キャッシュ削除」を行うと、保存されたデータが消える場合があります。大切な記録はメモなどに控えておくと安心です。</p>
+        <p>📱 ホーム画面に追加してご利用の場合、アップデート後もすぐには最新版に切り替わらないことがあります。反映されない時は、アプリスイッチャーから一度完全に閉じて開き直すか、下のボタンで最新版を読み込み直せます（保存データが消えることはありません）。</p>
+        <button type="button" class="reload-latest-btn" id="reload-btn">🔄 最新版を読み込み直す</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="x-footer-row">
+    <div class="x-footer-icons">
+      <a href="https://webkorisu.github.io/yucchis-portal/" target="_blank" rel="noopener noreferrer"
+         aria-label="✿ YUCCHIのアプリ一覧を開く" data-tooltip="アプリ一覧へ" class="x-icon-btn">
+        <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12.74 1.67 L22 10 L22 20.5 Q22 22 20.5 22 L14.5 22 L14.5 15 L9.5 15 L9.5 22 L3.5 22 Q2 22 2 20.5 L2 10 L11.26 1.67 Q12 1 12.74 1.67 Z"/>
+        </svg>
+      </a>
+      <a href="https://x.com/yuttyan4444" target="_blank" rel="noopener noreferrer"
+         aria-label="XでYUCCHIをフォロー" data-tooltip="Xへ" class="x-icon-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.254 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/>
+        </svg>
+      </a>
+    </div>
+    <div class="last-updated">最終更新：2026.10.06</div>
+  </div>
+  </div>
+    </div>
+  </div>
+  <div id="work-hint">
+    <div class="wh-main">ここは編み図エリアです</div>
+    <div class="wh-en">Knitting Chart Highlighter</div>
+    <div class="wh-note">※ブラウザを開き直した場合は<br>再度画像を読み込んでください</div>
+  </div>
+</div>
+
+<!-- ===== 左上：最小限のボタン ===== -->
+<div id="top-left" hidden>
+  <button type="button" class="pill-btn" id="menu-btn" aria-expanded="false" aria-controls="menu-panel">メニュー</button>
+</div>
+
+<!-- ===== 右上：蛍光ペンの操作盤 ===== -->
+<div id="mk-panel" hidden>
+ <div id="mk-card">
+  <div id="mk-head">
+    <button type="button" class="mk-title" id="mk-toggle" aria-expanded="true" aria-controls="mk-bar"><i class="mk-now" id="mk-now"></i><span class="mk-label">選択中の蛍光ペン</span><span class="mk-arrow">▾</span></button>
+    <div class="mk-acts">
+      <button type="button" class="round-btn" id="undo-btn" aria-label="1つ前に戻る" data-tip="1つ前に戻る" disabled>↺</button>
+      <button type="button" class="round-btn" id="redo-btn" aria-label="1つ先に進む" data-tip="1つ先に進む" disabled>↻</button>
+      <button type="button" class="round-btn emoji" id="clear-btn" aria-label="塗った内容を一括削除" data-tip="塗った内容を一括削除" disabled>🗑️</button>
+    </div>
+  </div>
+  <div id="mk-bar">
+    <div class="mk-row" role="group" aria-label="道具"><div class="mk-seg" id="mk-tseg">
+      <button type="button" class="mk-seg-b tl mk-t" data-t="pen">なぞる</button>
+      <button type="button" class="mk-seg-b tl mk-t" data-t="line">直線</button>
+      <button type="button" class="mk-seg-b tl mk-t" data-t="rect">四角</button>
+      <button type="button" class="mk-seg-b tl mk-t" data-t="select">選択</button>
+      <button type="button" class="mk-seg-b tl mk-t" data-t="erase">消しゴム</button>
+    </div></div>
+    <div class="mk-row" role="group" aria-label="カラー"><div id="mk-colors">
+      <button type="button" class="mk-dot" data-c="#FF4F7B" style="background:#FF4F7B" aria-label="赤"></button>
+      <button type="button" class="mk-dot" data-c="#FF9F1C" style="background:#FF9F1C" aria-label="橙"></button>
+      <button type="button" class="mk-dot" data-c="#FFF200" style="background:#FFF200" aria-label="黄"></button>
+      <button type="button" class="mk-dot" data-c="#7DFF3C" style="background:#7DFF3C" aria-label="緑"></button>
+      <button type="button" class="mk-dot" data-c="#2EDBFF" style="background:#2EDBFF" aria-label="青"></button>
+      <button type="button" class="mk-dot" data-c="#7A8CFF" style="background:#7A8CFF" aria-label="藍"></button>
+      <button type="button" class="mk-dot" data-c="#D45BFF" style="background:#D45BFF" aria-label="紫"></button>
+      <button type="button" class="mk-dot" id="mk-custom-swatch" data-c="#FFFFFF" aria-label="自分で選んだ色" hidden></button>
+      <input type="color" id="mk-custom" aria-label="好きな色">
+      <label for="mk-custom" id="mk-custom-label" title="好きな色を追加" aria-label="好きな色を追加"></label>
+    </div></div>
+    <div class="mk-row" id="mk-row-w" role="group" aria-label="太さ"><div class="mk-seg" id="mk-wseg">
+      <button type="button" class="mk-seg-b mk-seg-sq mk-w" data-w="8"><i style="width:6px;height:6px"></i>細</button>
+      <button type="button" class="mk-seg-b mk-seg-sq mk-w" data-w="18"><i style="width:12px;height:12px"></i>中</button>
+      <button type="button" class="mk-seg-b mk-seg-sq mk-w" data-w="36"><i style="width:20px;height:20px"></i>太</button>
+    </div></div>
+    <div class="mk-row" id="mk-row-a" role="group" aria-label="濃さ"><div class="mk-seg" id="mk-aseg">
+      <button type="button" class="mk-seg-b mk-seg-sq mk-a" data-a="0.3"><i style="width:16px;height:16px;border:1px solid var(--border)"></i>うすい</button>
+      <button type="button" class="mk-seg-b mk-seg-sq mk-a" data-a="0.45"><i style="width:16px;height:16px;border:1px solid var(--border)"></i>ふつう</button>
+      <button type="button" class="mk-seg-b mk-seg-sq mk-a" data-a="0.65"><i style="width:16px;height:16px;border:1px solid var(--border)"></i>こい</button>
+    </div></div>
+    <div class="mk-row" id="mk-row-in" role="group" aria-label="入力" hidden><div class="mk-seg" id="mk-iseg">
+      <button type="button" class="mk-seg-b tl mk-i" data-i="hand">👆 指モード</button>
+      <button type="button" class="mk-seg-b tl mk-i" data-i="pen">✏️ ペンモード</button>
+    </div></div>
+  </div>
+ </div>
+</div>
+
+<!-- ===== 選んだ線の、複製・削除（「選択」の道具のときだけ出る） ===== -->
+<div id="sel-bar" hidden>
+  <button type="button" class="pill-btn" id="sel-dup">複製</button>
+  <button type="button" class="pill-btn" id="sel-flip">反転</button>
+  <button type="button" class="pill-btn" id="sel-del">削除</button>
+</div>
+
+<!-- ===== 「反転」を押したときの、4つの矢印（押した側に、ひっくり返したコピーを置く） ===== -->
+<div id="sel-arrows" hidden>
+  <button type="button" class="sel-arrow" data-d="t" aria-label="上に、反転したコピーを置く"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button type="button" class="sel-arrow" data-d="b" aria-label="下に、反転したコピーを置く"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button type="button" class="sel-arrow" data-d="l" aria-label="左に、反転したコピーを置く"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button type="button" class="sel-arrow" data-d="r" aria-label="右に、反転したコピーを置く"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+</div>
+
+<!-- ===== 右下：段数カウンター ===== -->
+<div id="counter-panel" hidden role="group" aria-label="段数カウンター" title="段数カウンター">
+  <div id="cp-counter-row">
+    <button type="button" class="cp-btn" id="cp-minus" aria-label="1つ減らす（長押しで、0にもどす）" title="長押しで、0にもどす" disabled></button>
+    <span id="cp-num" aria-live="polite">0</span>
+    <button type="button" class="cp-btn" id="cp-plus" aria-label="1つ増やす"></button>
+  </div>
+</div>
+
+<!-- ===== メニュー（使い方・このアプリについて・データについて・リンク） ===== -->
+<div id="menu-panel" role="region" aria-label="メニュー">
+  <div id="file-slot">
+    <button type="button" class="file-pick" id="file-pick">📂 ファイルを選択して編み図を開く</button>
+    <div class="file-box" id="file-box" hidden>
+      <span class="file-name" id="file-name"></span>
+      <button type="button" class="file-close" id="file-close" aria-label="編み図を閉じて、最初の画面にもどる" title="編み図を閉じる">✕</button>
+    </div>
+  </div>
+  <button type="button" class="menu-act" id="change-btn" hidden>画像を選び直す</button>
+  <button type="button" class="menu-act" id="top-btn">最初の画面にもどる</button>
+  <div id="menu-info-slot"></div>
+</div>
+
+<div id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <p id="modal-msg"></p>
+    <div class="modal-btns">
+      <button type="button" class="pill-btn" id="modal-cancel">キャンセル</button>
+      <button type="button" class="pill-btn accent" id="modal-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="test-badge">test版・実験中</div>
+<div id="note" role="status"></div>
+<input type="file" id="file-input" accept="image/*" hidden>
+
+<script>
+(function () {
+  'use strict';
+  /* ---------- 状態（名前は、ルーラーとそろえてある） ---------- */
+  var img = null;                    // 開いている編み図
+  var chartName = '';                // メニューに出す、ファイルの名前
+  var chartId = null;                // 画像の見分け方：名前|大きさ|更新日時|縦横サイズ（手順5の自動保存で使う）
+  var scale = 1, offsetX = 0, offsetY = 0;        // 画面の位置 = offset + 画像の位置 × scale
+  var minScale = 0.1, maxScale = 12;
+  var lastW = window.innerWidth, lastH = window.innerHeight;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var viewer = $('viewer'), cv = $('chart-canvas'), ctx = cv.getContext('2d');
+  var mkCv = $('marker-canvas'), mctx = mkCv.getContext('2d');
+  var cache = document.createElement('canvas'), cctx = cache.getContext('2d');   // 塗った線の描き置き
+  var fileInput = $('file-input'), placeholder = $('placeholder');
+  var menuBtn = $('menu-btn'), menuPanel = $('menu-panel'), note = $('note');
+  var infoBlock = $('info-block');
+  var started = false;                              // 一度でも画像を開いたら true（そのあとは、トップ画面にはもどらない）
+  function placeInfo() {                            // 説明・アイコン列：最初のトップ画面ではカードの下、画像を開いたあとはメニューの中
+    var slot = started ? $('menu-info-slot') : $('start-info-slot');
+    if (infoBlock.parentNode !== slot) slot.appendChild(infoBlock);
+  }
+
+  /* ---------- お知らせ（タップで閉じる） ---------- */
+  var noteTimer = null;
+  function showNote(msg) {
+    note.textContent = msg; note.style.display = 'block';
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(function () { note.style.display = 'none'; }, Math.min(7000, Math.max(3000, 1800 + msg.length * 140)));
+  }
+  note.addEventListener('click', function () { note.style.display = 'none'; });
+
+  /* ---------- 蛍光ペンのデータ（線は「画像の座標の点の列」で持つので、拡大・移動してもずれない） ---------- */
+  var COLORS = ['#FF4F7B', '#FF9F1C', '#FFF200', '#7DFF3C', '#2EDBFF', '#7A8CFF', '#D45BFF'];   // 赤・橙・黄・緑・青・藍・紫
+  var WIDTHS = [8, 18, 36], ALPHAS = [0.30, 0.45, 0.65], TOOLS = ['pen', 'line', 'rect', 'select', 'erase'];
+  var SKEY = 'yucchi_chartHighlighter_settings';   // 道具・色・太さ・濃さ。一度決めたら、あとで変更しない
+  var cpPos = null;                                // カウンターを動かした位置 { r:右端からの距離, b:下からの距離 }。null ならもとの位置
+  var customColor = null;                          // 「＋」で選んだ色（色見本として、残しておく）
+  var panelPos = null;                             // 操作盤を動かした位置 { r:右端からの距離, t:上からの距離 }。null ならもとの位置
+  var PEN = { tool: 'pen', input: 'hand', penSeen: false, color: '#FFF200', alpha: 0.45, width: 18 };   // width は、画面での太さ[px]／ input：'hand'＝指モード、'pen'＝ペンモード
+  function nearest(list, v) { var b = list[0]; list.forEach(function (x) { if (Math.abs(x - v) < Math.abs(b - v)) b = x; }); return b; }
+  try {
+    var s0 = JSON.parse(localStorage.getItem(SKEY));
+    if (s0) {
+      if (TOOLS.indexOf(s0.tool) >= 0) PEN.tool = s0.tool;
+      if (/^#[0-9a-fA-F]{6}$/.test(s0.color)) PEN.color = s0.color;
+      if (isFinite(s0.alpha)) PEN.alpha = nearest(ALPHAS, +s0.alpha);
+      if (isFinite(s0.width)) PEN.width = nearest(WIDTHS, +s0.width);
+      if (s0.pos && isFinite(s0.pos.r) && isFinite(s0.pos.t)) panelPos = { r: +s0.pos.r, t: +s0.pos.t };
+      if (s0.input === 'pen' || s0.input === 'hand') PEN.input = s0.input;
+      if (s0.cpos && isFinite(s0.cpos.r) && isFinite(s0.cpos.b)) cpPos = { r: +s0.cpos.r, b: +s0.cpos.b };
+      if (/^#[0-9a-fA-F]{6}$/.test(s0.custom)) customColor = s0.custom;
+      if (s0.penDetected === true) PEN.penSeen = true;          // ペンで触れたことが記録されている端末だけ、ペンありとみなす
+    }
+  } catch (e) {}
+  if (!PEN.penSeen && PEN.input === 'pen') PEN.input = 'hand';
+  if (!customColor && COLORS.map(function (c) { return c.toLowerCase(); }).indexOf(PEN.color.toLowerCase()) < 0) customColor = PEN.color;      // 以前に選んだ好きな色が残っていれば、見本に出す
+  function saveSt() {
+    if (!storageOk) return;
+    try { localStorage.setItem(SKEY, JSON.stringify({ tool: PEN.tool, input: PEN.input, penDetected: PEN.penSeen, color: PEN.color, custom: customColor, alpha: PEN.alpha, width: PEN.width, pos: panelPos ? { r: Math.round(panelPos.r), t: Math.round(panelPos.t) } : null, cpos: cpPos ? { r: Math.round(cpPos.r), b: Math.round(cpPos.b) } : null })); } catch (e) {}
+  }
+  var strokes = [], hist = [], redoH = [], cur = null, ver = 0, cacheKey = '';
+  var painting = false, pid = null, penStroke = false, held = false, holdTimer = null, strokeT0 = 0, startPt = null, maxMove = 0;
+  var lastPt = null, eraseBefore = null, eraserPos = null;
+
+  /* ---------- 描画（編み図 → 蛍光ペン。蛍光ペンは別のキャンバスで、乗算で重ねる） ---------- */
+  var raf = 0, dirtyChart = false;
+  function requestDraw(chartToo) {
+    if (chartToo !== false) dirtyChart = true;
+    if (!raf) raf = requestAnimationFrame(frame);
+  }
+  function frame() {
+    raf = 0;
+    var dpr = window.devicePixelRatio || 1;
+    var W = Math.round(window.innerWidth * dpr), H = Math.round(window.innerHeight * dpr);
+    if (cv.width !== W || cv.height !== H) {
+      cv.width = W; cv.height = H; mkCv.width = W; mkCv.height = H; cache.width = W; cache.height = H;
+      dirtyChart = true; cacheKey = '';
+    }
+    if (dirtyChart) { drawChart(dpr); dirtyChart = false; }
+    renderMarker(dpr, W, H);
+    updateSelUI();
+  }
+  function drawChart(dpr) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    if (!img) return;
+    var iw = img.naturalWidth, ih = img.naturalHeight;
+    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * offsetX, dpr * offsetY);
+    ctx.save();                                   // 紙のように、白い下地とやさしい影をつける
+    ctx.shadowColor = 'rgba(70,105,120,.34)'; ctx.shadowBlur = 7 * dpr; ctx.shadowOffsetY = 2 * dpr;
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, iw, ih);
+    ctx.restore();
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0);
+  }
+  function drawStroke(c, s, dpr) {
+    var p = s.p; if (!p.length || !img) return;
+    c.save();
+    c.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * offsetX, dpr * offsetY);
+    c.beginPath(); c.rect(0, 0, img.naturalWidth, img.naturalHeight); c.clip();      // 編み図の外には、はみ出さない
+    c.globalAlpha = s.a; c.strokeStyle = s.c; c.fillStyle = s.c;
+    c.lineWidth = s.w; c.lineCap = 'round'; c.lineJoin = 'round';
+    if (s.k === 'r') {                               // 四角：ドラッグした範囲を塗りつぶす
+      if (p.length > 1) c.fillRect(Math.min(p[0][0], p[1][0]), Math.min(p[0][1], p[1][1]), Math.abs(p[1][0] - p[0][0]), Math.abs(p[1][1] - p[0][1]));
+    } else if (s.k === 'f') {                        // ななめの四角：多角形を塗りつぶす
+      if (p.length > 2) { c.beginPath(); c.moveTo(p[0][0], p[0][1]); for (var fi = 1; fi < p.length; fi++) c.lineTo(p[fi][0], p[fi][1]); c.closePath(); c.fill(); }
+    } else if (p.length === 1) {
+      c.beginPath(); c.arc(p[0][0], p[0][1], s.w / 2, 0, Math.PI * 2); c.fill();
+    } else {
+      c.beginPath(); c.moveTo(p[0][0], p[0][1]);
+      for (var i = 1; i < p.length - 1; i++) {
+        c.quadraticCurveTo(p[i][0], p[i][1], (p[i][0] + p[i + 1][0]) / 2, (p[i][1] + p[i + 1][1]) / 2);
+      }
+      c.lineTo(p[p.length - 1][0], p[p.length - 1][1]);
+      c.stroke();                                  // 1本の線は1回でなぞるので、線の中で重なっても濃くならない
+    }
+    c.restore();
+  }
+  function renderMarker(dpr, W, H) {
+    mctx.clearRect(0, 0, W, H);
+    if (!img) return;
+    var key = [scale, offsetX, offsetY, W, H, ver].join('|');
+    if (key !== cacheKey) {
+      cctx.clearRect(0, 0, W, H);
+      for (var i = 0; i < strokes.length; i++) drawStroke(cctx, strokes[i], dpr);
+      cacheKey = key;
+    }
+    mctx.drawImage(cache, 0, 0);
+    if (cur && !held) drawStroke(mctx, cur, dpr);
+    if (painting && !held && PEN.tool === 'erase' && eraserPos) {          // 消しゴムの目印（丸）
+      mctx.save(); mctx.setTransform(1, 0, 0, 1, 0, 0);
+      mctx.globalAlpha = 1; mctx.strokeStyle = '#7C9AA5'; mctx.lineWidth = 2 * dpr;
+      mctx.beginPath(); mctx.arc(eraserPos[0] * dpr, eraserPos[1] * dpr, 12 * dpr, 0, Math.PI * 2); mctx.stroke();
+      mctx.restore();
+    }
+  }
+
+  /* ---------- 確認ウィンドウ（あとで、リセット・一括削除の確認にも使う） ---------- */
+  var modalOk = null;
+  function showModal(msg, okLabel, onOk, showCancel, cancelLabel) {          // showCancel を false にすると、OKだけのお知らせになる
+    $('modal-msg').textContent = msg; $('modal-ok').textContent = okLabel || 'OK';
+    $('modal-cancel').textContent = cancelLabel || 'キャンセル';
+    $('modal-cancel').hidden = (showCancel === false); modalOk = onOk; $('modal').hidden = false;
+  }
+  function closeModal() { $('modal').hidden = true; modalOk = null; }
+  $('modal-cancel').addEventListener('click', closeModal);
+  $('modal-ok').addEventListener('click', function () { var f = modalOk; closeModal(); if (f) f(); });
+  $('modal').addEventListener('pointerdown', function (e) { if (e.target === $('modal')) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('modal').hidden) closeModal(); });
+
+  /* ---------- 画像を開く ---------- */
+  function openFile(file) {
+    if (!file) return;
+    if (!/^image\//.test(file.type) && !/\.(png|jpe?g|gif|webp|bmp|heic|heif)$/i.test(file.name)) {
+      showNote('画像ファイルを選んでください'); return;
+    }
+    // 画像は、一度「文字のデータ（data:）」にしてから読み込む。
+    // 制限のあるプレビュー画面などでは、blob: 形式の画像が止められてしまうため
+    var reader = new FileReader();
+    reader.onerror = function () {
+      showModal('ファイルの読み込みに失敗しました。もう一度お試しください。', 'OK', function () {}, false);
+    };
+    reader.onload = function () {
+      var im = new Image();
+      im.onload = function () { setImage(im, file); };
+      im.onerror = function () {
+        showModal('この画像は開けません。\nお使いのブラウザがこのファイル形式に対応していない可能性があります。\n（特にHEICはSafari以外では開けないことが多いです）\n別の形式（JPG・PNGなど）でお試しください。', 'OK', function () {}, false);
+      };
+      im.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  function setImage(im, file) {
+    cancelPaint(); mode = 'idle'; pts.clear(); editing = null; selStroke = null;
+    flush();                                       // 開いていた画像の塗りを、先に保存する
+    img = im; started = true;
+    // 画像の見分け方：名前・大きさ・更新日時・縦横サイズ（編み図ルーラーと同じ）
+    chartId = [file.name, file.size, file.lastModified, im.naturalWidth + 'x' + im.naturalHeight].join('|');
+    chartName = file.name;
+    strokes = loadFor(chartId); count = loadCount(chartId); hist = []; redoH = []; cur = null; ver++; cacheKey = '';
+    if (strokes.length || count) scheduleSave();   // 「最近使った画像」として、保存の日時を更新しておく
+    syncBtns();
+    placeholder.hidden = true; placeholder.classList.remove('work');
+    viewer.classList.remove('empty', 'dragging');
+    $('mk-panel').hidden = false; $('top-left').hidden = false;
+    cpPanel.hidden = false; document.body.classList.add('has-cp'); syncCounter(); applyCpPos();
+    syncFileSlot(); placeInfo();
+    closeMenu(); applyPos(); syncBarScroll();
+    fitImage();
+    if (strokes.length || count) showNote(strokes.length && count ? '前回の塗りと段数を復元しました' : (count ? '前回の段数を復元しました' : '前回の塗りを復元しました'));
+  }
+  // 画像を閉じる。画面はそのままで、編み図だけ閉じる（トップ画面にはもどらない）。塗った内容は、自動で保存されている
+  function closeImage() {
+    cancelPaint(); mode = 'idle'; pts.clear(); pinchLast = 0; midLast = null; editing = null; selStroke = null;
+    flush();
+    img = null; chartId = null; strokes = []; count = 0; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
+    syncBtns();
+    placeholder.hidden = false; placeholder.classList.add('work');
+    viewer.classList.add('empty'); viewer.classList.remove('dragging');
+    $('mk-panel').hidden = true; cpPanel.hidden = true; document.body.classList.remove('has-cp'); syncCounter();
+    chartName = '';
+    syncFileSlot(); placeInfo();
+    closeMenu(); requestDraw();
+  }
+  // 編み図エリア（画像を閉じたあと）から、最初のトップ画面にもどる
+  function goTop() {
+    started = false; placeholder.classList.remove('work');
+    $('top-left').hidden = true; closeMenu(); placeInfo();
+    placeholder.scrollTop = 0;
+  }
+  $('top-btn').addEventListener('click', function () {
+    closeMenu();
+    if (!img) { goTop(); return; }                  // 画像がない時は、そのままトップ画面へ
+    showModal('最初の画面にもどります。\n表示されている画像は取り消されます。\nよろしいですか？', 'もどる', function () { closeImage(); goTop(); });
+  });
+  $('file-close').addEventListener('click', function () {
+    showModal('表示されている画像を取り消しますか？', '取り消す', closeImage);                    // 編み図ルーラーと同じ
+  });
+  $('file-pick').addEventListener('click', function () { closeMenu(); pick(); });
+  $('change-btn').addEventListener('click', function () { closeMenu(); pick(); });      // 変更の確認は、ファイルを選んだあとに出る（ルーラーと同じ）
+  function syncFileSlot() {                         // メニューの一番上：開く前は「開く」ボタン、開いたあとは ファイル名＋✕、その下に「画像を選び直す」
+    $('file-pick').hidden = !!img; $('file-box').hidden = !img; $('change-btn').hidden = !img;
+    $('file-name').textContent = chartName; $('file-name').title = chartName;
+  }
+  function pick() { fileInput.click(); }
+  $('start-open-btn').addEventListener('click', pick);
+  fileInput.addEventListener('change', function () {
+    var f = fileInput.files && fileInput.files[0];
+    fileInput.value = '';                        // 同じ画像をもう一度選んでも反応するように
+    if (!f) return;
+    if (img) showModal('画像を変更しますか？', '変更する', function () { openFile(f); });     // 編み図ルーラーと同じ
+    else openFile(f);
+  });
+
+  /* ---------- 表示（拡大・縮小・移動） ---------- */
+  function fitRaw() { return Math.min(window.innerWidth / img.naturalWidth, window.innerHeight / img.naturalHeight); }
+  function updateLimits() { var f = fitRaw(); minScale = f * 0.3; maxScale = Math.max(12, f * 8); }
+  function fitImage() {
+    if (!img) return;
+    updateLimits();
+    scale = Math.min(fitRaw() * 0.96, 3);
+    offsetX = (window.innerWidth - img.naturalWidth * scale) / 2;
+    offsetY = (window.innerHeight - img.naturalHeight * scale) / 2;
+    requestDraw();
+  }
+  function clampOffset() {                        // 画像が、画面の外に消えてしまわないように
+    if (!img) return;
+    var W = window.innerWidth, H = window.innerHeight, w = img.naturalWidth * scale, h = img.naturalHeight * scale;
+    var mx = Math.min(80, w), my = Math.min(80, h);
+    offsetX = Math.min(W - mx, Math.max(mx - w, offsetX));
+    offsetY = Math.min(H - my, Math.max(my - h, offsetY));
+  }
+  function zoomAt(cx, cy, factor) {
+    var ns = Math.min(maxScale, Math.max(minScale, scale * factor)), ratio = ns / scale;
+    offsetX = cx - ratio * (cx - offsetX);
+    offsetY = cy - ratio * (cy - offsetY);
+    scale = ns; clampOffset(); requestDraw();
+  }
+
+  // ホイール・トラックパッド：
+  //   2本指でなぞる／ホイールを回す → 編み図が動く（移動）
+  //   ピンチ（ChromeやFirefoxでは、Ctrlキー付きのホイールとして届く）／ Ctrl（⌘）を押しながらホイール → 拡大・縮小
+  viewer.addEventListener('wheel', function (e) {
+    if (!img) return;
+    e.preventDefault();
+    if (painting || editing) return;              // 塗っている間・線を動かしている間は、編み図を動かさない
+    var dx = e.deltaX, dy = e.deltaY;
+    if (e.deltaMode === 1) { dx *= 20; dy *= 20; } else if (e.deltaMode === 2) { dx *= 400; dy *= 400; }
+    if (e.ctrlKey || e.metaKey) {                 // 拡大・縮小
+      var d = Math.max(-60, Math.min(60, dy));    // 1回の変化量に上限をつけて、ビュンビュン動かないように
+      zoomAt(e.clientX, e.clientY, Math.exp(-d * 0.008));
+    } else {                                      // 移動（指でなぞった向きに、編み図がついてくる）
+      offsetX -= dx; offsetY -= dy; clampOffset(); requestDraw();
+    }
+  }, { passive: false });
+
+  /* ---------- 塗る・動かす（指・ペン・マウス共通） ----------
+     指1本・ペン・マウス左ボタン：塗る ／ 2本指：拡大縮小と移動 ／ マウスの右ボタン・スペースキー＋ドラッグ：移動 */
+  var pts = new Map(), pinchLast = 0, midLast = null, mode = 'idle', spaceDown = false;  // mode：idle / paint / pan / pinch / ignore
+  function pinchInfo() {
+    var a = Array.from(pts.values());
+    return { d: Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y), mx: (a[0].x + a[1].x) / 2, my: (a[0].y + a[1].y) / 2 };
+  }
+  function toImg(e) { return [(e.clientX - offsetX) / scale, (e.clientY - offsetY) / scale]; }
+  function addPoint(e) {
+    var q = toImg(e), p = cur.p, l = p[p.length - 1];
+    if (l && Math.hypot(q[0] - l[0], q[1] - l[1]) * scale < 0.6) return;
+    p.push(q);
+  }
+  // 直線・四角：始点を固定して、終点だけ動かす（直線は、ほぼ水平・垂直なら、まっすぐに補正）
+  function setEnd(e) {
+    var q = toImg(e), a = cur.p[0];
+    if (cur.k === 'l') {
+      var dx = q[0] - a[0], dy = q[1] - a[1];
+      if (Math.abs(dy) < Math.abs(dx) * 0.0875) dy = 0;
+      else if (Math.abs(dx) < Math.abs(dy) * 0.0875) dx = 0;
+      q = [a[0] + dx, a[1] + dy];
+    }
+    cur.p[1] = q;
+  }
+  /* ---------- 選択：選んだ線を、動かす・大きさを変える・複製する・削除する ----------
+     ・四角・直線で描いた直後は、その線が自動で選ばれて、すぐ、リサイズ・移動できる（ルーラーの四角定規の癖のまま）
+     ・「選択」の道具では、どの線でも、タップで選べる。何もない所をドラッグすると、編み図が動く
+     ・四角・自由な線：角と辺をドラッグ＝大きさを変える／中をドラッグ＝移動。直線：両端の丸をドラッグ＝長さ・向き／線をドラッグ＝移動
+     ・線のデータは、いったん別のものに作り直してから入れ替える（もどす・やりなおしの記録を、壊さないため） */
+  var selStroke = null, editing = null;
+  var selLayer = document.createElement('div'), selBar = $('sel-bar');
+  selLayer.id = 'sel-layer'; selLayer.hidden = true;
+  selLayer.innerHTML = '<div class="sel-frame"></div>' +
+    '<i class="sel-h c" data-n="tl"></i><i class="sel-h c" data-n="tr"></i><i class="sel-h c" data-n="bl"></i><i class="sel-h c" data-n="br"></i>' +
+    '<i class="sel-h eh" data-n="t"></i><i class="sel-h eh" data-n="b"></i><i class="sel-h ev" data-n="l"></i><i class="sel-h ev" data-n="r"></i>' +
+    '<i class="sel-end" data-n="e0"></i><i class="sel-end" data-n="e1"></i>' +
+    '<svg class="sel-poly" data-n="poly"><polygon points=""/></svg>' +
+    '<i class="sel-rotl" data-n="rotl"></i>' +
+    '<i class="sel-rot" data-n="rot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></i>' +
+    '<i class="sel-angle" data-n="ang"></i>';
+  document.body.appendChild(selLayer);
+  function strokeBox(st) {
+    var b = { minX: 1e9, minY: 1e9, maxX: -1e9, maxY: -1e9 };
+    st.p.forEach(function (q) { b.minX = Math.min(b.minX, q[0]); b.maxX = Math.max(b.maxX, q[0]); b.minY = Math.min(b.minY, q[1]); b.maxY = Math.max(b.maxY, q[1]); });
+    return b;
+  }
+  function padOf(st) { return (st.k === 'r' || st.k === 'f') ? 0 : st.w / 2; }                       // 四角は、塗りつぶしなので、線の太さぶんの余白は、いらない
+  function isLineStroke(st) { return st.k !== 'r' && st.p.length === 2; }
+  function isDotStroke(st) { return st.k !== 'r' && st.p.length === 1; }
+  function frameOf(st) { var b = strokeBox(st), pd = padOf(st); return { minX: b.minX - pd, minY: b.minY - pd, maxX: b.maxX + pd, maxY: b.maxY + pd }; }
+  function toScr(x, y) { return [x * scale + offsetX, y * scale + offsetY]; }
+  function cloneStroke(st, pts, kind) { return { k: kind || st.k, c: st.c, a: st.a, w: st.w, p: pts || st.p.map(function (q) { return [q[0], q[1]]; }) }; }
+  function clearSel() { if (selStroke) { selStroke = null; requestDraw(false); } }
+  // 回転：線・自由な線は、点を回す。四角は、ななめになると、多角形（'f'）になる（まっすぐに戻れば、また四角('r')）
+  function rotatePts(pts, c, th) { var co = Math.cos(th), si = Math.sin(th); return pts.map(function (q) { return [c[0] + (q[0] - c[0]) * co - (q[1] - c[1]) * si, c[1] + (q[0] - c[0]) * si + (q[1] - c[1]) * co]; }); }
+  function rectCorners(o) { if (o.k === 'r') { var b = strokeBox(o); return [[b.minX, b.minY], [b.maxX, b.minY], [b.maxX, b.maxY], [b.minX, b.maxY]]; } return o.p; }
+  function centerOf(o) {
+    if (o.k === 'r' || o.k === 'f') { var q = rectCorners(o); return [(q[0][0] + q[2][0]) / 2, (q[0][1] + q[2][1]) / 2]; }
+    var bx = strokeBox(o); return [(bx.minX + bx.maxX) / 2, (bx.minY + bx.maxY) / 2];
+  }
+  function axisAligned4(q) {
+    var e = 1e-3;
+    return (Math.abs(q[0][1] - q[1][1]) < e && Math.abs(q[1][0] - q[2][0]) < e && Math.abs(q[2][1] - q[3][1]) < e && Math.abs(q[3][0] - q[0][0]) < e) ||
+           (Math.abs(q[0][0] - q[1][0]) < e && Math.abs(q[1][1] - q[2][1]) < e && Math.abs(q[2][0] - q[3][0]) < e && Math.abs(q[3][1] - q[0][1]) < e);
+  }
+  function rotateStroke(o, th) {
+    var c = centerOf(o);
+    if (o.k === 'r' || o.k === 'f') {
+      var q = rotatePts(rectCorners(o), c, th);
+      if (axisAligned4(q)) {
+        var xs = q.map(function (v) { return v[0]; }), ys = q.map(function (v) { return v[1]; });
+        return cloneStroke(o, [[Math.min.apply(null, xs), Math.min.apply(null, ys)], [Math.max.apply(null, xs), Math.max.apply(null, ys)]], 'r');
+      }
+      return cloneStroke(o, q, 'f');
+    }
+    return cloneStroke(o, rotatePts(o.p, c, th));
+  }
+  var flipMode = false, selArrows = $('sel-arrows');
+  function rotPos(st) { var F = frameOf(st), a = toScr(F.minX, F.minY), b = toScr(F.maxX, F.maxY); return [(a[0] + b[0]) / 2, a[1] - 30]; }
+  function updateSelUI() {                          // 選んだ線の、枠・つまみ・ボタン・矢印の位置を、いまの表示に合わせる
+    if (selStroke && (!img || strokes.indexOf(selStroke) < 0)) selStroke = null;
+    if (!selStroke) { selLayer.hidden = true; selBar.hidden = true; selArrows.hidden = true; flipMode = false; $('sel-flip').classList.remove('on'); return; }
+    selLayer.hidden = false;
+    var st = selStroke, F = frameOf(st), a = toScr(F.minX, F.minY), b = toScr(F.maxX, F.maxY);
+    var line = isLineStroke(st), dot = isDotStroke(st), poly = st.k === 'f', els = selLayer.children;
+    var l = a[0], t = a[1], r = b[0], bt = b[1], cx = (l + r) / 2, cy = (t + bt) / 2;
+    function put(n, x, y) { var el = selLayer.querySelector('[data-n="' + n + '"]'); el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.display = ''; return el; }
+    for (var i = 0; i < els.length; i++) els[i].style.display = 'none';
+    if (line) {
+      var p0 = toScr(st.p[0][0], st.p[0][1]), p1 = toScr(st.p[1][0], st.p[1][1]);
+      put('e0', p0[0], p0[1]); put('e1', p1[0], p1[1]);
+    } else if (poly) {                              // ななめの四角：多角形のふちを、点線で
+      var pg = selLayer.querySelector('[data-n="poly"]'); pg.style.display = '';
+      pg.querySelector('polygon').setAttribute('points', st.p.map(function (q) { var v = toScr(q[0], q[1]); return v[0] + ',' + v[1]; }).join(' '));
+    } else {
+      var fr = selLayer.querySelector('.sel-frame'); fr.style.display = ''; fr.style.left = l + 'px'; fr.style.top = t + 'px'; fr.style.width = (r - l) + 'px'; fr.style.height = (bt - t) + 'px';
+      if (!dot) { put('tl', l, t); put('tr', r, t); put('bl', l, bt); put('br', r, bt); put('t', cx, t); put('b', cx, bt); put('l', l, cy); put('r', r, cy); }
+    }
+    var rotShown = !dot && !flipMode;               // 回転の丸いつまみ（枠の上）。「反転」の矢印が出ている間は、隠す
+    if (rotShown) {
+      put('rot', cx, t - 30);
+      var rl = selLayer.querySelector('[data-n="rotl"]'); rl.style.display = ''; rl.style.left = cx + 'px'; rl.style.top = (t - 19) + 'px'; rl.style.height = '19px';
+    }
+    if (editing && editing.h.type === 'rotate' && editing.moved) {          // 回している間は、角度を出す
+      var deg = Math.round(editing.angle * 180 / Math.PI), an = put('ang', cx + 20, t - 30); an.textContent = deg + '°';
+    }
+    var showBar = PEN.tool === 'select' && !(editing && editing.moved);
+    selBar.hidden = !showBar;
+    var showArrows = showBar && flipMode;
+    selArrows.hidden = !showArrows;
+    if (showBar) {
+      var bhw = (selBar.offsetWidth || 200) / 2 + 8, cand = flipMode ? t - 82 : (rotShown ? t - 80 : t - 52);
+      selBar.style.left = Math.max(bhw, Math.min(window.innerWidth - bhw, cx)) + 'px';
+      selBar.style.top = (cand < 56 ? bt + (flipMode ? 60 : 14) : cand) + 'px';
+    }
+    if (showArrows) {                               // 四方の矢印。編み図の外になる側は、押せない
+      var iw = img.naturalWidth, ih = img.naturalHeight, W = window.innerWidth, H = window.innerHeight;
+      var pos = { t: [cx, t - 26, F.minY <= 0], b: [cx, bt + 26, F.maxY >= ih], l: [l - 26, cy, F.minX <= 0], r: [r + 26, cy, F.maxX >= iw] };
+      Array.prototype.forEach.call(selArrows.children, function (el) {
+        var p = pos[el.getAttribute('data-d')];
+        el.style.left = Math.max(20, Math.min(W - 20, p[0])) + 'px'; el.style.top = Math.max(20, Math.min(H - 20, p[1])) + 'px'; el.disabled = !!p[2];
+      });
+    }
+  }
+  // 選んだ線の、どこを触ったか：回転のつまみ／つまみ（角・辺・両端）／中（移動）／なし
+  function hitSel(px, py) {
+    if (!selStroke) return null;
+    var st = selStroke, i;
+    if (!isDotStroke(st) && !flipMode) { var rp = rotPos(st); if (Math.hypot(px - rp[0], py - rp[1]) <= 18) return { type: 'rotate' }; }
+    if (isLineStroke(st)) {
+      for (i = 0; i < 2; i++) { var c = toScr(st.p[i][0], st.p[i][1]); if (Math.hypot(px - c[0], py - c[1]) <= 20) return { type: 'end', i: i }; }
+      return hit(st, (px - offsetX) / scale, (py - offsetY) / scale, 14 / scale) ? { type: 'move' } : null;
+    }
+    if (st.k === 'f') return hit(st, (px - offsetX) / scale, (py - offsetY) / scale, 6 / scale) ? { type: 'move' } : null;    // ななめの四角：動かす・回すだけ（大きさは、まっすぐな時に決める）
+    var F = frameOf(st), a = toScr(F.minX, F.minY), b = toScr(F.maxX, F.maxY), l = a[0], t = a[1], r = b[0], bt = b[1], hw = (r - l) / 2, hh = (bt - t) / 2;
+    if (isDotStroke(st)) return (px >= l - 8 && px <= r + 8 && py >= t - 8 && py <= bt + 8) ? { type: 'move' } : null;
+    var cr = Math.max(10, Math.min(20, hw - 6, hh - 6)), esV = Math.min(12, Math.max(4, hh - 6)), esH = Math.min(12, Math.max(4, hw - 6));
+    var cs = [['l', 't', l, t], ['r', 't', r, t], ['l', 'b', l, bt], ['r', 'b', r, bt]];
+    for (i = 0; i < 4; i++) if (Math.hypot(px - cs[i][2], py - cs[i][3]) <= cr) return { type: 'corner', cx: cs[i][0], cy: cs[i][1] };
+    if (Math.abs(py - t) <= esV && px > l + cr && px < r - cr) return { type: 'edge', side: 't' };
+    if (Math.abs(py - bt) <= esV && px > l + cr && px < r - cr) return { type: 'edge', side: 'b' };
+    if (Math.abs(px - l) <= esH && py > t + cr && py < bt - cr) return { type: 'edge', side: 'l' };
+    if (Math.abs(px - r) <= esH && py > t + cr && py < bt - cr) return { type: 'edge', side: 'r' };
+    if (px >= l && px <= r && py >= t && py <= bt) return { type: 'move' };
+    return null;
+  }
+  function selectAt(px, py) {                       // タップした所の、いちばん上の線を選ぶ
+    var x = (px - offsetX) / scale, y = (py - offsetY) / scale, tol = 14 / scale;
+    for (var i = strokes.length - 1; i >= 0; i--) if (hit(strokes[i], x, y, tol)) return strokes[i];
+    return null;
+  }
+  function startEdit(e, h) {
+    var idx = strokes.indexOf(selStroke);
+    if (idx < 0) return false;
+    editing = { id: e.pointerId, h: h, x0: e.clientX, y0: e.clientY, orig: selStroke, before: strokes.slice(), idx: idx, moved: false, changed: false, angle: 0 };
+    if (h.type === 'rotate') {                      // 回転：まわりの中心と、つかんだ時の向きを覚える
+      var c = centerOf(selStroke), cs = toScr(c[0], c[1]);
+      editing.cs = cs; editing.a0 = Math.atan2(e.clientY - cs[1], e.clientX - cs[0]);
+    }
+    mode = 'edit'; viewer.classList.add('dragging'); requestDraw(false);
+    return true;
+  }
+  function applyEdit(e) {
+    var ed = editing, o = ed.orig, h = ed.h, dx = (e.clientX - ed.x0) / scale, dy = (e.clientY - ed.y0) / scale, pts, ns;
+    if (!ed.moved && Math.hypot(e.clientX - ed.x0, e.clientY - ed.y0) < 3) return;       // ちょっと触れただけでは、動かさない
+    ed.moved = true;
+    if (h.type === 'rotate') {                      // 回転：15度ごとに、ぴたっと止まる
+      var step = Math.PI / 12, ang = Math.atan2(e.clientY - ed.cs[1], e.clientX - ed.cs[0]) - ed.a0;
+      ang = Math.round(ang / step) * step; ang = Math.atan2(Math.sin(ang), Math.cos(ang));
+      ed.angle = ang; ed.changed = Math.abs(ang) > 1e-9;
+      ns = ed.changed ? rotateStroke(o, ang) : o;
+    } else {
+      ed.changed = true;
+      if (h.type === 'move') {
+        pts = o.p.map(function (q) { return [q[0] + dx, q[1] + dy]; });
+      } else if (h.type === 'end') {                // 直線の端：もう一方の端を中心に、長さ・向きを変える（水平・垂直に近ければ、そろえる）
+        pts = o.p.map(function (q) { return [q[0], q[1]]; });
+        pts[h.i] = axisFix(o.p[1 - h.i], [o.p[h.i][0] + dx, o.p[h.i][1] + dy]);
+      } else {                                      // 角・辺のドラッグ：反対側を固定して、大きさを変える
+        var pd = padOf(o), B = strokeBox(o), F = { minX: B.minX - pd, minY: B.minY - pd, maxX: B.maxX + pd, maxY: B.maxY + pd };
+        var mn = 2 * pd + 6 / scale, N = { minX: F.minX, minY: F.minY, maxX: F.maxX, maxY: F.maxY };
+        var side = h.type === 'corner' ? [h.cx, h.cy] : [h.side];
+        if (side.indexOf('l') >= 0) N.minX = Math.min(F.minX + dx, F.maxX - mn);
+        if (side.indexOf('r') >= 0) N.maxX = Math.max(F.maxX + dx, F.minX + mn);
+        if (side.indexOf('t') >= 0) N.minY = Math.min(F.minY + dy, F.maxY - mn);
+        if (side.indexOf('b') >= 0) N.maxY = Math.max(F.maxY + dy, F.minY + mn);
+        var bw = B.maxX - B.minX, bh = B.maxY - B.minY, nx0 = N.minX + pd, nx1 = N.maxX - pd, ny0 = N.minY + pd, ny1 = N.maxY - pd;
+        pts = o.p.map(function (q) {
+          return [bw > 1e-6 ? nx0 + (q[0] - B.minX) * (nx1 - nx0) / bw : (nx0 + nx1) / 2, bh > 1e-6 ? ny0 + (q[1] - B.minY) * (ny1 - ny0) / bh : (ny0 + ny1) / 2];
+        });
+      }
+      ns = cloneStroke(o, pts);
+    }
+    strokes[ed.idx] = ns; selStroke = ns; ver++; requestDraw(false);
+  }
+  function finishEdit() {
+    var ed = editing; editing = null;
+    if (!ed) return;
+    if (ed.changed) commit(ed.before);              // 動かした・大きさを変えた・回したことを、もどす・やりなおしの記録に入れる
+    else if (ed.moved) { strokes[ed.idx] = ed.orig; selStroke = ed.orig; ver++; }      // 回して、もとの向きにもどした時は、記録しない
+    requestDraw(false);
+  }
+  function cancelEdit() {                           // 2本目の指が触れた（ピンチ）などで、途中でやめる：もとの形にもどす
+    var ed = editing; editing = null;
+    if (!ed) return;
+    strokes = ed.before; selStroke = ed.orig; ver++; requestDraw(false);
+  }
+  // 塗る前に呼ぶ：選んだ線のつまみ・中を触った／「選択」の道具のとき、の操作を受け持つ。受け持ったら true
+  function beginAction(e) {
+    var h = selStroke ? hitSel(e.clientX, e.clientY) : null;
+    if (h && startEdit(e, h)) return true;
+    if (PEN.tool === 'select') {
+      var st = selectAt(e.clientX, e.clientY);
+      if (st) { selStroke = st; return startEdit(e, { type: 'move' }); }
+      clearSel();
+      if (e.pointerType === 'pen') { mode = 'ignore'; return true; }       // ペンは、何もない所では、何もしない
+      mode = 'pan'; viewer.classList.add('dragging'); return true;          // 指・マウスは、何もない所をドラッグすると、編み図が動く
+    }
+    if (selStroke) clearSel();
+    return false;
+  }
+  $('sel-dup').addEventListener('click', function () {
+    if (!selStroke) return;
+    var o = selStroke, off = 20 / scale, cp = cloneStroke(o, o.p.map(function (q) { return [q[0] + off, q[1] + off]; }));
+    var before = strokes.slice(); strokes.push(cp); commit(before); selStroke = cp; requestDraw(false);
+  });
+  function flipSel(dir) {                           // 反転したコピーを、元の線の枠の、すぐ左・右・上・下（'l' 'r' 't' 'b'）に、ぴったり並べて置く（元の線は、そのまま）
+    if (!selStroke || !img) return;
+    var o = selStroke, F = frameOf(o);
+    var out = dir === 'l' ? F.minX <= 0 : dir === 'r' ? F.maxX >= img.naturalWidth : dir === 't' ? F.minY <= 0 : F.maxY >= img.naturalHeight;
+    if (out) { showNote('編み図の外になるので、置けません'); return; }
+    var horiz = dir === 'l' || dir === 'r', ax = 2 * (dir === 'l' ? F.minX : dir === 'r' ? F.maxX : dir === 't' ? F.minY : F.maxY);       // 鏡の位置（元の線の枠の、その側のはし）
+    var cp = cloneStroke(o, o.p.map(function (q) { return horiz ? [ax - q[0], q[1]] : [q[0], ax - q[1]]; }));
+    var before = strokes.slice(); strokes.push(cp); commit(before); selStroke = cp; requestDraw(false);
+    showNote({ l: '左', r: '右', t: '上', b: '下' }[dir] + 'に、反転したコピーを置きました');
+  }
+  $('sel-flip').addEventListener('click', function () {      // 「反転」：矢印を出す／しまう
+    if (!selStroke) return;
+    flipMode = !flipMode; $('sel-flip').classList.toggle('on', flipMode);
+    if (flipMode) showNote('矢印を押すと、その側に、反転したコピーを置きます');
+    requestDraw(false);
+  });
+  selArrows.addEventListener('click', function (e) {
+    var bt2 = e.target.closest('.sel-arrow');
+    if (bt2 && !bt2.disabled) flipSel(bt2.getAttribute('data-d'));
+  });
+  $('sel-del').addEventListener('click', function () {
+    if (!selStroke) return;
+    var before = strokes.slice(), target = selStroke;
+    strokes = strokes.filter(function (x) { return x !== target; }); selStroke = null; commit(before); requestDraw(false);
+  });
+
+  /* ---------- 形の補正：なぞったあと、止めると、直線・円・四角にととのえる（編み図ルーラーと同じ判定） ---------- */
+  var snapTimer = null, snapped = null, snapAnchor = null;
+  var SNAP_MS = 550, SNAP_MOVE = 5;                 // 止めて約0.55秒で補正。5px以内の小さな揺れは、止まっているとみなす
+  function resetSnap() { clearTimeout(snapTimer); snapTimer = null; snapped = null; snapAnchor = null; }
+  function axisFix(a, q) {                          // 水平・垂直に近ければ、そろえる
+    var dx = q[0] - a[0], dy = q[1] - a[1];
+    if (Math.abs(dy) < Math.abs(dx) * 0.0875) dy = 0; else if (Math.abs(dx) < Math.abs(dy) * 0.0875) dx = 0;
+    return [a[0] + dx, a[1] + dy];
+  }
+  function simplify(p, eps) {                       // 震えをならして、点を減らす
+    if (p.length < 3) return p.slice();
+    var keep = new Array(p.length).fill(false), stack = [[0, p.length - 1]];
+    keep[0] = keep[p.length - 1] = true;
+    while (stack.length) {
+      var seg = stack.pop(), s0_ = seg[0], e0_ = seg[1], a = p[s0_], b = p[e0_], dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy, md = 0, mi = -1, k;
+      for (k = s0_ + 1; k < e0_; k++) {
+        var t = l2 ? Math.max(0, Math.min(1, ((p[k][0] - a[0]) * dx + (p[k][1] - a[1]) * dy) / l2)) : 0;
+        var d2 = Math.hypot(p[k][0] - (a[0] + t * dx), p[k][1] - (a[1] + t * dy));
+        if (d2 > md) { md = d2; mi = k; }
+      }
+      if (md > eps && mi > 0) { keep[mi] = true; stack.push([s0_, mi], [mi, e0_]); }
+    }
+    return p.filter(function (_, i) { return keep[i]; });
+  }
+  function fitEllipse(p) {                          // 閉じた形に、かたむいた楕円をあてはめる
+    var M = 72, cum = [0], i, tot, q = [];
+    for (i = 1; i < p.length; i++) cum.push(cum[i - 1] + Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]));
+    tot = cum[cum.length - 1] || 1;
+    for (var m = 0, j = 1; m < M; m++) {
+      var target = tot * m / M;
+      while (j < cum.length - 1 && cum[j] < target) j++;
+      var seg = cum[j] - cum[j - 1] || 1, f = Math.max(0, Math.min(1, (target - cum[j - 1]) / seg));
+      q.push([p[j - 1][0] + (p[j][0] - p[j - 1][0]) * f, p[j - 1][1] + (p[j][1] - p[j - 1][1]) * f]);
+    }
+    var mx = 0, my = 0;
+    q.forEach(function (c) { mx += c[0]; my += c[1]; }); mx /= M; my /= M;
+    var sxx = 0, syy = 0, sxy = 0;
+    q.forEach(function (c) { sxx += (c[0] - mx) * (c[0] - mx); syy += (c[1] - my) * (c[1] - my); sxy += (c[0] - mx) * (c[1] - my); });
+    var th0 = 0.5 * Math.atan2(2 * sxy, sxx - syy), best = null;
+    [th0, 0].forEach(function (th) {
+      var cs = Math.cos(th), sn = Math.sin(th), mnU = 1e9, mxU = -1e9, mnV = 1e9, mxV = -1e9, us = [], vs = [];
+      q.forEach(function (c) {
+        var u = (c[0] - mx) * cs + (c[1] - my) * sn, v = -(c[0] - mx) * sn + (c[1] - my) * cs;
+        us.push(u); vs.push(v); mnU = Math.min(mnU, u); mxU = Math.max(mxU, u); mnV = Math.min(mnV, v); mxV = Math.max(mxV, v);
+      });
+      var a = (mxU - mnU) / 2, b = (mxV - mnV) / 2, cu = (mxU + mnU) / 2, cv = (mxV + mnV) / 2;
+      if (a < 1e-6 || b < 1e-6) return;
+      var err = 0;
+      for (var k = 0; k < M; k++) err += Math.abs(Math.hypot((us[k] - cu) / a, (vs[k] - cv) / b) - 1);
+      err /= M;
+      if (!best || err < best.err) best = { err: err, a: a, b: b, th: th, cx: mx + cu * cs - cv * sn, cy: my + cu * sn + cv * cs };
+    });
+    return best || { err: 9, a: 1, b: 1, th: 0, cx: mx, cy: my };
+  }
+  function recognize(p) {                           // 直線・円（楕円）・四角のどれかに当てはまれば、整えた点の列を返す
+    if (p.length < 8) return null;
+    var n = p.length, L = 0, i, minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+    var sp = simplify(p, 2.5 / scale);              // 長さは、震えを除いた形で測る
+    for (i = 1; i < sp.length; i++) L += Math.hypot(sp[i][0] - sp[i - 1][0], sp[i][1] - sp[i - 1][1]);
+    for (i = 0; i < n; i++) {
+      minX = Math.min(minX, p[i][0]); maxX = Math.max(maxX, p[i][0]); minY = Math.min(minY, p[i][1]); maxY = Math.max(maxY, p[i][1]);
+    }
+    if (L * scale < 30) return null;
+    var a = p[0], b = p[n - 1], d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (d * scale > 30 && L / d < 1.45) {           // 直線：始点と終点を結ぶ線から、ほとんどずれていない
+      var dev = 0, lo = Math.max(1, Math.floor(n * 0.12)), hi = n - lo;       // 始点・終点のあたりの「はね」は、判定に入れない
+      for (i = lo; i < hi; i++) {
+        var t = ((p[i][0] - a[0]) * (b[0] - a[0]) + (p[i][1] - a[1]) * (b[1] - a[1])) / (d * d);
+        var px = a[0] + t * (b[0] - a[0]), py = a[1] + t * (b[1] - a[1]);
+        dev = Math.max(dev, Math.hypot(p[i][0] - px, p[i][1] - py));
+      }
+      var side = 0, flips = 0, hy = 4 / scale;      // うねる線（波線）は、直線にしない
+      for (i = 0; i < sp.length; i++) {
+        var sd = ((sp[i][0] - a[0]) * (b[1] - a[1]) - (sp[i][1] - a[1]) * (b[0] - a[0])) / d;
+        if (Math.abs(sd) > hy) { var sg = sd > 0 ? 1 : -1; if (side && sg !== side) flips++; side = sg; }
+      }
+      if (dev / d < 0.19 && flips < 3) return { kind: 'line', pts: [a.slice(), axisFix(a, b)] };    // ゆるいカーブの線も、まっすぐにする
+    }
+    if (L * scale < 60) return null;                // 閉じた形：始点と終点が近い（円・四角は、ある程度の大きさが必要）
+    var w = maxX - minX, h = maxY - minY;
+    if (d > 0.25 * L || w * scale < 24 || h * scale < 24) return null;
+    var cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, ra = w / 2, rb = h / 2, er = 0;
+    for (i = 0; i < n; i++) {                       // 四角（水平・垂直）との、あてはまり具合
+      var u = (p[i][0] - cx) / ra, v = (p[i][1] - cy) / rb;
+      er += Math.min(Math.abs(1 - Math.abs(u)), Math.abs(1 - Math.abs(v)));
+    }
+    er /= n;
+    var fit = fitEllipse(p), ee = fit.err;          // 楕円（かたむきも許す）との、あてはまり具合
+    var pts2 = [], k, N;
+    if (ee < 0.14 && ee <= er) {
+      var ea = fit.a, eb = fit.b;
+      if (Math.abs(ea / eb - 1) < 0.15) { ea = eb = (ea + eb) / 2; }                  // 縦横の差が小さければ、正円
+      var cth = Math.cos(fit.th), sth = Math.sin(fit.th);
+      var du = a[0] - fit.cx, dv = a[1] - fit.cy;
+      var t0 = Math.atan2((-du * sth + dv * cth) / eb, (du * cth + dv * sth) / ea);   // 始点の位置から描き始める
+      N = 64;
+      for (k = 0; k <= N; k++) {
+        var tt = t0 + (2 * Math.PI * k) / N, ex = ea * Math.cos(tt), ey = eb * Math.sin(tt);
+        pts2.push([fit.cx + ex * cth - ey * sth, fit.cy + ex * sth + ey * cth]);
+      }
+      return { kind: 'ellipse', pts: pts2 };
+    }
+    if (er < 0.1 && er < ee) {
+      var cs2 = [[cx - ra, cy - rb], [cx + ra, cy - rb], [cx + ra, cy + rb], [cx - ra, cy + rb]], best = 0, bd = 1e9;
+      for (k = 0; k < 4; k++) { var dd = Math.hypot(cs2[k][0] - a[0], cs2[k][1] - a[1]); if (dd < bd) { bd = dd; best = k; } }
+      var S = 10;
+      for (k = 0; k < 4; k++) {
+        var c1 = cs2[(best + k) % 4], c2 = cs2[(best + k + 1) % 4];
+        for (var s2 = 0; s2 < S; s2++) pts2.push([c1[0] + (c2[0] - c1[0]) * s2 / S, c1[1] + (c2[1] - c1[1]) * s2 / S]);
+      }
+      pts2.push(cs2[best].slice());
+      return { kind: 'rect', pts: pts2 };
+    }
+    return null;
+  }
+  function trimHold(p) {                            // 止めている間の、小さな揺れの点を、判定から外す
+    var last = p[p.length - 1], i = p.length - 1;
+    while (i > 0 && Math.hypot(p[i][0] - last[0], p[i][1] - last[1]) * scale < 10) i--;
+    return p.slice(0, i + 1).concat([last]);
+  }
+  function trySnap() {
+    if (!painting || held || !cur || cur.k !== 'p' || PEN.tool !== 'pen' || snapped) return;
+    var r = recognize(trimHold(cur.p));
+    if (!r) return;
+    snapped = { kind: r.kind, orig: cur.p.slice(), start: cur.p[0].slice() };
+    cur.p = r.pts; requestDraw(false);
+  }
+  function armSnap(e) {                             // 動いたら、止まるのを待つタイマーを入れ直す
+    if (PEN.tool !== 'pen' || !cur || cur.k !== 'p') return;
+    if (!snapAnchor || Math.hypot(e.clientX - snapAnchor[0], e.clientY - snapAnchor[1]) > SNAP_MOVE) {
+      snapAnchor = [e.clientX, e.clientY];
+      clearTimeout(snapTimer); snapTimer = setTimeout(trySnap, SNAP_MS);
+    }
+  }
+
+  // 消しゴム：触れた線を1本ずつ消す
+  function distSeg(x, y, a, b) {
+    var vx = b[0] - a[0], vy = b[1] - a[1], l2 = vx * vx + vy * vy;
+    var t = l2 ? Math.max(0, Math.min(1, ((x - a[0]) * vx + (y - a[1]) * vy) / l2)) : 0;
+    return Math.hypot(x - (a[0] + t * vx), y - (a[1] + t * vy));
+  }
+  function hit(st, x, y, tol) {
+    var p = st.p;
+    if (st.k === 'f') {                             // ななめの四角：中、または、ふちの近く
+      var inside = false, n = p.length, fi, fj;
+      for (fi = 0, fj = n - 1; fi < n; fj = fi++) {
+        if (((p[fi][1] > y) !== (p[fj][1] > y)) && (x < (p[fj][0] - p[fi][0]) * (y - p[fi][1]) / (p[fj][1] - p[fi][1]) + p[fi][0])) inside = !inside;
+      }
+      if (inside) return true;
+      for (fi = 0; fi < n; fi++) if (distSeg(x, y, p[fi], p[(fi + 1) % n]) <= tol) return true;
+      return false;
+    }
+    if (st.k === 'r') {
+      return p.length > 1 && x >= Math.min(p[0][0], p[1][0]) - tol && x <= Math.max(p[0][0], p[1][0]) + tol &&
+             y >= Math.min(p[0][1], p[1][1]) - tol && y <= Math.max(p[0][1], p[1][1]) + tol;
+    }
+    var r = st.w / 2 + tol;
+    if (p.length === 1) return Math.hypot(x - p[0][0], y - p[0][1]) <= r;
+    for (var i = 0; i < p.length - 1; i++) if (distSeg(x, y, p[i], p[i + 1]) <= r) return true;
+    return false;
+  }
+  function eraseAt(e) {
+    var q = toImg(e), tol = 12 / scale, n = strokes.length;
+    var left = strokes.filter(function (st) { return !hit(st, q[0], q[1], tol); });
+    if (left.length !== n) { strokes = left; ver++; }
+  }
+  function startPaint(e) {
+    resetSnap();
+    painting = true; pid = e.pointerId; penStroke = e.pointerType === 'pen';
+    strokeT0 = Date.now(); startPt = [e.clientX, e.clientY]; lastPt = e; maxMove = 0;
+    held = e.pointerType === 'touch';            // 指は、2本指ピンチかもしれないので、約0.1秒、様子を見てから塗り始める
+    clearTimeout(holdTimer);
+    if (held) holdTimer = setTimeout(release, 120);
+    if (PEN.tool === 'erase') {
+      eraseBefore = strokes.slice(); eraserPos = [e.clientX, e.clientY]; cur = null;
+      if (!held) eraseAt(e);
+      requestDraw(false); return;
+    }
+    var k = PEN.tool === 'line' ? 'l' : (PEN.tool === 'rect' ? 'r' : 'p');
+    cur = { k: k, c: PEN.color, a: PEN.alpha, w: PEN.width / scale, p: [] };
+    addPoint(e);
+    if (k !== 'p') cur.p.push(cur.p[0].slice());
+    requestDraw(false);
+  }
+  function release() {
+    if (!held) return;
+    held = false; clearTimeout(holdTimer);
+    if (painting && PEN.tool === 'erase' && lastPt) eraseAt(lastPt);
+    requestDraw(false);
+  }
+  function cancelPaint() {
+    clearTimeout(holdTimer); held = false;
+    if (eraseBefore) { strokes = eraseBefore; ver++; syncBtns(); }     // 消しゴムの途中で取り消された時は、消す前にもどす
+    eraseBefore = null; eraserPos = null; cur = null; painting = false; pid = null; resetSnap(); requestDraw(false);
+  }
+  function finishPaint() {
+    if (eraseBefore) {
+      if (strokes.length !== eraseBefore.length) commit(eraseBefore);
+      eraseBefore = null; eraserPos = null;
+    } else if (cur && cur.p.length) {
+      var tiny = cur.k === 'r' && Math.abs(cur.p[1][0] - cur.p[0][0]) * scale < 3 && Math.abs(cur.p[1][1] - cur.p[0][1]) * scale < 3;
+      if (!tiny) { var before = strokes.slice(); strokes.push(cur); commit(before); if (cur.k === 'r' || cur.k === 'l') selStroke = cur; }
+    }
+    clearTimeout(holdTimer); held = false; cur = null; painting = false; pid = null; resetSnap(); syncBtns(); requestDraw(false);
+  }
+  // 2本目の指が触れた：様子見中・ごく短い塗りなら、ピンチとみなして取り消す。しっかり塗っていた線は残す
+  function endForPinch() {
+    var short = !penStroke && (held || (Date.now() - strokeT0 < 350 && maxMove < 12));
+    if (short) cancelPaint(); else finishPaint();
+  }
+
+  viewer.addEventListener('pointerdown', function (e) {
+    if (!img) return;
+    if (e.pointerType === 'mouse' && e.button > 2) return;
+    closeMenu();
+    try { viewer.setPointerCapture(e.pointerId); } catch (err) {}
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    e.preventDefault();
+    var isPen = e.pointerType === 'pen';
+    if (painting && penStroke && !isPen) return;     // ペンで塗っている間は、ほかの指・マウスの動きを無視（手のひらが触れても、動かない）
+    if (isPen) {                                     // ペンは、いつでも塗る・選ぶ（指のパン・ピンチの途中でも、ペンを優先）
+      if (painting && penStroke) return;
+      if (painting) finishPaint();
+      if (mode === 'edit') cancelEdit();
+      pinchLast = 0; midLast = null; viewer.classList.remove('dragging');
+      if (beginAction(e)) return;
+      mode = 'paint'; startPaint(e); return;
+    }
+    if (pts.size >= 2) {                             // 2本目：ピンチ（拡大縮小＋移動）
+      if (mode === 'paint') endForPinch();
+      if (mode === 'edit') cancelEdit();
+      mode = 'pinch'; var p = pinchInfo(); pinchLast = p.d; midLast = [p.mx, p.my];
+      viewer.classList.add('dragging'); return;
+    }
+    if (e.pointerType === 'mouse' && (e.button !== 0 || spaceDown)) {
+      mode = 'pan'; viewer.classList.add('dragging'); return;
+    }
+    if (PEN.input === 'pen') {                       // ペンモード：指・マウスは塗らず、編み図を動かす
+      mode = 'pan'; viewer.classList.add('dragging'); return;
+    }
+    if (beginAction(e)) return;
+    mode = 'paint'; startPaint(e);
+  });
+  viewer.addEventListener('pointermove', function (e) {
+    var prev = pts.get(e.pointerId);
+    if (!prev || !img) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (mode === 'paint') {
+      if (e.pointerId !== pid) return;
+      lastPt = e;
+      var list = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
+      if (!list.length) list = [e];
+      maxMove = Math.max(maxMove, Math.hypot(e.clientX - startPt[0], e.clientY - startPt[1]));
+      if (held && maxMove > 6) release();          // 少し動いたら、1本指で塗っているとみなして、塗り始める
+      var i;
+      if (PEN.tool === 'erase') { if (!held) { for (i = 0; i < list.length; i++) eraseAt(list[i]); } eraserPos = [e.clientX, e.clientY]; }
+      else if (cur && cur.k !== 'p') setEnd(e);
+      else if (snapped) {
+        if (snapped.kind === 'line') { cur.p = [snapped.start, axisFix(snapped.start, toImg(e))]; }       // 直線は、止めたまま動かすと、終点が追いかける
+        else if (Math.hypot(e.clientX - snapAnchor[0], e.clientY - snapAnchor[1]) > 16) {                   // 円・四角は、動かし続けたら、補正をやめて、そのまま続けて描く
+          cur.p = snapped.orig.concat([toImg(e)]); snapped = null; snapAnchor = [e.clientX, e.clientY];
+          clearTimeout(snapTimer); snapTimer = setTimeout(trySnap, SNAP_MS);
+        }
+      }
+      else { for (i = 0; i < list.length; i++) addPoint(list[i]); armSnap(e); }
+      requestDraw(false);
+    } else if (mode === 'edit') {
+      if (editing && e.pointerId === editing.id) applyEdit(e);
+    } else if (mode === 'pan') {
+      offsetX += e.clientX - prev.x; offsetY += e.clientY - prev.y;
+      clampOffset(); requestDraw();
+    } else if (mode === 'pinch' && pts.size >= 2) {
+      var p = pinchInfo();
+      if (pinchLast > 0) {
+        offsetX += p.mx - midLast[0]; offsetY += p.my - midLast[1];
+        zoomAt(p.mx, p.my, Math.pow(p.d / pinchLast, 0.65));    // ゆるやかに（急な拡大縮小を抑える）
+      }
+      pinchLast = p.d; midLast = [p.mx, p.my];
+    }
+  });
+  function pointerEnd(e) {
+    if (!pts.has(e.pointerId)) return;
+    pts.delete(e.pointerId);
+    if (mode === 'paint' && e.pointerId === pid) finishPaint();
+    if (mode === 'edit' && editing && e.pointerId === editing.id) finishEdit();
+    if (pts.size === 0) { mode = 'idle'; pinchLast = 0; midLast = null; viewer.classList.remove('dragging'); }
+    else if (mode === 'pinch' && pts.size < 2) { mode = 'ignore'; pinchLast = 0; midLast = null; }   // ピンチのあと、残った1本で塗らない
+    else if (mode === 'paint' && !painting) { mode = 'ignore'; }
+    else if (mode === 'edit' && !editing) { mode = 'ignore'; }                                      // ペンで塗り終わったあと、まだ触れている指では、塗らない
+  }
+  viewer.addEventListener('pointerup', pointerEnd);
+  viewer.addEventListener('pointercancel', pointerEnd);
+  viewer.addEventListener('contextmenu', function (e) { if (img) e.preventDefault(); });
+  // Safari：ページ全体の拡大は止める。パソコンのSafariのピンチは、ここで、編み図の拡大・縮小にする（iPad・iPhoneは、2本指の処理でやっているので、ここでは何もしない）
+  var gStartScale = 1;
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); gStartScale = scale; }, { passive: false });
+  document.addEventListener('gesturechange', function (e) {
+    e.preventDefault();
+    if (!img || painting || navigator.maxTouchPoints > 0 || !viewer.contains(e.target)) return;
+    var ns = Math.min(maxScale, Math.max(minScale, gStartScale * e.scale));
+    zoomAt(e.clientX, e.clientY, ns / scale);
+  }, { passive: false });
+  document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
+
+  /* ---------- 段数カウンター（＋／－とリセット。数は、編み図ごとに自動で保存） ---------- */
+  var count = 0, CP_MAX = 999, cpPanel = $('counter-panel');
+  function syncCounter() { $('cp-num').textContent = count; $('cp-minus').disabled = count <= 0; $('cp-plus').disabled = count >= CP_MAX; }
+  function setCount(n) { count = Math.max(0, Math.min(CP_MAX, n)); syncCounter(); scheduleSave(); }
+  $('cp-plus').addEventListener('click', function () { if (count < CP_MAX) setCount(count + 1); });
+  // 「−」を長押しすると、0にもどす（確認つき）。誤タップでリセットされないよう、ボタンは増やさず、約0.9秒の長押しにする（編み図ルーラーと同じ）
+  var CP_LONG_MS = 900, cpLongTimer = null, cpLongFired = false;
+  function cpLongStart() {
+    cpLongFired = false; clearTimeout(cpLongTimer);
+    cpLongTimer = setTimeout(function () {
+      cpLongFired = true;
+      showModal('カウントを0に戻しますか？', '戻す', function () { setCount(0); }, true, '戻さない');
+    }, CP_LONG_MS);
+  }
+  function cpLongCancel() { clearTimeout(cpLongTimer); }
+  var cpMinus = $('cp-minus');
+  cpMinus.addEventListener('pointerdown', cpLongStart);
+  cpMinus.addEventListener('pointerup', cpLongCancel);
+  cpMinus.addEventListener('pointercancel', cpLongCancel);
+  cpMinus.addEventListener('pointerleave', cpLongCancel);
+  cpMinus.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  cpMinus.addEventListener('click', function () {
+    if (cpLongFired) { cpLongFired = false; return; }                // 長押しで確認を出した直後の「押した」では、1つ減らさない
+    if (count > 0) setCount(count - 1);
+  });
+  function applyCpPos() {                           // 動かした位置を反映（画面の外に出ないように収める）
+    if (!cpPos) { cpPanel.style.right = ''; cpPanel.style.bottom = ''; return; }
+    if (cpPanel.hidden) return;
+    var w = cpPanel.offsetWidth, h = cpPanel.offsetHeight;
+    cpPos.r = Math.min(Math.max(4, window.innerWidth - w - 4), Math.max(4, cpPos.r));
+    cpPos.b = Math.min(Math.max(4, window.innerHeight - h - 4), Math.max(4, cpPos.b));
+    cpPanel.style.right = cpPos.r + 'px'; cpPanel.style.bottom = cpPos.b + 'px';
+  }
+  var cDrag = null, cLastTap = 0;
+  cpPanel.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (e.target.closest('button')) return;                        // ＋／－・リセットは、ふつうに押す
+    e.preventDefault();
+    try { cpPanel.setPointerCapture(e.pointerId); } catch (err) {}
+    var r = cpPanel.getBoundingClientRect();
+    cDrag = { id: e.pointerId, x: e.clientX, y: e.clientY, r: window.innerWidth - r.right, b: window.innerHeight - r.bottom, moved: false };
+    cpPanel.classList.add('dragging');
+  });
+  cpPanel.addEventListener('pointermove', function (e) {
+    if (!cDrag || e.pointerId !== cDrag.id) return;
+    var dx = e.clientX - cDrag.x, dy = e.clientY - cDrag.y;
+    if (!cDrag.moved && Math.hypot(dx, dy) < 4) return;
+    cDrag.moved = true; cpPos = { r: cDrag.r - dx, b: cDrag.b - dy }; applyCpPos();
+  });
+  function cpEnd(e) {
+    if (!cDrag || e.pointerId !== cDrag.id) return;
+    var moved = cDrag.moved; cDrag = null; cpPanel.classList.remove('dragging');
+    if (moved) { saveSt(); cLastTap = 0; return; }
+    var now = Date.now();                           // 白いところを2回続けてタップ：もとの位置にもどす
+    if (now - cLastTap < 400) { cpPos = null; applyCpPos(); saveSt(); cLastTap = 0; showNote('カウンターを、もとの位置にもどしました'); }
+    else cLastTap = now;
+  }
+  cpPanel.addEventListener('pointerup', cpEnd);
+  cpPanel.addEventListener('pointercancel', cpEnd);
+  syncCounter();
+
+  /* ---------- ペンの検知（最初の1回だけ、お知らせを出す）。Apple Pencil・Sペンなど、ペンの種類は問わない ---------- */
+  var noticePending = false, noticeTimer = null;
+  function showPenNotice() {
+    if (!$('modal').hidden) { setTimeout(showPenNotice, 1000); return; }          // 別の確認が出ている間は、終わるまで待つ
+    var lead = img ? '操作盤の「入力」で、塗り方を選べます。' : '編み図を開くと、操作盤の「入力」で、塗り方を選べます。';
+    showModal('ペンを検知しました ✏️\n' + lead + '\n\n✏️ ペンモード\nペンで塗って、指で編み図を動かします。\n\n👆 指モード\n指でもペンでも、塗れます。', 'OK', function () {}, false);
+  }
+  document.addEventListener('pointerdown', function (e) {
+    if (e.pointerType !== 'pen' || PEN.penSeen) return;
+    PEN.penSeen = true; saveSt(); syncUI();
+    noticePending = true;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(function () { if (noticePending) { noticePending = false; showPenNotice(); } }, 2500);     // 念のため
+  }, true);
+  ['pointerup', 'pointercancel'].forEach(function (n) {
+    document.addEventListener(n, function (e) {
+      if (noticePending && e.pointerType === 'pen') { noticePending = false; clearTimeout(noticeTimer); setTimeout(showPenNotice, 350); }
+    }, true);
+  });
+
+  /* ---------- 履歴（もどす・やりなおす。あとで消しゴム・一括削除も、同じ仕組みで扱う） ---------- */
+  function commit(before) {
+    hist.push({ b: before, a: strokes.slice() }); if (hist.length > 100) hist.shift();
+    redoH = []; ver++; syncBtns(); scheduleSave();
+  }
+  function syncBtns() {
+    $('undo-btn').disabled = hist.length === 0; $('redo-btn').disabled = redoH.length === 0; $('clear-btn').disabled = strokes.length === 0;
+  }
+  function undo() {
+    if (painting || !hist.length) return;
+    clearSel(); var op = hist.pop(); strokes = op.b.slice(); redoH.push(op); ver++; syncBtns(); scheduleSave(); requestDraw(false);
+  }
+  function redo() {
+    if (painting || !redoH.length) return;
+    clearSel(); var op = redoH.pop(); strokes = op.a.slice(); hist.push(op); ver++; syncBtns(); scheduleSave(); requestDraw(false);
+  }
+  /* ---------- 操作盤（道具・カラー・太さ・濃さ・一括削除・開閉） ---------- */
+  var TOOL_HINT = { pen: 'なぞったところを、塗ります', line: 'ドラッグした長さの、まっすぐな線を引きます', rect: 'ドラッグした範囲を、四角く塗ります', select: '線をタップして選ぶと、動かす・大きさを変える・回す・複製・反転・削除ができます', erase: '触れた線を、1本ずつ消します' };
+  function syncUI() {
+    document.querySelectorAll('.mk-t').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === PEN.tool); });
+    var sw = $('mk-custom-swatch');                                     // 「＋」で選んだ色の見本
+    sw.hidden = !customColor;
+    if (customColor) { sw.setAttribute('data-c', customColor); sw.style.background = customColor; }
+    document.querySelectorAll('.mk-dot').forEach(function (b) {
+      b.classList.toggle('on', !b.hidden && b.getAttribute('data-c').toLowerCase() === PEN.color.toLowerCase());
+    });
+    $('mk-custom').value = customColor || PEN.color; $('mk-now').style.background = PEN.color;
+    $('mk-row-in').hidden = !PEN.penSeen;                                // ペンで触れたことがあるまで、「入力」の行は出さない
+    document.querySelectorAll('.mk-i').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-i') === PEN.input); });
+    viewer.classList.toggle('inpen', PEN.input === 'pen');
+    viewer.classList.toggle('insel', PEN.tool === 'select');
+    syncBarScroll();
+    document.querySelectorAll('.mk-w').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-w') === PEN.width); });
+    document.querySelectorAll('.mk-a').forEach(function (b) {
+      var a = +b.getAttribute('data-a'), dot = b.querySelector('i');
+      b.classList.toggle('on', a === PEN.alpha); dot.style.background = PEN.color; dot.style.opacity = a;
+    });
+  }
+  document.querySelectorAll('.mk-t').forEach(function (b) {
+    b.addEventListener('click', function () {
+      PEN.tool = b.getAttribute('data-t');
+      if (PEN.tool !== 'select') clearSel(); else requestDraw(false);        // 「選択」に切りかえる時は、選んでいる線を、そのまま残す（描いた直後の図形を、すぐ複製できる）
+      saveSt(); syncUI(); showNote(TOOL_HINT[PEN.tool]);
+    });
+  });
+  document.querySelectorAll('.mk-dot').forEach(function (b) {
+    b.addEventListener('click', function () { PEN.color = b.getAttribute('data-c'); saveSt(); syncUI(); });
+  });
+  document.querySelectorAll('.mk-i').forEach(function (b) {
+    b.addEventListener('click', function () {
+      PEN.input = b.getAttribute('data-i'); saveSt(); syncUI();
+      showNote(PEN.input === 'pen' ? 'ペンモード：ペンで塗って、指は編み図を動かします' : '指モード：指でもペンでも、塗れます');
+    });
+  });
+  $('mk-custom').addEventListener('input', function (e) { PEN.color = e.target.value; customColor = PEN.color; saveSt(); syncUI(); });
+  document.querySelectorAll('.mk-w').forEach(function (b) {
+    b.addEventListener('click', function () { PEN.width = +b.getAttribute('data-w'); saveSt(); syncUI(); });
+  });
+  document.querySelectorAll('.mk-a').forEach(function (b) {
+    b.addEventListener('click', function () { PEN.alpha = +b.getAttribute('data-a'); saveSt(); syncUI(); });
+  });
+  $('clear-btn').addEventListener('click', function () {
+    if (!strokes.length) return;
+    showModal('塗った内容を一括削除しますか？', '削除する', function () {
+      clearSel(); var before = strokes.slice(); strokes = []; commit(before); requestDraw(false);
+    });
+  });
+  $('mk-toggle').addEventListener('click', function () {
+    var closed = $('mk-panel').classList.toggle('closed');
+    $('mk-toggle').setAttribute('aria-expanded', closed ? 'false' : 'true');
+    if (panelPos) applyPos();                       // 開いて、画面の外にはみ出す時は、位置を収める
+    syncBarScroll();
+  });
+  syncUI();
+
+  $('undo-btn').addEventListener('click', undo);
+  $('redo-btn').addEventListener('click', redo);
+  document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
+    if (e.key === ' ' && img && document.activeElement === document.body) {
+      e.preventDefault(); spaceDown = true; viewer.classList.add('panmode');
+    }
+  });
+  document.addEventListener('keyup', function (e) {
+    if (e.key === ' ') { spaceDown = false; viewer.classList.remove('panmode'); }
+  });
+
+  // 画面の大きさ・向きが変わったとき：画面の中心にあった場所を、そのまま中心に保つ
+  function onResize() {
+    var W = window.innerWidth, H = window.innerHeight;
+    if (img) {
+      var cx = (lastW / 2 - offsetX) / scale, cy = (lastH / 2 - offsetY) / scale;
+      updateLimits();
+      offsetX = W / 2 - cx * scale; offsetY = H / 2 - cy * scale;
+      clampOffset();
+    }
+    lastW = W; lastH = H; requestDraw();
+  }
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+
+  /* ---------- 右上の操作盤の位置：スマホで、左上のボタンが2段になっても、重ならないように ---------- */
+  var tlBox = $('top-left'), mkPanel = $('mk-panel');
+  function layoutPanel() {                          // 左上のボタンと重なる時だけ、操作盤を、ボタンの下にずらす（動かした位置があるときは、そちらを優先）
+    if (panelPos) return;
+    mkPanel.style.top = '';
+    if (mkPanel.hidden || tlBox.hidden) return;
+    var t = tlBox.getBoundingClientRect(), c = $('mk-card').getBoundingClientRect(), hb = $('mk-head').getBoundingClientRect().bottom;
+    var overlap = t.right + 8 > c.left && t.left - 8 < c.right && t.bottom + 8 > c.top && t.top - 8 < hb;
+    if (overlap) mkPanel.style.top = (t.bottom + 8) + 'px';
+  }
+  function applyPos() {                             // 動かした位置を反映（画面の外に出ないように収める）
+    if (!panelPos) { mkPanel.style.right = ''; mkPanel.style.top = ''; layoutPanel(); return; }
+    if (mkPanel.hidden) return;
+    var w = mkPanel.offsetWidth, h = mkPanel.offsetHeight;
+    panelPos.r = Math.min(Math.max(4, window.innerWidth - w - 4), Math.max(4, panelPos.r));
+    panelPos.t = Math.min(Math.max(4, window.innerHeight - h - 4), Math.max(4, panelPos.t));
+    mkPanel.style.right = panelPos.r + 'px'; mkPanel.style.top = panelPos.t + 'px';
+  }
+  if (window.ResizeObserver) new ResizeObserver(layoutPanel).observe(tlBox);
+  window.addEventListener('resize', function () { if (panelPos) applyPos(); else layoutPanel(); syncBarScroll(); if (cpPos) applyCpPos(); });
+
+  var mkCard = $('mk-card'), mkBar = $('mk-bar'), gDrag = null, lastTap = 0;
+  function syncBarScroll() { var bar = $('mk-bar'); bar.classList.toggle('scrolls', bar.scrollHeight > bar.clientHeight + 1); }
+  mkCard.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    var onToggle = !!e.target.closest('#mk-toggle');                     // 見出しのボタンは、押すと開閉。ドラッグすると、操作盤が動く
+    if (!onToggle && e.target.closest('button, input, label, a')) return;   // ほかのボタン・色の丸などは、ふつうに押す
+    if (e.target.closest('#mk-bar') && mkBar.scrollHeight > mkBar.clientHeight + 1) return;   // 中身をスクロールする時は、つかまない
+    if (!onToggle) { e.preventDefault(); try { mkCard.setPointerCapture(e.pointerId); } catch (err) {} mkCard.classList.add('dragging'); }
+    var r = mkPanel.getBoundingClientRect();
+    gDrag = { id: e.pointerId, x: e.clientX, y: e.clientY, right: window.innerWidth - r.right, top: r.top, moved: false, fromToggle: onToggle };
+  });
+  mkCard.addEventListener('pointermove', function (e) {
+    if (!gDrag || e.pointerId !== gDrag.id) return;
+    var dx = e.clientX - gDrag.x, dy = e.clientY - gDrag.y;
+    if (!gDrag.moved && Math.hypot(dx, dy) < 4) return;       // ちょっと触れただけでは、動かさない
+    if (!gDrag.moved && gDrag.fromToggle) {                   // 見出しのボタンから動かし始めた：ここで、つかむ（このあとの「押した」扱いは、なくなる）
+      try { mkCard.setPointerCapture(e.pointerId); } catch (err) {}
+      mkCard.classList.add('dragging');
+    }
+    gDrag.moved = true;
+    panelPos = { r: gDrag.right - dx, t: gDrag.top + dy }; applyPos();
+  });
+  function cardEnd(e) {
+    if (!gDrag || e.pointerId !== gDrag.id) return;
+    var moved = gDrag.moved, fromToggle = gDrag.fromToggle; gDrag = null; mkCard.classList.remove('dragging');
+    if (moved) { saveSt(); lastTap = 0; return; }
+    if (fromToggle) return;                         // 見出しのボタンを押しただけ：開閉するだけ（2回タップのもどす操作には、数えない）
+    var now = Date.now();                           // 白いところを触れただけ：1回目は何もしない。2回続けてタップしたら、もとの位置にもどす
+    if (now - lastTap < 400) {
+      panelPos = null; applyPos(); saveSt(); lastTap = 0; showNote('操作盤を、もとの位置にもどしました');
+    } else {
+      lastTap = now;
+    }
+  }
+  mkCard.addEventListener('pointerup', cardEnd);
+  mkCard.addEventListener('pointercancel', cardEnd);
+
+  /* ---------- メニュー ---------- */
+  function setMenu(open) {
+    menuPanel.classList.toggle('open', open);
+    menuBtn.classList.toggle('on', open);
+    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  function closeMenu() { setMenu(false); }
+  menuBtn.addEventListener('click', function () { setMenu(!menuPanel.classList.contains('open')); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
+  placeholder.addEventListener('pointerdown', function (e) { if (!e.target.closest('button, a')) closeMenu(); });
+  document.querySelectorAll('.data-note-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var box = b.parentElement, open = box.classList.toggle('open');
+      b.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  });
+  $('reload-btn').addEventListener('click', function () { location.href = location.pathname + '?v=' + Date.now(); });
+
+  /* ---------- 自動保存と復元（編み図の画像ごと） ----------
+     保存キー：一度決めたら、あとで変更しない。すべて 'yucchi_chartHighlighter_' で始める。
+     ルーラー（yucchi_ruler… / yucchi_amizuRulerV2_…）や編み図サポート（yucchi_chartTrimmer_…）のキーは、読まない・書かない・消さない。
+     保存の形：{ v:1, items:{ 画像の見分け方: { t:保存日時, s:塗った線, n:カウンター（手順6で追加） } } } */
+  var DKEY = 'yucchi_chartHighlighter_data';
+  var MAX_ITEMS = 40, saveTimer = null, dirty = false, warned = false;
+  var storageOk = true;
+  try { localStorage.getItem(DKEY); } catch (e) { storageOk = false; }       // プレビュー画面などで、保存が禁止されている場合
+
+  function pack(s) {
+    var f = []; s.p.forEach(function (q) { f.push(Math.round(q[0] * 10) / 10, Math.round(q[1] * 10) / 10); });
+    return [s.k, s.c, s.a, Math.round(s.w * 100) / 100, f];
+  }
+  function unpack(a) {                              // 保存データが壊れていても、アプリが止まらないように、1本ずつ確認する
+    if (!Array.isArray(a) || !Array.isArray(a[4])) return null;
+    var f = a[4], p = [];
+    for (var i = 0; i + 1 < f.length; i += 2) { if (isFinite(f[i]) && isFinite(f[i + 1])) p.push([+f[i], +f[i + 1]]); }
+    if (!p.length) return null;
+    var c = /^#[0-9a-fA-F]{6}$/.test(a[1]) ? a[1] : PEN.color;
+    var al = (isFinite(a[2]) && a[2] > 0 && a[2] <= 1) ? +a[2] : PEN.alpha;
+    var w = (isFinite(a[3]) && a[3] > 0) ? +a[3] : PEN.width;
+    return { k: a[0] === 'p' || a[0] === 'l' || a[0] === 'r' || a[0] === 'f' ? a[0] : 'p', c: c, a: al, w: w, p: p };
+  }
+  function readAll() {
+    try { var o = JSON.parse(localStorage.getItem(DKEY)); if (o && typeof o.items === 'object' && o.items) return o; } catch (e) {}
+    return { v: 1, items: {} };
+  }
+  function tryWrite(all) {                          // 成功なら null、失敗ならエラーを返す
+    try { localStorage.setItem(DKEY, JSON.stringify(all)); return null; } catch (e) { return e || new Error('x'); }
+  }
+  function isQuota(e) { return !!e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22 || e.code === 1014); }
+  function loadFor(id) {
+    if (!storageOk) return [];
+    try {
+      var it = readAll().items[id];
+      if (it && Array.isArray(it.s)) return it.s.map(unpack).filter(function (x) { return x; });
+    } catch (e) {}
+    return [];
+  }
+  function loadCount(id) {
+    if (!storageOk) return 0;
+    try {
+      var it = readAll().items[id];
+      if (it && isFinite(it.n) && it.n > 0) return Math.min(999, Math.floor(it.n));
+    } catch (e) {}
+    return 0;
+  }
+  function warnOnce(msg) { if (warned) return; warned = true; showNote(msg); }
+  function flush() {
+    clearTimeout(saveTimer); saveTimer = null;
+    if (!dirty || !chartId) return;
+    dirty = false;
+    if (!storageOk) { warnOnce('この画面では、塗った内容を保存できません。ブラウザで直接開くと、保存されます。'); return; }
+    var all = readAll(), it = all.items[chartId] || {};
+    if (strokes.length) it.s = strokes.map(pack); else delete it.s;
+    if (count > 0) it.n = count; else delete it.n;                                  // カウンターの数も、同じ記録に入れる
+    it.t = Date.now();
+    if (it.s || it.n) all.items[chartId] = it; else delete all.items[chartId];      // 塗りもカウンターも空なら、記録ごと消す
+    var keys = Object.keys(all.items);
+    if (keys.length > MAX_ITEMS) {                  // 編み図が増えすぎたら、古いものから整理
+      keys.filter(function (k) { return k !== chartId; }).sort(function (a, b) { return (all.items[a].t || 0) - (all.items[b].t || 0); })
+        .slice(0, keys.length - MAX_ITEMS).forEach(function (k) { delete all.items[k]; });
+    }
+    var err = tryWrite(all);
+    if (!err) return;
+    if (!isQuota(err)) { warnOnce('塗った内容を保存できませんでした。ブラウザの設定をご確認ください。'); return; }
+    var removed = false;
+    while (true) {                                  // 容量がいっぱい：古い編み図の分から整理する
+      var others = Object.keys(all.items).filter(function (k) { return k !== chartId; });
+      if (!others.length) { showNote('保存の容量がいっぱいで、塗った内容を保存できませんでした。'); return; }
+      others.sort(function (a, b) { return (all.items[a].t || 0) - (all.items[b].t || 0); });
+      delete all.items[others[0]]; removed = true;
+      if (!tryWrite(all)) break;
+    }
+    if (removed) showNote('保存の容量がいっぱいのため、古い編み図の塗りを整理しました。');
+  }
+  function scheduleSave() { dirty = true; clearTimeout(saveTimer); saveTimer = setTimeout(flush, 500); }
+  window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flush(); });
+
+  requestDraw();
+})();
+</script>
+</body>
+</html>
