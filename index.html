@@ -65,40 +65,30 @@
     #viewer canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
     #marker-canvas { pointer-events: none; mix-blend-mode: multiply; }   /* 乗算：記号や線が透けて見える */
 
-    /* ===== 画像を開く前の案内 ===== */
+    /* ===== 編み図エリア（画像がないとき）：編み図ルーラーと同じ、文字だけ ===== */
     #placeholder {
       position: fixed; inset: 0; z-index: 5; display: flex; overflow-y: auto;
-      padding: 40px 16px calc(40px + 8vh); background: var(--bg);         /* 下の余白をほんの少し多めにして、全体を少し上寄りに */
+      padding: 68px 16px; background: var(--bg);
     }
-    .start-wrap { width: 100%; max-width: 380px; margin: auto; }       /* タイトルは背景の上、白いカードはその下（ほかのYUCCHIのアプリと同じ） */
-    .start-wrap > header { margin-bottom: 22px; }
-    /* 画像を閉じたあと：編み図ルーラーと同じ、文字だけの「編み図エリア」（画像は、左上のボタンから開ける） */
-    #placeholder.work { padding: 68px 16px 68px; }
-    #placeholder.work .start-wrap { display: none; }
-    #work-hint { display: none; margin: auto; text-align: center; }
-    #placeholder.work #work-hint { display: block; }
+    #work-hint { margin: auto; text-align: center; }
     .wh-main { font-size: 15px; font-weight: 700; color: var(--text); opacity: .8; letter-spacing: .12em; margin-bottom: 14px; }
     .wh-en { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(17px, 5vw, 26px); font-weight: 400; color: var(--brand); letter-spacing: .14em; line-height: 1.3; margin-bottom: 18px; }
     .wh-note { font-size: 12px; color: var(--text); opacity: .7; letter-spacing: .08em; line-height: 1.9; }
-    .start-card {
-      width: 100%; background: var(--surface); border: 1.5px solid var(--edge); border-radius: 24px;
-      padding: 20px; text-align: center;
-      box-shadow: 0 3px 10px rgba(70, 105, 120, .16);
-    }
+    @media (min-width: 600px) { .wh-main { font-size: 17px; } .wh-en { font-size: 32px; } .wh-note { font-size: 13px; } }
 
-    /* タイトルブロック（日本語→英語→サブ→ブランド→データ注意書き） */
-    header { text-align: center; }
+    /* メニューの一番上：タイトルブロック（日本語→英語→サブ→ブランド→データ注意書き） */
+    header { text-align: center; padding: 10px 4px 16px; }
     header h1 {
-      font-family: 'Zen Maru Gothic', sans-serif; font-size: clamp(17px, 4vw, 22px); font-weight: 500;
-      color: var(--text); letter-spacing: .10em; line-height: 1.4; margin: 0 0 5px;
+      font-family: 'Zen Maru Gothic', sans-serif; font-size: 17px; font-weight: 500;
+      color: var(--text); letter-spacing: .10em; line-height: 1.4; margin: 0 0 4px;
     }
     header h2 {
-      font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(19px, 5.2vw, 32px); font-weight: 400;
-      color: var(--text); letter-spacing: .12em; line-height: 1.2; margin: 0 0 10px;
+      font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; font-weight: 400;
+      color: var(--text); letter-spacing: .1em; line-height: 1.2; margin: 0 0 8px; white-space: nowrap;
     }
     header .title-ja-sub {
-      font-family: 'Zen Maru Gothic', sans-serif; font-size: clamp(12px, 3.3vw, 14px); font-weight: 500;
-      color: var(--text); letter-spacing: .05em; opacity: .78; margin-bottom: 14px; line-height: 1.7;
+      font-family: 'Zen Maru Gothic', sans-serif; font-size: 12px; font-weight: 500;
+      color: var(--text); letter-spacing: .05em; opacity: .78; margin-bottom: 8px; line-height: 1.7;
       display: flex; align-items: center; justify-content: center; gap: 10px;
     }
     header .title-ja-sub::before, header .title-ja-sub::after {
@@ -109,54 +99,14 @@
     header .brand {
       display: inline-block; text-decoration: none; transition: opacity .15s;
       font-family: 'Cormorant Garamond', Georgia, serif; font-size: 14px; font-weight: 400;
-      color: var(--brand); padding-top: 10px;
+      color: var(--brand); padding-top: 6px;
     }
     header .brand .brand-deco { font-size: 11px; }
     @media (hover: hover) { header .brand:hover { opacity: .65; } }
     header .data-hint {
       font-size: 10px; color: var(--text); opacity: .72; letter-spacing: .04em;
-      margin-top: 10px; line-height: 1.7; text-align: center; padding: 0 8px;
+      margin-top: 8px; line-height: 1.7; text-align: center; padding: 0 8px;
     }
-
-    /* タブレット向け：カードを広げて、文字もひとまわり大きくする（スマホは、いまのまま） */
-    @media (min-width: 600px) {
-      .start-wrap { max-width: 560px; }
-      .start-wrap > header { margin-bottom: 28px; }
-      .start-card { padding: 30px 36px 30px; border-radius: 28px; }
-      header .title-ja-sub { font-size: 15px; }
-      header .brand { font-size: 15px; }
-      header .data-hint { font-size: 11px; }
-      .drop-frame { padding: 40px 24px 36px; border-radius: 22px; }
-      .drop-frame b { font-size: 19px; margin-bottom: 10px; }
-      .drop-frame span { font-size: 14px; }
-      .keep-note { padding: 10px 18px; font-size: 12px; }
-      .keep-note br { display: none; }                    /* スマホ以外は、改行しないで1行に */
-      .wh-main { font-size: 17px; }
-      .wh-en { font-size: 32px; }
-      .wh-note { font-size: 13px; }
-    }
-
-    /* 点線の枠（編み図ルーラーと同じ。「ここに読み込む」感が出る。押すと、ファイル選びが開く） */
-    .drop-frame {
-      display: block; width: 100%; padding: 28px 16px 26px; text-align: center; color: var(--text); cursor: pointer;
-      background: var(--surface); border: 1.5px dashed var(--sel-line); border-radius: 18px;
-      transition: background .15s, transform .1s;
-    }
-    .drop-frame b { display: block; font-size: 16px; font-weight: 700; letter-spacing: .05em; line-height: 1.6; margin-bottom: 8px; }
-    .drop-frame span { display: block; font-size: 12px; line-height: 1.8; color: var(--text-sub); }
-    .drop-frame .nb { display: inline-block; font-style: normal; }       /* 読みやすい切れ目で、折り返す */
-    .drop-frame:active { transform: scale(.985); }
-    @media (hover: hover) { .drop-frame:hover { background: #F2F7F8; } }
-    .keep-note { padding: 10px 18px; font-size: 12px; }
-    }
-
-    .guide { padding: 14px 4px 0; margin: 0 0 16px; line-height: 1.9; font-size: 13px; }       /* 枠なし：文字だけにして、ボタンと見間違えないようにする */
-    .guide b { display: block; font-size: 16px; font-weight: 700; letter-spacing: .06em; margin-bottom: 4px; }
-    .keep-note {
-      background: var(--cream); border: 1px solid var(--cream-line); border-radius: 10px;
-      padding: 8px 12px; margin-top: 14px; font-size: 11px; line-height: 1.8; color: var(--text-sub);
-    }
-    .keep-note span { display: inline-block; }
 
     /* ===== ボタン ===== */
     .pill-btn {
@@ -180,23 +130,23 @@
     }
     /* 操作盤は、1枚のカードにまとめる：いちばん上の「つかむ帯」→ 見出し行（タイトル＋もどす・やりなおす・削除）→ 中身 */
     #mk-card {
-      width: min(300px, calc(100vw - 24px)); background: var(--surface); border: 1.5px solid var(--edge); border-radius: 18px;
+      width: min(236px, calc(100vw - 24px)); background: var(--surface); border: 1.5px solid var(--edge); border-radius: 18px;       /* 幅を狭めた（300px → 236px） */
       box-shadow: 0 4px 12px rgba(70, 105, 120, .20); user-select: none; -webkit-user-select: none;
       cursor: grab; touch-action: none;                 /* 白いところは、どこでもつかんで動かせる */
     }
     #mk-card.dragging { cursor: grabbing; }
-    #mk-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 12px 12px 12px 8px; }
+    #mk-head { display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 8px 10px 12px 8px; }          /* 見出しは2行：タイトル／↺ ↻ 🗑️ */
     .mk-title {
-      display: inline-flex; align-items: center; gap: 6px; flex: 0 1 auto; min-width: 0; min-height: 40px; padding: 6px 8px 8px; background: transparent; border: none; border-radius: 12px;
+      display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; flex: 0 1 auto; max-width: 100%; min-width: 0; min-height: 40px; padding: 6px 8px 8px; background: transparent; border: none; border-radius: 12px;
       font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: .02em; cursor: pointer; white-space: nowrap; transition: background .15s;
     }
     .mk-label { overflow: hidden; text-overflow: ellipsis; }
     .mk-now { flex: none; }
     .mk-arrow { flex: none; }
     @media (hover: hover) { .mk-title:hover { background: #F2F7F8; } }
-    .mk-acts { display: flex; gap: 5px; flex: none; }
+    .mk-acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding-left: 2px; }       /* 道具と同じ、1行に3つずつ */
     .round-btn {
-      position: relative; width: 36px; height: 36px; padding: 0 0 2px; border-radius: 50%; flex: none;
+      position: relative; width: auto; height: 38px; padding: 0 0 2px; border-radius: 10px;
       display: inline-flex; align-items: center; justify-content: center;
       background: var(--surface); color: var(--text); border: 1.5px solid var(--border);
       font-size: 19px; line-height: 1; cursor: pointer;
@@ -230,11 +180,12 @@
       min-height: 38px; padding: 4px 2px 3px; background: #fff; border: 1.5px solid var(--border); border-radius: 10px;
       font-size: 10px; font-weight: 700; color: var(--text-sub); cursor: pointer; transition: background .15s;
     }
-    .mk-seg-b.tl { min-height: 34px; letter-spacing: 0; white-space: nowrap; }
+    .mk-seg-b.tl { min-height: 38px; font-size: 11px; letter-spacing: 0; white-space: nowrap; }
+    #mk-tseg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }       /* 道具：1行に3つずつ */
     /* 点と文字：点の大きさがちがっても、文字の高さがそろうよう、点の枠を同じ高さにして、上下の余白を同じにする */
     .mk-seg-sq {
-      flex: 1; min-width: 0; height: 40px; min-height: 0; padding: 0 2px; line-height: 1.2;
-      --dot-slot: 20px;
+      flex: 1; min-width: 0; height: 46px; min-height: 0; padding: 0 2px; line-height: 1.2;
+      --dot-slot: 22px;
       display: grid; grid-template-rows: var(--dot-slot) auto; align-content: center; justify-items: center; align-items: center; gap: 0;
     }
     /* 「細」「中」は、点が小さいので、文字だけを少し上げる（点の枠を4px低くすると、点は動かず、文字だけが2px上がる） */
@@ -247,14 +198,14 @@
     #mk-bar.scrolls { touch-action: pan-y; }              /* 中身が長くて、スクロールが必要な時だけ、縦スクロールを優先する */
     .mk-seg-b.on { background: var(--sel-bg); border-color: var(--sel-line); box-shadow: inset 0 0 0 1px var(--sel-line); color: var(--text); }
     @media (hover: hover) { .mk-seg-b:not(.on):hover { background: #EEF4F4; } }
-    #mk-colors { display: flex; flex: 1; flex-wrap: wrap; gap: 3px; align-items: center; justify-content: space-between; }
+    #mk-colors { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 0; justify-items: center; align-items: center; }       /* 色：1行に4つずつ */
     .mk-dot {
       box-sizing: border-box; flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent;
       padding: 0; cursor: pointer; transition: transform .15s;
     }
     .mk-dot.on { border-color: #fff; box-shadow: 0 0 0 2px var(--text); transform: scale(1.05); }
     #mk-custom { position: absolute; width: 0; height: 0; opacity: 0; border: none; padding: 0; }
-    /* 好きな色を追加するボタン：点線の丸に「＋」（押すと、色選びが開く）。選んだ色は、となりの丸い見本に残る */
+    /* 好きな色のボタン：点線の丸に「＋」（押すと、色選びが開く）。好きな色を使っている間は、その色で塗りつぶした丸になる */
     #mk-custom-label {
       position: relative; box-sizing: border-box; display: block; flex: none; width: 24px; height: 24px; border-radius: 50%;
       border: 1.5px dashed #8AA5AF; background: transparent; cursor: pointer; transition: border-color .15s, background .15s;
@@ -262,16 +213,13 @@
     #mk-custom-label::before, #mk-custom-label::after { content: ''; position: absolute; left: 50%; top: 50%; background: #8AA5AF; transform: translate(-50%, -50%); transition: background .15s; }
     #mk-custom-label::before { width: 10px; height: 1.5px; }
     #mk-custom-label::after { width: 1.5px; height: 10px; }
+    #mk-custom-label.custom-on { border: 2px solid #fff; box-shadow: 0 0 0 2px var(--text); transform: scale(1.05); }
+    #mk-custom-label.custom-on::before, #mk-custom-label.custom-on::after { background: #fff; box-shadow: 0 0 0 1px rgba(107, 82, 88, .55); }
     @media (hover: hover) { #mk-custom-label:hover { border-color: #6F9AAA; background: #F2F7F8; } #mk-custom-label:hover::before, #mk-custom-label:hover::after { background: #6F9AAA; } }
     #mk-bar > * { flex: 0 0 100%; }
-    #mk-row-w, #mk-row-a { flex: 0 0 calc(50% - 4px); min-width: 0; }              /* 「太さ」と「濃さ」は、横に並べる */
-    #mk-wseg, #mk-aseg { gap: 4px; }
+    #mk-wseg, #mk-aseg { gap: 6px; }                                                /* 「太さ」「濃さ」も、道具と同じ、1行に3つずつ */
     @media (max-width: 559px), (max-height: 559px) {          /* 狭い画面：さらに、ぎゅっとまとめる */
-      #mk-bar { gap: 6px; padding: 8px; }
-      #mk-row-w, #mk-row-a { flex-basis: calc(50% - 3px); }
-      .mk-seg-b.tl { min-height: 28px; }
-      .mk-seg-sq { height: 34px; font-size: 9px; --dot-slot: 16px; }
-      .mk-seg-sq i { transform: scale(.8); }
+      #mk-bar { gap: 8px; padding: 10px; }
     }
 
     @media (max-width: 430px) { #top-left { gap: 6px; } #top-left .pill-btn { padding: 8px 10px 10px; font-size: 12px; letter-spacing: .02em; } }     /* スマホ：4つのボタンが1段に収まるよう、余白を詰める */
@@ -287,7 +235,7 @@
       position: fixed; z-index: 30; display: none; overflow-y: auto;
       top: calc(env(safe-area-inset-top, 0px) + 62px);
       left: calc(env(safe-area-inset-left, 0px) + 12px);
-      width: min(340px, calc(100vw - 24px));
+      width: min(360px, calc(100vw - 24px));
       max-height: 70vh;
       max-height: calc(100dvh - 130px);
       background: var(--surface); border: 1.5px solid var(--edge); border-radius: var(--radius);
@@ -295,13 +243,6 @@
     }
     #menu-panel.open { display: block; }
     .acc-list { display: flex; flex-direction: column; gap: 6px; }
-    /* メニューの中は「使い方」だけ。「このアプリについて」「データについて」とアイコン列は、最初の画面（カードの下）だけに出す */
-    #menu-info-slot #aboutNote, #menu-info-slot #dataNote, #menu-info-slot .x-footer-row { display: none; }
-    /* スタート画面：カードの下に、使い方・このアプリについて・データについて と、アイコン列（ほかのYUCCHIのアプリと同じ） */
-    #start-info-slot { margin-top: 14px; }
-    #start-info-slot .data-note { border-color: var(--edge); }
-    #start-info-slot .x-footer-row { padding: 12px 2px 4px; }
-    #start-info-slot .last-updated { color: var(--text); opacity: .75; }
     /* ファイル枠（編み図ルーラーと同じ：開く前は「開く」ボタン、開いたあとは ファイル名＋✕） */
     #file-slot { margin-bottom: 8px; }
     /* 押して動かす操作：水色の丸いボタン（✿の付いた白い行は、開いて読むもの、と見た目を分ける） */
@@ -311,7 +252,7 @@
       font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: .08em; cursor: pointer;
       transition: background .15s, transform .1s;
     }
-    #top-btn { margin-bottom: 14px; }
+    #change-btn { margin-bottom: 12px; }
     .menu-act:active { transform: scale(.98); }
     @media (hover: hover) { .menu-act:hover { background: #C8DEE4; } }
     .file-pick, .file-box {
@@ -319,7 +260,9 @@
       border: 1.5px dashed var(--sel-line); border-radius: 14px;
       display: flex; align-items: center; justify-content: center; gap: 10px;
     }
-    .file-pick { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: .04em; cursor: pointer; transition: background .15s; }
+    .file-pick { flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: .04em; cursor: pointer; transition: background .15s; }
+    .file-pick small { display: block; font-size: 10.5px; font-weight: 500; color: var(--text-sub); letter-spacing: .02em; line-height: 1.6; text-align: center; }
+    .file-pick b { font-weight: 700; }
     .file-pick:active { transform: scale(.98); }
     @media (hover: hover) { .file-pick:hover { background: #F2F7F8; } }
     .file-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--text); letter-spacing: .02em; }
@@ -427,6 +370,10 @@
     .sel-arrow:disabled { opacity: .35; cursor: not-allowed; }
     #sel-bar { position: fixed; z-index: 25; display: flex; gap: 6px; transform: translateX(-50%); }
     #sel-bar[hidden] { display: none; }
+    .sel-close { position: relative; flex: none; width: 34px; height: 34px; padding: 0; border-radius: 50%; background: #fff; border: 1.5px solid var(--border); box-shadow: var(--shadow); cursor: pointer; }
+    .sel-close::before, .sel-close::after { content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: 1.5px; background: var(--text-sub); transform: translate(-50%, -50%) rotate(45deg); }
+    .sel-close::after { transform: translate(-50%, -50%) rotate(-45deg); }
+    .sel-close:active { background: #F2F7F8; }
     #sel-bar .pill-btn { min-height: 34px; padding: 6px 14px 8px; font-size: 12px; }
     #viewer.insel { cursor: default; }
 
@@ -486,8 +433,95 @@
 
 <!-- ===== 画像を開く前の案内（スタート画面） ===== -->
 <div id="placeholder">
-  <div class="start-wrap">
-    <header>
+  <div id="work-hint">
+    <div class="wh-main">ここは編み図エリアです</div>
+    <div class="wh-en">Knitting Chart Highlighter</div>
+    <div class="wh-note">※ブラウザを開き直した場合は<br>再度画像を読み込んでください</div>
+  </div>
+</div>
+
+<!-- ===== 左上：最小限のボタン ===== -->
+<div id="top-left">
+  <button type="button" class="pill-btn" id="menu-btn" aria-expanded="false" aria-controls="menu-panel">メニュー</button>
+</div>
+
+<!-- ===== 右上：蛍光ペンの操作盤 ===== -->
+<div id="mk-panel" hidden>
+ <div id="mk-card">
+  <div id="mk-head">
+    <button type="button" class="mk-title" id="mk-toggle" aria-expanded="true" aria-controls="mk-bar"><i class="mk-now" id="mk-now"></i><span class="mk-label" id="mk-label">選択中の蛍光ペン</span><span class="mk-arrow">▾</span></button>
+    <div class="mk-acts">
+      <button type="button" class="round-btn" id="undo-btn" aria-label="1つ前に戻る" data-tip="1つ前に戻る" disabled>↺</button>
+      <button type="button" class="round-btn" id="redo-btn" aria-label="1つ先に進む" data-tip="1つ先に進む" disabled>↻</button>
+      <button type="button" class="round-btn emoji" id="clear-btn" aria-label="塗った内容を一括削除" data-tip="塗った内容を一括削除" disabled>🗑️</button>
+    </div>
+  </div>
+  <div id="mk-bar">
+    <div class="mk-row" role="group" aria-label="道具"><div class="mk-seg" id="mk-tseg">
+      <button type="button" class="mk-seg-b tl mk-t" data-t="pen">なぞる</button>
+      <button type="button" class="mk-seg-b tl mk-t" data-t="select">選択</button>
+      <button type="button" class="mk-seg-b tl mk-t" data-t="erase">消しゴム</button>
+      <button type="button" class="mk-seg-b tl mk-t" data-t="line">直線</button>
+      <button type="button" class="mk-seg-b tl mk-t" data-t="rect">四角</button>
+      <button type="button" class="mk-seg-b tl mk-t" data-t="ellipse">円</button>
+    </div></div>
+    <div class="mk-row" role="group" aria-label="カラー"><div id="mk-colors">
+      <button type="button" class="mk-dot" data-c="#FF4F7B" style="background:#FF4F7B" aria-label="赤"></button>
+      <button type="button" class="mk-dot" data-c="#FF9F1C" style="background:#FF9F1C" aria-label="橙"></button>
+      <button type="button" class="mk-dot" data-c="#FFF200" style="background:#FFF200" aria-label="黄"></button>
+      <button type="button" class="mk-dot" data-c="#7DFF3C" style="background:#7DFF3C" aria-label="緑"></button>
+      <button type="button" class="mk-dot" data-c="#2EDBFF" style="background:#2EDBFF" aria-label="青"></button>
+      <button type="button" class="mk-dot" data-c="#7A8CFF" style="background:#7A8CFF" aria-label="藍"></button>
+      <button type="button" class="mk-dot" data-c="#D45BFF" style="background:#D45BFF" aria-label="紫"></button>
+      <label for="mk-custom" id="mk-custom-label" title="好きな色を追加" aria-label="好きな色を追加"></label>
+      <input type="color" id="mk-custom" aria-label="好きな色">
+    </div></div>
+    <div class="mk-row" id="mk-row-w" role="group" aria-label="太さ"><div class="mk-seg" id="mk-wseg">
+      <button type="button" class="mk-seg-b mk-seg-sq mk-w" data-w="8"><i style="width:6px;height:6px"></i>細</button>
+      <button type="button" class="mk-seg-b mk-seg-sq mk-w" data-w="18"><i style="width:12px;height:12px"></i>中</button>
+      <button type="button" class="mk-seg-b mk-seg-sq mk-w" data-w="36"><i style="width:20px;height:20px"></i>太</button>
+    </div></div>
+    <div class="mk-row" id="mk-row-a" role="group" aria-label="濃さ"><div class="mk-seg" id="mk-aseg">
+      <button type="button" class="mk-seg-b mk-seg-sq mk-a" data-a="0.3"><i style="width:16px;height:16px;border:1px solid var(--border)"></i>うすい</button>
+      <button type="button" class="mk-seg-b mk-seg-sq mk-a" data-a="0.45"><i style="width:16px;height:16px;border:1px solid var(--border)"></i>ふつう</button>
+      <button type="button" class="mk-seg-b mk-seg-sq mk-a" data-a="0.65"><i style="width:16px;height:16px;border:1px solid var(--border)"></i>こい</button>
+    </div></div>
+    <div class="mk-row" id="mk-row-in" role="group" aria-label="入力" hidden><div class="mk-seg" id="mk-iseg">
+      <button type="button" class="mk-seg-b tl mk-i" data-i="hand">👆 指モード</button>
+      <button type="button" class="mk-seg-b tl mk-i" data-i="pen">✏️ ペンモード</button>
+    </div></div>
+  </div>
+ </div>
+</div>
+
+<!-- ===== 選んだ線の、複製・削除（「選択」の道具のときだけ出る） ===== -->
+<div id="sel-bar" hidden>
+  <button type="button" class="pill-btn" id="sel-dup">複製</button>
+  <button type="button" class="pill-btn" id="sel-flip">反転</button>
+  <button type="button" class="pill-btn" id="sel-del">削除</button>
+  <button type="button" class="sel-close" id="sel-close" aria-label="選ぶのをやめる" title="選ぶのをやめる"></button>
+</div>
+
+<!-- ===== 「反転」を押したときの、4つの矢印（押した側に、ひっくり返したコピーを置く） ===== -->
+<div id="sel-arrows" hidden>
+  <button type="button" class="sel-arrow" data-d="t" aria-label="上に、反転したコピーを置く"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button type="button" class="sel-arrow" data-d="b" aria-label="下に、反転したコピーを置く"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button type="button" class="sel-arrow" data-d="l" aria-label="左に、反転したコピーを置く"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button type="button" class="sel-arrow" data-d="r" aria-label="右に、反転したコピーを置く"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+</div>
+
+<!-- ===== 右下：段数カウンター ===== -->
+<div id="counter-panel" hidden role="group" aria-label="段数カウンター" title="段数カウンター">
+  <div id="cp-counter-row">
+    <button type="button" class="cp-btn" id="cp-minus" aria-label="1つ減らす（長押しで、0にもどす）" title="長押しで、0にもどす" disabled></button>
+    <span id="cp-num" aria-live="polite">0</span>
+    <button type="button" class="cp-btn" id="cp-plus" aria-label="1つ増やす"></button>
+  </div>
+</div>
+
+<!-- ===== メニュー（使い方・このアプリについて・データについて・リンク） ===== -->
+<div id="menu-panel" role="region" aria-label="メニュー">
+  <header>
       <h1>編み図のための蛍光ペン</h1>
       <h2>Knitting Chart Highlighter</h2>
       <div class="title-ja-sub"><div class="sub-text"><span>編み図に蛍光ペンが引けるアプリ</span></div></div>
@@ -497,35 +531,35 @@
         詳細は ✿ データについて をご確認ください
       </div>
     </header>
-    <div class="start-card">
-    <button type="button" class="drop-frame" id="start-open-btn">
-      <b>📂 ファイルを選択して編み図を開く</b>
-      <span><em class="nb">写真やスクリーンショットを開くと、</em><em class="nb">蛍光ペンで塗れるようになります。</em></span>
-    </button>
-    <div class="keep-note"><span>※ブラウザを開き直した場合は</span> <br><span>再度画像を読み込んでください</span></div>
+  <div id="file-slot">
+    <button type="button" class="file-pick" id="file-pick"><b>📂 ファイルを選択して編み図を開く</b><small>写真やスクリーンショットを開くと、蛍光ペンで塗れるようになります。</small></button>
+    <div class="file-box" id="file-box" hidden>
+      <span class="file-name" id="file-name"></span>
+      <button type="button" class="file-close" id="file-close" aria-label="編み図を閉じる" title="編み図を閉じる">✕</button>
     </div>
-    <div id="start-info-slot">
-  <div id="info-block">
+  </div>
+  <button type="button" class="menu-act" id="change-btn" hidden>画像を選び直す</button>
+  <div id="menu-info-slot">
+<div id="info-block">
   <div class="acc-list">
 
     <div class="data-note" id="howNote">
       <button type="button" class="data-note-btn" aria-expanded="false"><span>✿ 使い方</span><span class="data-note-arrow">▼</span></button>
       <div class="data-note-body">
         <ol>
-          <li>最初の画面の枠（またはメニューの上のほう）から、編み図の画像を開きます。</li>
-          <li>指（またはペン・マウス）でなぞると、蛍光ペンで塗れます。右上の操作盤で、道具（なぞる・直線・四角・消しゴム）、色、太さ、濃さを選べます。色は、いちばん右の点線の「＋」で、好きな色を追加できます（追加した色は、丸い見本として残ります）。</li>
+          <li>メニューの「ファイルを選択して編み図を開く」から、編み図の画像を開きます。</li>
+          <li>指（またはペン・マウス）でなぞると、蛍光ペンで塗れます。右上の操作盤で、道具（なぞる・直線・四角・円・選択・消しゴム）、色、太さ、濃さを選べます。「円」は、ドラッグした範囲に、円を塗りつぶします（編んだところを、四角や円で隠すのに便利です）。色は、7色のほかに、いちばん右の点線の「＋」で、好きな色を選べます（選んだ色は、「＋」の丸に出ます）。</li>
           <li>「なぞる」で塗ったあと、ペンや指を止めて少し待つと（約0.5秒）、きれいな直線・円・四角に整います。直線は、止めたまま動かすと、向きや長さを変えられます。円や四角は、そのまま動かし続けると、整える前のなぞった線にもどります。</li>
-          <li>「四角」「直線」で描いた直後は、角や辺（直線は両端の丸）をドラッグして、大きさを変えられます。中をドラッグすると、動きます。「選択」の道具では、どの線もタップで選べて、同じように動かしたり、大きさを変えたりできます。枠の上の丸いつまみをドラッグすると、回せます（15度ごとに止まります）。「複製」「反転」「削除」のボタンも出ます。「反転」を押すと、四方に矢印が出て、押した側に、ひっくり返したコピーを、ぴったり並べて置きます。何もない所をドラッグすると、編み図が動きます。</li>
+          <li>「四角」「直線」で描いた直後は、角や辺（直線は両端の丸）をドラッグして、大きさを変えられます。中をドラッグすると、動きます。「選択」の道具では、どの線もタップで選べて、同じように動かしたり、大きさを変えたりできます。枠の上の丸いつまみをドラッグすると、回せます（15度ごとに止まります）。選んだ線をさわっている間は、見出しが「選んだ線を変更」になり、色・濃さ・太さのボタンは、その線を変えます（「×」で、選ぶのをやめられます）。「選択」の道具でなくても、塗った線を、ちょんと触れる（動かさずに離す）と、その線が選ばれます（点を打つときは、線のない所で）。「複製」「反転」「削除」のボタンも出ます。「反転」を押すと、四方に矢印が出て、押した側に、ひっくり返したコピーを、ぴったり並べて置きます。何もない所をドラッグすると、編み図が動きます。</li>
           <li>ペンで触れると、操作盤に「入力」の行が出ます。「ペンモード」は、ペンで塗って、指で編み図を動かします。「指モード」は、指でもペンでも塗れます。</li>
           <li>操作盤は、白いところや「選択中の蛍光ペン」の文字をつかんでドラッグすると、好きな場所に動かせます（白いところを2回タップすると、もとの位置にもどります）。</li>
           <li>右下のカウンターで、段数を数えられます。＋で1つ増やし、－で1つ減らします（0〜999）。「−」を長押し（約1秒）すると、0にもどします（確認が出ます）。数は、編み図ごとに自動で保存されます。カウンターも、白いところをつかんで動かせます。</li>
           <li>↺で1つ前に戻り、↻でやり直せます。🗑️で、塗った内容を一括削除します。「蛍光ペン」を押すと、操作盤を閉じたり開いたりできます。</li>
           <li>2本指で広げると拡大、つまむと縮小します。2本指のまま動かすと、編み図が動きます。</li>
           <li>パソコンのトラックパッドは、2本指でなぞると編み図が動き、ピンチ（つまむ・広げる）で拡大・縮小します。マウスは、ホイールで上下に動き、Ctrl（Macは⌘）を押しながらホイールで拡大・縮小します。右ボタン（またはスペースキーを押しながら）のドラッグでも動かせます。</li>
-          <li>メニューの一番上に、開いている画像の名前が出ます。✕を押すと、画像だけ閉じます（塗った内容は、自動で保存されています）。画像を変えたいときは「画像を選び直す」、アプリを開いた直後の画面にもどりたいときは「最初の画面にもどる」を押します。</li>
+          <li>メニューの一番上に、開いている画像の名前が出ます。✕を押すと、画像だけ閉じます（塗った内容は、自動で保存されています）。画像を変えたいときは「画像を選び直す」を押します。</li>
         </ol>
         <p>塗った内容は、自動で保存されます。次の日も、前回と同じ画像を選ぶと、続きから再開できます。</p>
-        <p>「このアプリについて」「データについて」と、アプリ一覧へのリンクは、アプリを開いた直後の最初の画面にあります。</p>
         <p>※カウンターは、このあと追加していきます。</p>
       </div>
     </div>
@@ -574,105 +608,7 @@
     <div class="last-updated">最終更新：2026.10.06</div>
   </div>
   </div>
-    </div>
   </div>
-  <div id="work-hint">
-    <div class="wh-main">ここは編み図エリアです</div>
-    <div class="wh-en">Knitting Chart Highlighter</div>
-    <div class="wh-note">※ブラウザを開き直した場合は<br>再度画像を読み込んでください</div>
-  </div>
-</div>
-
-<!-- ===== 左上：最小限のボタン ===== -->
-<div id="top-left" hidden>
-  <button type="button" class="pill-btn" id="menu-btn" aria-expanded="false" aria-controls="menu-panel">メニュー</button>
-</div>
-
-<!-- ===== 右上：蛍光ペンの操作盤 ===== -->
-<div id="mk-panel" hidden>
- <div id="mk-card">
-  <div id="mk-head">
-    <button type="button" class="mk-title" id="mk-toggle" aria-expanded="true" aria-controls="mk-bar"><i class="mk-now" id="mk-now"></i><span class="mk-label">選択中の蛍光ペン</span><span class="mk-arrow">▾</span></button>
-    <div class="mk-acts">
-      <button type="button" class="round-btn" id="undo-btn" aria-label="1つ前に戻る" data-tip="1つ前に戻る" disabled>↺</button>
-      <button type="button" class="round-btn" id="redo-btn" aria-label="1つ先に進む" data-tip="1つ先に進む" disabled>↻</button>
-      <button type="button" class="round-btn emoji" id="clear-btn" aria-label="塗った内容を一括削除" data-tip="塗った内容を一括削除" disabled>🗑️</button>
-    </div>
-  </div>
-  <div id="mk-bar">
-    <div class="mk-row" role="group" aria-label="道具"><div class="mk-seg" id="mk-tseg">
-      <button type="button" class="mk-seg-b tl mk-t" data-t="pen">なぞる</button>
-      <button type="button" class="mk-seg-b tl mk-t" data-t="line">直線</button>
-      <button type="button" class="mk-seg-b tl mk-t" data-t="rect">四角</button>
-      <button type="button" class="mk-seg-b tl mk-t" data-t="select">選択</button>
-      <button type="button" class="mk-seg-b tl mk-t" data-t="erase">消しゴム</button>
-    </div></div>
-    <div class="mk-row" role="group" aria-label="カラー"><div id="mk-colors">
-      <button type="button" class="mk-dot" data-c="#FF4F7B" style="background:#FF4F7B" aria-label="赤"></button>
-      <button type="button" class="mk-dot" data-c="#FF9F1C" style="background:#FF9F1C" aria-label="橙"></button>
-      <button type="button" class="mk-dot" data-c="#FFF200" style="background:#FFF200" aria-label="黄"></button>
-      <button type="button" class="mk-dot" data-c="#7DFF3C" style="background:#7DFF3C" aria-label="緑"></button>
-      <button type="button" class="mk-dot" data-c="#2EDBFF" style="background:#2EDBFF" aria-label="青"></button>
-      <button type="button" class="mk-dot" data-c="#7A8CFF" style="background:#7A8CFF" aria-label="藍"></button>
-      <button type="button" class="mk-dot" data-c="#D45BFF" style="background:#D45BFF" aria-label="紫"></button>
-      <button type="button" class="mk-dot" id="mk-custom-swatch" data-c="#FFFFFF" aria-label="自分で選んだ色" hidden></button>
-      <input type="color" id="mk-custom" aria-label="好きな色">
-      <label for="mk-custom" id="mk-custom-label" title="好きな色を追加" aria-label="好きな色を追加"></label>
-    </div></div>
-    <div class="mk-row" id="mk-row-w" role="group" aria-label="太さ"><div class="mk-seg" id="mk-wseg">
-      <button type="button" class="mk-seg-b mk-seg-sq mk-w" data-w="8"><i style="width:6px;height:6px"></i>細</button>
-      <button type="button" class="mk-seg-b mk-seg-sq mk-w" data-w="18"><i style="width:12px;height:12px"></i>中</button>
-      <button type="button" class="mk-seg-b mk-seg-sq mk-w" data-w="36"><i style="width:20px;height:20px"></i>太</button>
-    </div></div>
-    <div class="mk-row" id="mk-row-a" role="group" aria-label="濃さ"><div class="mk-seg" id="mk-aseg">
-      <button type="button" class="mk-seg-b mk-seg-sq mk-a" data-a="0.3"><i style="width:16px;height:16px;border:1px solid var(--border)"></i>うすい</button>
-      <button type="button" class="mk-seg-b mk-seg-sq mk-a" data-a="0.45"><i style="width:16px;height:16px;border:1px solid var(--border)"></i>ふつう</button>
-      <button type="button" class="mk-seg-b mk-seg-sq mk-a" data-a="0.65"><i style="width:16px;height:16px;border:1px solid var(--border)"></i>こい</button>
-    </div></div>
-    <div class="mk-row" id="mk-row-in" role="group" aria-label="入力" hidden><div class="mk-seg" id="mk-iseg">
-      <button type="button" class="mk-seg-b tl mk-i" data-i="hand">👆 指モード</button>
-      <button type="button" class="mk-seg-b tl mk-i" data-i="pen">✏️ ペンモード</button>
-    </div></div>
-  </div>
- </div>
-</div>
-
-<!-- ===== 選んだ線の、複製・削除（「選択」の道具のときだけ出る） ===== -->
-<div id="sel-bar" hidden>
-  <button type="button" class="pill-btn" id="sel-dup">複製</button>
-  <button type="button" class="pill-btn" id="sel-flip">反転</button>
-  <button type="button" class="pill-btn" id="sel-del">削除</button>
-</div>
-
-<!-- ===== 「反転」を押したときの、4つの矢印（押した側に、ひっくり返したコピーを置く） ===== -->
-<div id="sel-arrows" hidden>
-  <button type="button" class="sel-arrow" data-d="t" aria-label="上に、反転したコピーを置く"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-  <button type="button" class="sel-arrow" data-d="b" aria-label="下に、反転したコピーを置く"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-  <button type="button" class="sel-arrow" data-d="l" aria-label="左に、反転したコピーを置く"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-  <button type="button" class="sel-arrow" data-d="r" aria-label="右に、反転したコピーを置く"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-</div>
-
-<!-- ===== 右下：段数カウンター ===== -->
-<div id="counter-panel" hidden role="group" aria-label="段数カウンター" title="段数カウンター">
-  <div id="cp-counter-row">
-    <button type="button" class="cp-btn" id="cp-minus" aria-label="1つ減らす（長押しで、0にもどす）" title="長押しで、0にもどす" disabled></button>
-    <span id="cp-num" aria-live="polite">0</span>
-    <button type="button" class="cp-btn" id="cp-plus" aria-label="1つ増やす"></button>
-  </div>
-</div>
-
-<!-- ===== メニュー（使い方・このアプリについて・データについて・リンク） ===== -->
-<div id="menu-panel" role="region" aria-label="メニュー">
-  <div id="file-slot">
-    <button type="button" class="file-pick" id="file-pick">📂 ファイルを選択して編み図を開く</button>
-    <div class="file-box" id="file-box" hidden>
-      <span class="file-name" id="file-name"></span>
-      <button type="button" class="file-close" id="file-close" aria-label="編み図を閉じて、最初の画面にもどる" title="編み図を閉じる">✕</button>
-    </div>
-  </div>
-  <button type="button" class="menu-act" id="change-btn" hidden>画像を選び直す</button>
-  <button type="button" class="menu-act" id="top-btn">最初の画面にもどる</button>
-  <div id="menu-info-slot"></div>
 </div>
 
 <div id="modal" hidden>
@@ -706,12 +642,6 @@
   var cache = document.createElement('canvas'), cctx = cache.getContext('2d');   // 塗った線の描き置き
   var fileInput = $('file-input'), placeholder = $('placeholder');
   var menuBtn = $('menu-btn'), menuPanel = $('menu-panel'), note = $('note');
-  var infoBlock = $('info-block');
-  var started = false;                              // 一度でも画像を開いたら true（そのあとは、トップ画面にはもどらない）
-  function placeInfo() {                            // 説明・アイコン列：最初のトップ画面ではカードの下、画像を開いたあとはメニューの中
-    var slot = started ? $('menu-info-slot') : $('start-info-slot');
-    if (infoBlock.parentNode !== slot) slot.appendChild(infoBlock);
-  }
 
   /* ---------- お知らせ（タップで閉じる） ---------- */
   var noteTimer = null;
@@ -724,10 +654,9 @@
 
   /* ---------- 蛍光ペンのデータ（線は「画像の座標の点の列」で持つので、拡大・移動してもずれない） ---------- */
   var COLORS = ['#FF4F7B', '#FF9F1C', '#FFF200', '#7DFF3C', '#2EDBFF', '#7A8CFF', '#D45BFF'];   // 赤・橙・黄・緑・青・藍・紫
-  var WIDTHS = [8, 18, 36], ALPHAS = [0.30, 0.45, 0.65], TOOLS = ['pen', 'line', 'rect', 'select', 'erase'];
+  var WIDTHS = [8, 18, 36], ALPHAS = [0.30, 0.45, 0.65], TOOLS = ['pen', 'line', 'rect', 'ellipse', 'select', 'erase'];
   var SKEY = 'yucchi_chartHighlighter_settings';   // 道具・色・太さ・濃さ。一度決めたら、あとで変更しない
   var cpPos = null;                                // カウンターを動かした位置 { r:右端からの距離, b:下からの距離 }。null ならもとの位置
-  var customColor = null;                          // 「＋」で選んだ色（色見本として、残しておく）
   var panelPos = null;                             // 操作盤を動かした位置 { r:右端からの距離, t:上からの距離 }。null ならもとの位置
   var PEN = { tool: 'pen', input: 'hand', penSeen: false, color: '#FFF200', alpha: 0.45, width: 18 };   // width は、画面での太さ[px]／ input：'hand'＝指モード、'pen'＝ペンモード
   function nearest(list, v) { var b = list[0]; list.forEach(function (x) { if (Math.abs(x - v) < Math.abs(b - v)) b = x; }); return b; }
@@ -741,15 +670,13 @@
       if (s0.pos && isFinite(s0.pos.r) && isFinite(s0.pos.t)) panelPos = { r: +s0.pos.r, t: +s0.pos.t };
       if (s0.input === 'pen' || s0.input === 'hand') PEN.input = s0.input;
       if (s0.cpos && isFinite(s0.cpos.r) && isFinite(s0.cpos.b)) cpPos = { r: +s0.cpos.r, b: +s0.cpos.b };
-      if (/^#[0-9a-fA-F]{6}$/.test(s0.custom)) customColor = s0.custom;
       if (s0.penDetected === true) PEN.penSeen = true;          // ペンで触れたことが記録されている端末だけ、ペンありとみなす
     }
   } catch (e) {}
   if (!PEN.penSeen && PEN.input === 'pen') PEN.input = 'hand';
-  if (!customColor && COLORS.map(function (c) { return c.toLowerCase(); }).indexOf(PEN.color.toLowerCase()) < 0) customColor = PEN.color;      // 以前に選んだ好きな色が残っていれば、見本に出す
   function saveSt() {
     if (!storageOk) return;
-    try { localStorage.setItem(SKEY, JSON.stringify({ tool: PEN.tool, input: PEN.input, penDetected: PEN.penSeen, color: PEN.color, custom: customColor, alpha: PEN.alpha, width: PEN.width, pos: panelPos ? { r: Math.round(panelPos.r), t: Math.round(panelPos.t) } : null, cpos: cpPos ? { r: Math.round(cpPos.r), b: Math.round(cpPos.b) } : null })); } catch (e) {}
+    try { localStorage.setItem(SKEY, JSON.stringify({ tool: PEN.tool, input: PEN.input, penDetected: PEN.penSeen, color: PEN.color, alpha: PEN.alpha, width: PEN.width, pos: panelPos ? { r: Math.round(panelPos.r), t: Math.round(panelPos.t) } : null, cpos: cpPos ? { r: Math.round(cpPos.r), b: Math.round(cpPos.b) } : null })); } catch (e) {}
   }
   var strokes = [], hist = [], redoH = [], cur = null, ver = 0, cacheKey = '';
   var painting = false, pid = null, penStroke = false, held = false, holdTimer = null, strokeT0 = 0, startPt = null, maxMove = 0;
@@ -795,6 +722,8 @@
     c.lineWidth = s.w; c.lineCap = 'round'; c.lineJoin = 'round';
     if (s.k === 'r') {                               // 四角：ドラッグした範囲を塗りつぶす
       if (p.length > 1) c.fillRect(Math.min(p[0][0], p[1][0]), Math.min(p[0][1], p[1][1]), Math.abs(p[1][0] - p[0][0]), Math.abs(p[1][1] - p[0][1]));
+    } else if (s.k === 'e') {                        // 円（楕円）：ドラッグした範囲に、ぴったり入る円を塗りつぶす
+      if (p.length > 1) { var ex0 = (p[0][0] + p[1][0]) / 2, ey0 = (p[0][1] + p[1][1]) / 2, erx = Math.abs(p[1][0] - p[0][0]) / 2, ery = Math.abs(p[1][1] - p[0][1]) / 2; if (erx > 0 && ery > 0) { c.beginPath(); c.ellipse(ex0, ey0, erx, ery, 0, 0, Math.PI * 2); c.fill(); } }
     } else if (s.k === 'f') {                        // ななめの四角：多角形を塗りつぶす
       if (p.length > 2) { c.beginPath(); c.moveTo(p[0][0], p[0][1]); for (var fi = 1; fi < p.length; fi++) c.lineTo(p[fi][0], p[fi][1]); c.closePath(); c.fill(); }
     } else if (p.length === 1) {
@@ -866,46 +795,35 @@
   function setImage(im, file) {
     cancelPaint(); mode = 'idle'; pts.clear(); editing = null; selStroke = null;
     flush();                                       // 開いていた画像の塗りを、先に保存する
-    img = im; started = true;
+    img = im;
     // 画像の見分け方：名前・大きさ・更新日時・縦横サイズ（編み図ルーラーと同じ）
     chartId = [file.name, file.size, file.lastModified, im.naturalWidth + 'x' + im.naturalHeight].join('|');
     chartName = file.name;
     strokes = loadFor(chartId); count = loadCount(chartId); hist = []; redoH = []; cur = null; ver++; cacheKey = '';
     if (strokes.length || count) scheduleSave();   // 「最近使った画像」として、保存の日時を更新しておく
     syncBtns();
-    placeholder.hidden = true; placeholder.classList.remove('work');
+    placeholder.hidden = true;
     viewer.classList.remove('empty', 'dragging');
-    $('mk-panel').hidden = false; $('top-left').hidden = false;
+    $('mk-panel').hidden = false;
     cpPanel.hidden = false; document.body.classList.add('has-cp'); syncCounter(); applyCpPos();
-    syncFileSlot(); placeInfo();
+    syncFileSlot();
     closeMenu(); applyPos(); syncBarScroll();
     fitImage();
     if (strokes.length || count) showNote(strokes.length && count ? '前回の塗りと段数を復元しました' : (count ? '前回の段数を復元しました' : '前回の塗りを復元しました'));
   }
-  // 画像を閉じる。画面はそのままで、編み図だけ閉じる（トップ画面にはもどらない）。塗った内容は、自動で保存されている
+  // 画像を閉じる。画面はそのままで、編み図だけ閉じる。塗った内容は、自動で保存されている
   function closeImage() {
     cancelPaint(); mode = 'idle'; pts.clear(); pinchLast = 0; midLast = null; editing = null; selStroke = null;
     flush();
     img = null; chartId = null; strokes = []; count = 0; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
     syncBtns();
-    placeholder.hidden = false; placeholder.classList.add('work');
+    placeholder.hidden = false;
     viewer.classList.add('empty'); viewer.classList.remove('dragging');
     $('mk-panel').hidden = true; cpPanel.hidden = true; document.body.classList.remove('has-cp'); syncCounter();
     chartName = '';
-    syncFileSlot(); placeInfo();
-    closeMenu(); requestDraw();
+    syncFileSlot();
+    setMenu(true); requestDraw();                   // 画像を閉じたら、メニューを開いて、すぐ次の画像を選べるようにする
   }
-  // 編み図エリア（画像を閉じたあと）から、最初のトップ画面にもどる
-  function goTop() {
-    started = false; placeholder.classList.remove('work');
-    $('top-left').hidden = true; closeMenu(); placeInfo();
-    placeholder.scrollTop = 0;
-  }
-  $('top-btn').addEventListener('click', function () {
-    closeMenu();
-    if (!img) { goTop(); return; }                  // 画像がない時は、そのままトップ画面へ
-    showModal('最初の画面にもどります。\n表示されている画像は取り消されます。\nよろしいですか？', 'もどる', function () { closeImage(); goTop(); });
-  });
   $('file-close').addEventListener('click', function () {
     showModal('表示されている画像を取り消しますか？', '取り消す', closeImage);                    // 編み図ルーラーと同じ
   });
@@ -916,7 +834,6 @@
     $('file-name').textContent = chartName; $('file-name').title = chartName;
   }
   function pick() { fileInput.click(); }
-  $('start-open-btn').addEventListener('click', pick);
   fileInput.addEventListener('change', function () {
     var f = fileInput.files && fileInput.files[0];
     fileInput.value = '';                        // 同じ画像をもう一度選んでも反応するように
@@ -989,6 +906,10 @@
       else if (Math.abs(dx) < Math.abs(dy) * 0.0875) dx = 0;
       q = [a[0] + dx, a[1] + dy];
     }
+    if (cur.k === 'e') {                            // 縦横がほぼ同じなら、正円にそろえる
+      var ex = q[0] - a[0], ey = q[1] - a[1], em = Math.max(Math.abs(ex), Math.abs(ey));
+      if (em > 0 && Math.abs(Math.abs(ex) - Math.abs(ey)) / em < 0.08) { var ed2 = (Math.abs(ex) + Math.abs(ey)) / 2; q = [a[0] + (ex < 0 ? -ed2 : ed2), a[1] + (ey < 0 ? -ed2 : ed2)]; }
+    }
     cur.p[1] = q;
   }
   /* ---------- 選択：選んだ線を、動かす・大きさを変える・複製する・削除する ----------
@@ -996,7 +917,8 @@
      ・「選択」の道具では、どの線でも、タップで選べる。何もない所をドラッグすると、編み図が動く
      ・四角・自由な線：角と辺をドラッグ＝大きさを変える／中をドラッグ＝移動。直線：両端の丸をドラッグ＝長さ・向き／線をドラッグ＝移動
      ・線のデータは、いったん別のものに作り直してから入れ替える（もどす・やりなおしの記録を、壊さないため） */
-  var selStroke = null, editing = null;
+  var tapSelNoted = false;                         // 「ちょんと触れて線を選ぶ」お知らせは、最初の1回だけ
+  var selStroke = null, editing = null, selEngaged = false, attrSession = null, attrTimer = null, uiKey = '';       // selEngaged：選んだ線を、自分でさわった（つまみ・本体・「選択」の道具で選んだ）
   var selLayer = document.createElement('div'), selBar = $('sel-bar');
   selLayer.id = 'sel-layer'; selLayer.hidden = true;
   selLayer.innerHTML = '<div class="sel-frame"></div>' +
@@ -1013,13 +935,14 @@
     st.p.forEach(function (q) { b.minX = Math.min(b.minX, q[0]); b.maxX = Math.max(b.maxX, q[0]); b.minY = Math.min(b.minY, q[1]); b.maxY = Math.max(b.maxY, q[1]); });
     return b;
   }
-  function padOf(st) { return (st.k === 'r' || st.k === 'f') ? 0 : st.w / 2; }                       // 四角は、塗りつぶしなので、線の太さぶんの余白は、いらない
-  function isLineStroke(st) { return st.k !== 'r' && st.p.length === 2; }
-  function isDotStroke(st) { return st.k !== 'r' && st.p.length === 1; }
+  function isFillKind(st) { return st.k === 'r' || st.k === 'e' || st.k === 'f'; }           // 塗りつぶしの図形（線ではない）
+  function padOf(st) { return isFillKind(st) ? 0 : st.w / 2; }                       // 四角は、塗りつぶしなので、線の太さぶんの余白は、いらない
+  function isLineStroke(st) { return !isFillKind(st) && st.p.length === 2; }
+  function isDotStroke(st) { return !isFillKind(st) && st.p.length === 1; }
   function frameOf(st) { var b = strokeBox(st), pd = padOf(st); return { minX: b.minX - pd, minY: b.minY - pd, maxX: b.maxX + pd, maxY: b.maxY + pd }; }
   function toScr(x, y) { return [x * scale + offsetX, y * scale + offsetY]; }
   function cloneStroke(st, pts, kind) { return { k: kind || st.k, c: st.c, a: st.a, w: st.w, p: pts || st.p.map(function (q) { return [q[0], q[1]]; }) }; }
-  function clearSel() { if (selStroke) { selStroke = null; requestDraw(false); } }
+  function clearSel() { endAttrSession(); selEngaged = false; if (selStroke) { selStroke = null; requestDraw(false); } }
   // 回転：線・自由な線は、点を回す。四角は、ななめになると、多角形（'f'）になる（まっすぐに戻れば、また四角('r')）
   function rotatePts(pts, c, th) { var co = Math.cos(th), si = Math.sin(th); return pts.map(function (q) { return [c[0] + (q[0] - c[0]) * co - (q[1] - c[1]) * si, c[1] + (q[0] - c[0]) * si + (q[1] - c[1]) * co]; }); }
   function rectCorners(o) { if (o.k === 'r') { var b = strokeBox(o); return [[b.minX, b.minY], [b.maxX, b.minY], [b.maxX, b.maxY], [b.minX, b.maxY]]; } return o.p; }
@@ -1034,6 +957,17 @@
   }
   function rotateStroke(o, th) {
     var c = centerOf(o);
+    if (o.k === 'e') {                              // 円（楕円）：正円は、そのまま。90度ごとは、縦横を入れかえる。それ以外は、なめらかな多角形（'f'）にして回す
+      var bx = strokeBox(o), rx = (bx.maxX - bx.minX) / 2, ry = (bx.maxY - bx.minY) / 2;
+      if (Math.abs(rx - ry) < 1e-6) return cloneStroke(o);
+      var q90 = th / (Math.PI / 2);
+      if (Math.abs(q90 - Math.round(q90)) < 1e-6) {
+        if (Math.round(q90) % 2 === 0) return cloneStroke(o);
+        return cloneStroke(o, [[c[0] - ry, c[1] - rx], [c[0] + ry, c[1] + rx]]);
+      }
+      var poly = []; for (var pi = 0; pi < 72; pi++) { var tt = 2 * Math.PI * pi / 72; poly.push([c[0] + rx * Math.cos(tt), c[1] + ry * Math.sin(tt)]); }
+      return cloneStroke(o, rotatePts(poly, c, th), 'f');
+    }
     if (o.k === 'r' || o.k === 'f') {
       var q = rotatePts(rectCorners(o), c, th);
       if (axisAligned4(q)) {
@@ -1045,10 +979,14 @@
     return cloneStroke(o, rotatePts(o.p, c, th));
   }
   var flipMode = false, selArrows = $('sel-arrows');
+  function refreshPanel() {                         // 選んだ線が変わった・色などが変わった時に、操作盤の表示を合わせる
+    var t = selTarget(), k = t ? (t.c + '|' + t.a) : '';
+    if (k !== uiKey) { uiKey = k; syncUI(); }
+  }
   function rotPos(st) { var F = frameOf(st), a = toScr(F.minX, F.minY), b = toScr(F.maxX, F.maxY); return [(a[0] + b[0]) / 2, a[1] - 30]; }
   function updateSelUI() {                          // 選んだ線の、枠・つまみ・ボタン・矢印の位置を、いまの表示に合わせる
     if (selStroke && (!img || strokes.indexOf(selStroke) < 0)) selStroke = null;
-    if (!selStroke) { selLayer.hidden = true; selBar.hidden = true; selArrows.hidden = true; flipMode = false; $('sel-flip').classList.remove('on'); return; }
+    if (!selStroke) { selLayer.hidden = true; selBar.hidden = true; selArrows.hidden = true; flipMode = false; selEngaged = false; $('sel-flip').classList.remove('on'); refreshPanel(); return; }
     selLayer.hidden = false;
     var st = selStroke, F = frameOf(st), a = toScr(F.minX, F.minY), b = toScr(F.maxX, F.maxY);
     var line = isLineStroke(st), dot = isDotStroke(st), poly = st.k === 'f', els = selLayer.children;
@@ -1073,7 +1011,8 @@
     if (editing && editing.h.type === 'rotate' && editing.moved) {          // 回している間は、角度を出す
       var deg = Math.round(editing.angle * 180 / Math.PI), an = put('ang', cx + 20, t - 30); an.textContent = deg + '°';
     }
-    var showBar = PEN.tool === 'select' && !(editing && editing.moved);
+    refreshPanel();
+    var showBar = (PEN.tool === 'select' || selEngaged) && !(editing && editing.moved);       // 描いた直後でも、さわったあとは、複製・反転・削除が出る
     selBar.hidden = !showBar;
     var showArrows = showBar && flipMode;
     selArrows.hidden = !showArrows;
@@ -1113,6 +1052,24 @@
     if (px >= l && px <= r && py >= t && py <= bt) return { type: 'move' };
     return null;
   }
+  // 選んだ線への、色・濃さ・太さの反映（選んだ線を、さわっている時だけ。描いた直後で、まださわっていない時は、次に描くペンの設定だけ変える）
+  function selTarget() { return (selStroke && (PEN.tool === 'select' || selEngaged)) ? selStroke : null; }
+  function endAttrSession() {
+    clearTimeout(attrTimer); attrTimer = null;
+    if (attrSession) { var b0 = attrSession.before; attrSession = null; commit(b0); }
+  }
+  function applyToSel(attrs, final) {              // final：true＝すぐ、もどす記録に入れる／false＝色選びの途中。少しとまったら、まとめて記録に入れる
+    var o = selTarget(); if (!o) return;
+    var idx = strokes.indexOf(o); if (idx < 0) return;
+    var ns = cloneStroke(o);
+    if (attrs.c) ns.c = attrs.c;
+    if (attrs.a !== undefined) ns.a = attrs.a;
+    if (attrs.w !== undefined) ns.w = attrs.w / scale;
+    if (ns.c === o.c && ns.a === o.a && ns.w === o.w) return;
+    if (!attrSession) attrSession = { before: strokes.slice() };
+    strokes[idx] = ns; selStroke = ns; ver++; requestDraw(false);
+    if (final) endAttrSession(); else { clearTimeout(attrTimer); attrTimer = setTimeout(endAttrSession, 700); }
+  }
   function selectAt(px, py) {                       // タップした所の、いちばん上の線を選ぶ
     var x = (px - offsetX) / scale, y = (py - offsetY) / scale, tol = 14 / scale;
     for (var i = strokes.length - 1; i >= 0; i--) if (hit(strokes[i], x, y, tol)) return strokes[i];
@@ -1121,6 +1078,7 @@
   function startEdit(e, h) {
     var idx = strokes.indexOf(selStroke);
     if (idx < 0) return false;
+    endAttrSession(); selEngaged = true;           // さわったので、ここから、複製・削除のボタンが出て、色などの変更も、この線に反映される
     editing = { id: e.pointerId, h: h, x0: e.clientX, y0: e.clientY, orig: selStroke, before: strokes.slice(), idx: idx, moved: false, changed: false, angle: 0 };
     if (h.type === 'rotate') {                      // 回転：まわりの中心と、つかんだ時の向きを覚える
       var c = centerOf(selStroke), cs = toScr(c[0], c[1]);
@@ -1213,6 +1171,7 @@
     var bt2 = e.target.closest('.sel-arrow');
     if (bt2 && !bt2.disabled) flipSel(bt2.getAttribute('data-d'));
   });
+  $('sel-close').addEventListener('click', function () { clearSel(); });
   $('sel-del').addEventListener('click', function () {
     if (!selStroke) return;
     var before = strokes.slice(), target = selStroke;
@@ -1371,6 +1330,11 @@
       for (fi = 0; fi < n; fi++) if (distSeg(x, y, p[fi], p[(fi + 1) % n]) <= tol) return true;
       return false;
     }
+    if (st.k === 'e') {                             // 円（楕円）：中、または、ふちの近く
+      if (p.length < 2) return false;
+      var hx = (p[0][0] + p[1][0]) / 2, hy = (p[0][1] + p[1][1]) / 2, hrx = Math.abs(p[1][0] - p[0][0]) / 2 + tol, hry = Math.abs(p[1][1] - p[0][1]) / 2 + tol;
+      return hrx > 0 && hry > 0 && ((x - hx) * (x - hx)) / (hrx * hrx) + ((y - hy) * (y - hy)) / (hry * hry) <= 1;
+    }
     if (st.k === 'r') {
       return p.length > 1 && x >= Math.min(p[0][0], p[1][0]) - tol && x <= Math.max(p[0][0], p[1][0]) + tol &&
              y >= Math.min(p[0][1], p[1][1]) - tol && y <= Math.max(p[0][1], p[1][1]) + tol;
@@ -1397,7 +1361,7 @@
       if (!held) eraseAt(e);
       requestDraw(false); return;
     }
-    var k = PEN.tool === 'line' ? 'l' : (PEN.tool === 'rect' ? 'r' : 'p');
+    var k = PEN.tool === 'line' ? 'l' : (PEN.tool === 'rect' ? 'r' : (PEN.tool === 'ellipse' ? 'e' : 'p'));
     cur = { k: k, c: PEN.color, a: PEN.alpha, w: PEN.width / scale, p: [] };
     addPoint(e);
     if (k !== 'p') cur.p.push(cur.p[0].slice());
@@ -1418,9 +1382,13 @@
     if (eraseBefore) {
       if (strokes.length !== eraseBefore.length) commit(eraseBefore);
       eraseBefore = null; eraserPos = null;
+    } else if (cur && cur.p.length && maxMove < 6 && (Date.now() - strokeT0) < 600 && selectAt(startPt[0], startPt[1])) {
+      // ちょんと触れた（動かさずに離した）所に、塗った線があれば、点を打たずに、その線を選ぶ（「選択」の道具に切りかえなくても、選べる）
+      selStroke = selectAt(startPt[0], startPt[1]); selEngaged = true;
+      if (!tapSelNoted) { tapSelNoted = true; showNote('線を選びました。「×」で、やめられます'); }
     } else if (cur && cur.p.length) {
-      var tiny = cur.k === 'r' && Math.abs(cur.p[1][0] - cur.p[0][0]) * scale < 3 && Math.abs(cur.p[1][1] - cur.p[0][1]) * scale < 3;
-      if (!tiny) { var before = strokes.slice(); strokes.push(cur); commit(before); if (cur.k === 'r' || cur.k === 'l') selStroke = cur; }
+      var tiny = (cur.k === 'r' || cur.k === 'e') && Math.abs(cur.p[1][0] - cur.p[0][0]) * scale < 3 && Math.abs(cur.p[1][1] - cur.p[0][1]) * scale < 3;
+      if (!tiny) { var before = strokes.slice(); strokes.push(cur); commit(before); if (cur.k === 'r' || cur.k === 'l' || cur.k === 'e') { selStroke = cur; selEngaged = false; } }
     }
     clearTimeout(holdTimer); held = false; cur = null; painting = false; pid = null; resetSnap(); syncBtns(); requestDraw(false);
   }
@@ -1621,16 +1589,17 @@
     clearSel(); var op = redoH.pop(); strokes = op.a.slice(); hist.push(op); ver++; syncBtns(); scheduleSave(); requestDraw(false);
   }
   /* ---------- 操作盤（道具・カラー・太さ・濃さ・一括削除・開閉） ---------- */
-  var TOOL_HINT = { pen: 'なぞったところを、塗ります', line: 'ドラッグした長さの、まっすぐな線を引きます', rect: 'ドラッグした範囲を、四角く塗ります', select: '線をタップして選ぶと、動かす・大きさを変える・回す・複製・反転・削除ができます', erase: '触れた線を、1本ずつ消します' };
+  var TOOL_HINT = { pen: 'なぞったところを、塗ります', line: 'ドラッグした長さの、まっすぐな線を引きます', rect: 'ドラッグした範囲を、四角く塗ります', ellipse: 'ドラッグした範囲を、円（楕円）に塗ります。ほぼ正円なら、正円になります', select: '線をタップして選ぶと、動かす・大きさを変える・回す・複製・反転・削除ができます', erase: '触れた線を、1本ずつ消します' };
   function syncUI() {
     document.querySelectorAll('.mk-t').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === PEN.tool); });
-    var sw = $('mk-custom-swatch');                                     // 「＋」で選んだ色の見本
-    sw.hidden = !customColor;
-    if (customColor) { sw.setAttribute('data-c', customColor); sw.style.background = customColor; }
+    var tg = selTarget(), showCol = tg ? tg.c : PEN.color, showAl = tg ? tg.a : PEN.alpha;       // 選んだ線をさわっている間は、その線の色・濃さを見せる
+    $('mk-label').textContent = tg ? '選んだ線を変更' : '選択中の蛍光ペン';
     document.querySelectorAll('.mk-dot').forEach(function (b) {
-      b.classList.toggle('on', !b.hidden && b.getAttribute('data-c').toLowerCase() === PEN.color.toLowerCase());
+      b.classList.toggle('on', !b.hidden && b.getAttribute('data-c').toLowerCase() === showCol.toLowerCase());
     });
-    $('mk-custom').value = customColor || PEN.color; $('mk-now').style.background = PEN.color;
+    var isPreset = COLORS.some(function (c) { return c.toLowerCase() === showCol.toLowerCase(); }), cl = $('mk-custom-label');       // 好きな色を使っている間は、「＋」の丸が、その色になる
+    cl.classList.toggle('custom-on', !isPreset); cl.style.background = isPreset ? '' : showCol;
+    $('mk-custom').value = showCol; $('mk-now').style.background = showCol;
     $('mk-row-in').hidden = !PEN.penSeen;                                // ペンで触れたことがあるまで、「入力」の行は出さない
     document.querySelectorAll('.mk-i').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-i') === PEN.input); });
     viewer.classList.toggle('inpen', PEN.input === 'pen');
@@ -1639,7 +1608,7 @@
     document.querySelectorAll('.mk-w').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-w') === PEN.width); });
     document.querySelectorAll('.mk-a').forEach(function (b) {
       var a = +b.getAttribute('data-a'), dot = b.querySelector('i');
-      b.classList.toggle('on', a === PEN.alpha); dot.style.background = PEN.color; dot.style.opacity = a;
+      b.classList.toggle('on', a === showAl); dot.style.background = showCol; dot.style.opacity = a;
     });
   }
   document.querySelectorAll('.mk-t').forEach(function (b) {
@@ -1650,7 +1619,11 @@
     });
   });
   document.querySelectorAll('.mk-dot').forEach(function (b) {
-    b.addEventListener('click', function () { PEN.color = b.getAttribute('data-c'); saveSt(); syncUI(); });
+    b.addEventListener('click', function () {
+      var c = b.getAttribute('data-c');
+      if (selTarget()) applyToSel({ c: c }, true); else { PEN.color = c; saveSt(); }
+      syncUI();
+    });
   });
   document.querySelectorAll('.mk-i').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -1658,12 +1631,27 @@
       showNote(PEN.input === 'pen' ? 'ペンモード：ペンで塗って、指は編み図を動かします' : '指モード：指でもペンでも、塗れます');
     });
   });
-  $('mk-custom').addEventListener('input', function (e) { PEN.color = e.target.value; customColor = PEN.color; saveSt(); syncUI(); });
+  $('mk-custom').addEventListener('input', function (e) {
+    var c = e.target.value;
+    if (selTarget()) applyToSel({ c: c }, false); else PEN.color = c;      // 色選びの途中は、少しとまったら、まとめて記録に入れる
+    saveSt(); syncUI();
+  });
   document.querySelectorAll('.mk-w').forEach(function (b) {
-    b.addEventListener('click', function () { PEN.width = +b.getAttribute('data-w'); saveSt(); syncUI(); });
+    b.addEventListener('click', function () {
+      var w = +b.getAttribute('data-w'), tg = selTarget();
+      if (tg) {
+        if (isFillKind(tg)) { showNote('四角や円は、線ではないので、太さは変わりません'); return; }
+        applyToSel({ w: w }, true);
+      } else { PEN.width = w; saveSt(); }
+      syncUI();
+    });
   });
   document.querySelectorAll('.mk-a').forEach(function (b) {
-    b.addEventListener('click', function () { PEN.alpha = +b.getAttribute('data-a'); saveSt(); syncUI(); });
+    b.addEventListener('click', function () {
+      var a = +b.getAttribute('data-a');
+      if (selTarget()) applyToSel({ a: a }, true); else { PEN.alpha = a; saveSt(); }
+      syncUI();
+    });
   });
   $('clear-btn').addEventListener('click', function () {
     if (!strokes.length) return;
@@ -1802,7 +1790,7 @@
     var c = /^#[0-9a-fA-F]{6}$/.test(a[1]) ? a[1] : PEN.color;
     var al = (isFinite(a[2]) && a[2] > 0 && a[2] <= 1) ? +a[2] : PEN.alpha;
     var w = (isFinite(a[3]) && a[3] > 0) ? +a[3] : PEN.width;
-    return { k: a[0] === 'p' || a[0] === 'l' || a[0] === 'r' || a[0] === 'f' ? a[0] : 'p', c: c, a: al, w: w, p: p };
+    return { k: a[0] === 'p' || a[0] === 'l' || a[0] === 'r' || a[0] === 'f' || a[0] === 'e' ? a[0] : 'p', c: c, a: al, w: w, p: p };
   }
   function readAll() {
     try { var o = JSON.parse(localStorage.getItem(DKEY)); if (o && typeof o.items === 'object' && o.items) return o; } catch (e) {}
@@ -1861,6 +1849,7 @@
   window.addEventListener('pagehide', flush);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flush(); });
 
+  setMenu(true);                                     // 起動したら、メニューが開いた状態（タイトル・ファイルを開く枠が、すぐ見える）
   requestDraw();
 })();
 </script>
