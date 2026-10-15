@@ -5,19 +5,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light only">
-  <meta name="robots" content="noindex">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>【test版】編み図のための蛍光ペン｜Knitting Chart Highlighter</title>
-  <meta name="description" content="どこまで編んだかがわかるように、読み込んだ編み図に蛍光ペンでマーカーを引けるアプリ。編んだところを塗って消し込めます。段数カウンター付き。無料・実験中のtest版です。">
+  <title>編み図のための蛍光ペン｜Knitting Chart Highlighter</title>
+  <meta name="description" content="読み込んだ編み図に蛍光ペンを引いて、どこまで編んだかがひと目でわかるアプリ。編んだところを塗って消し込めます。段数カウンター付き。無料で使えて、データはお使いの端末の中だけに保存されます。">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
 
   <style>
-    /* ===== ✿ YUCCHI ✿ 編み図蛍光ペン（test版）／パレット 06 Crystal Blue =====
+    /* ===== ✿ YUCCHI ✿ 編み図蛍光ペン／パレット 06 Crystal Blue =====
        背景だけくすみブルー。パネル・カード・ボタンは、白・ピンク・クリーム色で受け持つ */
     :root {
       color-scheme: light only;
@@ -59,6 +58,7 @@
 
     /* ===== 編み図の表示エリア ===== */
     #viewer { position: fixed; inset: 0; z-index: 1; background: #FFFFFF; touch-action: none; cursor: crosshair; user-select: none; -webkit-user-select: none; }
+    #viewer.pencur { cursor: var(--pen-cursor, crosshair); }       /* マウスの矢印を、ペンの形に（エクセルの罫線のように）。先っぽが、触れる位置 */
     #viewer.panmode, #viewer.inpen { cursor: grab; }
     #viewer.dragging { cursor: grabbing; }
     #viewer.empty { cursor: default; }
@@ -106,13 +106,23 @@
     }
     header .title-ja-sub .sub-text { text-align: center; }
     header .title-ja-sub span { display: inline-block; }
+    /* ブランド名（.brand）：デザインルールの標準ロゴの型。色だけ --brand で変えてよい */
     header .brand {
-      display: inline-block; text-decoration: none; transition: opacity .15s;
-      font-family: 'Cormorant Garamond', Georgia, serif; font-size: 11px; font-weight: 400;
-      color: var(--brand); padding-top: 2px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--brand, #A07080);
+      padding-top: 0;               /* 上の余白は、サブ説明文の margin-bottom（14px）だけで取る */
+      display: inline-block;
+      line-height: 1.4;
     }
-    header .brand .brand-deco { font-size: 8px; }
-    @media (hover: hover) { header .brand:hover { opacity: .65; } }
+    header .brand .brand-deco {
+      font-size: .75em;             /* 花は文字の75%。pxにしない */
+      display: inline-block;
+      vertical-align: .05em;        /* 大文字の上下にそろう高さ */
+    }
+    /* パネルのヘッダー（帯）の中：11px・文字色を少しうすく・padding-top 6px。帯の中のロゴは、リンクにしない。ふわっと消す動きは、外側の .menu-sub にかけている */
+    #menu-head .brand { font-size: 11px; padding-top: 6px; color: var(--text); opacity: .82; }
 
     /* ===== ボタン ===== */
     .pill-btn {
@@ -257,7 +267,6 @@
     @media (hover: hover) { #menu-head:hover .menu-toggle { background: rgba(255, 255, 255, .9); } }
     .menu-sub { opacity: 0; max-height: 0; overflow: hidden; pointer-events: none; transition: opacity .6s ease, max-height .4s ease; }
     .menu-sub.show { opacity: 1; max-height: 64px; pointer-events: auto; }        /* パネルを開いて、3秒だけ見える */
-    #menu-head .brand { cursor: pointer; }
     .acc-list { display: flex; flex-direction: column; gap: 5px; }
     /* ファイル枠（編み図ルーラーと同じ：開く前は「開く」ボタン、開いたあとは ファイル名＋✕） */
     #file-slot { margin-bottom: 8px; }
@@ -312,7 +321,6 @@
     .data-note-body p { margin: 0 0 6px; }
     .data-note-body p:last-child { margin-bottom: 0; }
     .data-note-body ol { margin: 0 0 6px; padding-left: 1.4em; }
-    .data-note-body .test-line { background: var(--cream); border-radius: 8px; padding: 6px 10px; color: var(--text); }
     .reload-latest-btn {
       display: block; width: 100%; margin-top: 8px; padding: 9px 12px 11px;
       background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
@@ -357,18 +365,13 @@
     .pill-btn.accent { background: var(--primary); border-color: var(--primary-line); }
     @media (hover: hover) { .pill-btn.accent:hover { background: #C8DEE4; } }
 
-    /* ===== test版バッジ・お知らせ ===== */
-    #test-badge {
-      position: fixed; z-index: 15; pointer-events: none;
-      left: calc(env(safe-area-inset-left, 0px) + 12px);
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
-      background: var(--cream); border: 1px solid var(--cream-line); border-radius: 999px;
-      padding: 3px 11px 5px; font-size: 10px; font-weight: 700; color: var(--text-sub); letter-spacing: .08em;
-    }
     /* ===== 選んだ線の、つまみ（リサイズ・移動）。編み図ルーラーの四角定規と同じ：角・辺をドラッグ＝リサイズ、中をドラッグ＝移動 ===== */
     #sel-layer { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
     #sel-layer[hidden] { display: none; }
-    .sel-frame { position: fixed; box-sizing: border-box; border: 1.5px dashed #6F9AAA; box-shadow: 0 0 0 1px rgba(255, 255, 255, .9); }
+    .sel-frame { position: fixed; overflow: visible; }                         /* 選んだ線の点線の枠：SVGで描く（ブラウザによって出方が変わらず、4辺とも同じに出る） */
+    .sel-frame rect { fill: none; }
+    .sel-frame .sf-halo { stroke: rgba(255, 255, 255, .92); stroke-width: 3.5; }
+    .sel-frame .sf-dash { stroke: #6F9AAA; stroke-width: 1.5; stroke-dasharray: 4 3; }
     .sel-h, .sel-end { position: fixed; box-sizing: border-box; background: #fff; border: 1.5px solid #6F9AAA; transform: translate(-50%, -50%); box-shadow: 0 1px 3px rgba(70, 105, 120, .3); }
     .sel-h.c { width: 14px; height: 14px; border-radius: 50%; }
     .sel-h.eh { width: 20px; height: 8px; border-radius: 4px; }
@@ -390,7 +393,11 @@
     .sel-arrow:active { background: #F2F7F8; }
     .sel-arrow:disabled { opacity: .35; cursor: not-allowed; }
     #sel-bar { position: fixed; z-index: 25; display: flex; gap: 6px; transform: translateX(-50%); }
-    #sel-bar[hidden] { display: none; }
+    #sel-bar[hidden], #sel-bar [hidden] { display: none; }
+    #fill-pop { position: fixed; z-index: 26; transform: translateX(-50%); transition: opacity .5s ease; }
+    #fill-pop[hidden] { display: none; }
+    #fill-pop.fade { opacity: 0; }
+    #fill-pop .pill-btn { min-height: 34px; padding: 6px 14px 8px; font-size: 12px; }
     .sel-close { position: relative; flex: none; width: 34px; height: 34px; padding: 0; border-radius: 50%; background: #fff; border: 1.5px solid var(--border); box-shadow: var(--shadow); cursor: pointer; }
     .sel-close::before, .sel-close::after { content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: 1.5px; background: var(--text-sub); transform: translate(-50%, -50%) rotate(45deg); }
     .sel-close::after { transform: translate(-50%, -50%) rotate(-45deg); }
@@ -512,10 +519,14 @@
  </div>
 </div>
 
+<!-- ===== ぐるっと一周描いたあとに、ふわっと出る「中を塗る」ボタン ===== -->
+<div id="fill-pop" hidden><button type="button" class="pill-btn" id="fill-pop-btn">中を塗る</button></div>
+
 <!-- ===== 選んだ線の、複製・削除（「選択」の道具のときだけ出る） ===== -->
 <div id="sel-bar" hidden>
   <button type="button" class="pill-btn" id="sel-dup">複製</button>
   <button type="button" class="pill-btn" id="sel-flip">反転</button>
+  <button type="button" class="pill-btn" id="sel-fill">中を塗る</button>
   <button type="button" class="pill-btn" id="sel-del">削除</button>
   <button type="button" class="sel-close" id="sel-close" aria-label="選ぶのをやめる" title="選ぶのをやめる"></button>
 </div>
@@ -545,7 +556,7 @@
       <h2>Knitting Chart Highlighter</h2>
       <div class="menu-sub show" id="menu-sub">
       <div class="title-ja-sub"><div class="sub-text"><span>編みながら蛍光ペンが引けるアプリ</span></div></div>
-      <a class="brand" href="https://webkorisu.github.io/yucchis-portal/" target="_blank" rel="noopener noreferrer" aria-label="✿ YUCCHIのアプリ一覧を開く"><span class="brand-deco">✿</span>&nbsp;&nbsp;&nbsp;&nbsp;Y&nbsp;&nbsp;U&nbsp;&nbsp;C&nbsp;&nbsp;C&nbsp;&nbsp;H&nbsp;&nbsp;I&nbsp;&nbsp;&nbsp;&nbsp;<span class="brand-deco">✿</span></a>
+      <div class="brand"><span class="brand-deco">✿</span>&nbsp;&nbsp;Y&nbsp;U&nbsp;C&nbsp;C&nbsp;H&nbsp;I&nbsp;&nbsp;<span class="brand-deco">✿</span></div>
       </div>
     </header>
   <div id="menu-body">
@@ -556,6 +567,7 @@
       <button type="button" class="file-close" id="file-close" aria-label="編み図を閉じる" title="編み図を閉じる">✕</button>
     </div>
   </div>
+  <button type="button" class="menu-act" id="export-btn" hidden>🖼️ 塗った編み図を画像で保存</button>
   <div id="menu-info-slot">
 <div id="info-block">
   <div class="acc-list">
@@ -565,9 +577,14 @@
       <div class="data-note-body">
         <ol>
           <li>左上のパネルの「ファイルを選択して編み図を開く」から、編み図の画像を開きます。パネルは、タイトルを押すと、開いたり閉じたりできます。</li>
-          <li>指（またはペン・マウス）でなぞると、蛍光ペンで塗れます。右上の操作盤で、道具（なぞる・直線・四角・円・選択・消しゴム）、色、太さ、濃さを選べます。「円」は、ドラッグした範囲に、円を塗りつぶします（編んだところを、四角や円で隠すのに便利です）。色は、7色のほかに、いちばん右の点線の「＋」で、好きな色を選べます（選んだ色は、「＋」の丸に出ます）。</li>
+          <li>指（またはペン・マウス）でなぞると、蛍光ペンで塗れます。右上の操作盤で、道具（なぞる・直線・四角・円・選択・消しゴム）、色、太さ、濃さを選べます。いちばん右の点線の「＋」では、好きな色を選べます（選んだ色は、「＋」の丸に出ます）。</li>
+          <li>「四角」「円」は、ドラッグした範囲を塗りつぶします。編んだところを隠すのに便利です。</li>
           <li>「なぞる」で塗ったあと、ペンや指を止めて少し待つと（約0.5秒）、きれいな直線・円・四角に整います。直線は、止めたまま動かすと、向きや長さを変えられます。円や四角は、そのまま動かし続けると、整える前のなぞった線にもどります。</li>
-          <li>「四角」「直線」で描いた直後は、角や辺（直線は両端の丸）をドラッグして、大きさを変えられます。中をドラッグすると、動きます。「選択」の道具では、どの線もタップで選べて、同じように動かしたり、大きさを変えたりできます。枠の上の丸いつまみをドラッグすると、回せます（15度ごとに止まります）。選んだ線をさわっている間は、見出しが「選んだ線を変更」になり、色・濃さ・太さのボタンは、その線を変えます（「×」で、選ぶのをやめられます）。「選択」の道具でなくても、塗った線を、ちょんと触れる（動かさずに離す）と、その線が選ばれます（点を打つときは、線のない所で）。「複製」「反転」「削除」のボタンも出ます。「反転」を押すと、四方に矢印が出て、押した側に、ひっくり返したコピーを、ぴったり並べて置きます。何もない所をドラッグすると、編み図が動きます。</li>
+          <li>「四角」「直線」で描いた直後は、角や辺（直線は両端の丸）をドラッグして、大きさを変えられます。中をドラッグすると、動きます。</li>
+          <li>塗った線は、ちょんと触れる（動かさずに離す）と選べます（線の真上だけです。点は、中心をねらったときだけ選ばれるので、続けて打てます）。「選択」の道具なら、どの線もタップで選べます。選ぶと、動かす・大きさを変えることができ、枠の上の丸いつまみをドラッグすると回せます（15度ごとに止まります）。「複製」（左側に、少しずらして置きます）「反転」「中を塗る」「削除」のボタンも出ます。「×」で、選ぶのをやめられます。何もない所をドラッグすると、編み図が動きます。</li>
+          <li>選んだ線をさわっている間は、見出しが「選んだ線を変更」になり、色・濃さ・太さのボタンは、その線を変えます。</li>
+          <li>「反転」を押すと、四方に矢印が出て、押した側に、ひっくり返したコピーを、ぴったり並べて置きます。</li>
+          <li>ぐるっと一周なぞると、線のそばに「中を塗る」ボタンが出て、輪っかの中を塗りつぶせます（あとから、線を選んで「中を塗る」でも塗れます）。</li>
           <li>ペンで触れると、操作盤に「入力」の行が出ます。「ペンモード」は、ペンで塗って、指で編み図を動かします。「指モード」は、指でもペンでも塗れます。</li>
           <li>操作盤は、白いところや「選択中の蛍光ペン」の文字をつかんでドラッグすると、好きな場所に動かせます（白いところを2回タップすると、もとの位置にもどります）。</li>
           <li>右下のカウンターで、段数を数えられます。＋で1つ増やし、－で1つ減らします（0〜999）。「−」を長押し（約1秒）すると、0にもどします（確認が出ます）。数は、編み図ごとに自動で保存されます。カウンターも、白いところをつかんで動かせます。</li>
@@ -575,16 +592,15 @@
           <li>2本指で広げると拡大、つまむと縮小します。2本指のまま動かすと、編み図が動きます。</li>
           <li>パソコンのトラックパッドは、2本指でなぞると編み図が動き、ピンチ（つまむ・広げる）で拡大・縮小します。マウスは、ホイールで上下に動き、Ctrl（Macは⌘）を押しながらホイールで拡大・縮小します。右ボタン（またはスペースキーを押しながら）のドラッグでも動かせます。</li>
           <li>左上のパネルに、開いている画像の名前が出ます。✕を押すと、画像だけ閉じます（塗った内容は、自動で保存されています）。画像を変えたいときは、そのファイル名の枠を押します。</li>
+          <li>ファイル名の下の「🖼️ 塗った編み図を画像で保存」を押すと、蛍光ペンを塗った状態の編み図を、画像（PNG）にして残せます。進み具合の記録や、SNSへの投稿にどうぞ。</li>
         </ol>
         <p>塗った内容は、自動で保存されます。次の日も、前回と同じ画像を選ぶと、続きから再開できます。</p>
-        <p>※カウンターは、このあと追加していきます。</p>
       </div>
     </div>
 
     <div class="data-note" id="aboutNote">
       <button type="button" class="data-note-btn" aria-expanded="false"><span>✿ このアプリについて</span><span class="data-note-arrow">▼</span></button>
       <div class="data-note-body">
-        <p class="test-line">※いまは実験中のtest版です。予告なく内容が変わったり、保存したデータが使えなくなったりすることがあります。</p>
         <p>このアプリは、編み物や日々の暮らしをちょっと便利にするために作られた個人制作のツールです。</p>
         <p>計算結果・提案内容はすべて参考情報としてお使いください。編み物の仕上がりや作業結果はゲージ・素材・個人差によって異なります。必ずご自身でご確認のうえお使いください。</p>
         <p>作者（YUCCHI）は、アプリの内容・結果によって生じたいかなる損害についても責任を負いかねます。あらかじめご了承ください。</p>
@@ -598,6 +614,7 @@
         <p>データはこの端末のブラウザに保存されます。スマホとPCなど、端末が異なると記録は共有されません。</p>
         <p>編み図の画像そのものは保存されません。また、画像が端末の外に送られることもありません。</p>
         <p>塗った内容と、段数のカウンターの数は、編み図の画像ごとに、この端末のブラウザに自動で保存されます。ファイル名・大きさ・更新日時が同じ画像を選ぶと、続きから再開できます（コピーした画像や、保存し直した画像は、別の画像として扱われます）。</p>
+        <p>「画像で保存」で作る画像は、この端末の中だけで作られ、外には送られません。</p>
         <p>保存の容量がいっぱいになったときは、古い編み図の分から整理して、お知らせを出します。</p>
         <p>ブラウザの「履歴を消去」や「キャッシュ削除」を行うと、保存されたデータが消える場合があります。大切な記録はメモなどに控えておくと安心です。</p>
         <p>📱 ホーム画面に追加してご利用の場合、アップデート後もすぐには最新版に切り替わらないことがあります。反映されない時は、アプリスイッチャーから一度完全に閉じて開き直すか、下のボタンで最新版を読み込み直せます（保存データが消えることはありません）。</p>
@@ -622,7 +639,7 @@
         </svg>
       </a>
     </div>
-    <div class="last-updated">最終更新：2026.10.10</div>
+    <div class="last-updated">最終更新：2026.10.15</div>
   </div>
   </div>
   </div>
@@ -640,7 +657,6 @@
   </div>
 </div>
 
-<div id="test-badge">test版・実験中</div>
 <div id="note" role="status"></div>
 <input type="file" id="file-input" accept="image/*" hidden>
 
@@ -733,6 +749,22 @@
     ctx.drawImage(img, 0, 0);
     ctx.strokeStyle = 'rgba(107, 82, 88, .22)'; ctx.lineWidth = 1 / scale; ctx.strokeRect(0, 0, iw, ih);       // 白い背景の上でも、画像のふち（塗れる範囲）が分かるように
   }
+  var gOff = document.createElement('canvas');      // 中を塗った輪かくを、いったん別の紙にまとめて塗るための、ひろげた作業用のキャンバス
+  function drawFilledLoop(c, s, dpr) {              // c：いまの描き先（編み図の座標に合わせてある）。濃さ（globalAlpha）は、c にかかっている
+    var p = s.p, minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9, i;
+    for (i = 0; i < p.length; i++) { minX = Math.min(minX, p[i][0]); maxX = Math.max(maxX, p[i][0]); minY = Math.min(minY, p[i][1]); maxY = Math.max(maxY, p[i][1]); }
+    var m = s.w / 2 + 2, bx = minX - m, by = minY - m, bw = maxX - minX + 2 * m, bh = maxY - minY + 2 * m;
+    var k = dpr * scale; if (bw * k > 4096 || bh * k > 4096) k = Math.min(4096 / bw, 4096 / bh);       // 大きすぎる時は、少し粗くする
+    gOff.width = Math.max(1, Math.ceil(bw * k)); gOff.height = Math.max(1, Math.ceil(bh * k));
+    var o = gOff.getContext('2d'); o.setTransform(1, 0, 0, 1, 0, 0); o.clearRect(0, 0, gOff.width, gOff.height);
+    o.setTransform(k, 0, 0, k, -bx * k, -by * k);
+    o.globalAlpha = 1; o.fillStyle = s.c; o.strokeStyle = s.c; o.lineWidth = s.w; o.lineCap = 'round'; o.lineJoin = 'round';
+    var gp = new Path2D(); gp.moveTo(p[0][0], p[0][1]);
+    for (i = 1; i < p.length - 1; i++) gp.quadraticCurveTo(p[i][0], p[i][1], (p[i][0] + p[i + 1][0]) / 2, (p[i][1] + p[i + 1][1]) / 2);
+    gp.lineTo(p[p.length - 1][0], p[p.length - 1][1]); gp.closePath();
+    o.fill(gp); o.stroke(gp);                                                       // 中とふちを、同じ色で、濃さなしで、まとめて塗る
+    c.drawImage(gOff, 0, 0, gOff.width, gOff.height, bx, by, gOff.width / k, gOff.height / k);       // 全体に、濃さをかけて、写す（中もふちも、同じ濃さ）
+  }
   function drawStroke(c, s, dpr) {
     var p = s.p; if (!p.length || !img) return;
     c.save();
@@ -744,6 +776,8 @@
       if (p.length > 1) c.fillRect(Math.min(p[0][0], p[1][0]), Math.min(p[0][1], p[1][1]), Math.abs(p[1][0] - p[0][0]), Math.abs(p[1][1] - p[0][1]));
     } else if (s.k === 'e') {                        // 円（楕円）：ドラッグした範囲に、ぴったり入る円を塗りつぶす
       if (p.length > 1) { var ex0 = (p[0][0] + p[1][0]) / 2, ey0 = (p[0][1] + p[1][1]) / 2, erx = Math.abs(p[1][0] - p[0][0]) / 2, ery = Math.abs(p[1][1] - p[0][1]) / 2; if (erx > 0 && ery > 0) { c.beginPath(); c.ellipse(ex0, ey0, erx, ery, 0, 0, Math.PI * 2); c.fill(); } }
+    } else if (s.k === 'g') {                        // ぐるっと描いた輪かくの、中を塗る：中もふちも、いったん「濃さなし」でまとめて塗ってから、全体に、濃さをかける（つなぎ目も、重なって濃くなるところも、出ない）
+      if (p.length > 2) drawFilledLoop(c, s, dpr);
     } else if (s.k === 'f') {                        // ななめの四角：多角形を塗りつぶす
       if (p.length > 2) { c.beginPath(); c.moveTo(p[0][0], p[0][1]); for (var fi = 1; fi < p.length; fi++) c.lineTo(p[fi][0], p[fi][1]); c.closePath(); c.fill(); }
     } else if (p.length === 1) {
@@ -852,6 +886,7 @@
   function syncFileSlot() {                         // パネルの上の枠：開く前は「開く」ボタン、開いたあとは ファイル名（押すと選び直せる）＋✕
     $('file-pick').hidden = !!img; $('file-box').hidden = !img;
     $('file-name').textContent = chartName; $('file-name').title = chartName;
+    $('export-btn').hidden = !img;                  // 画像を開いている間だけ、「画像で保存」を出す
   }
   function pick() { fileInput.click(); }
   fileInput.addEventListener('change', function () {
@@ -937,11 +972,12 @@
      ・「選択」の道具では、どの線でも、タップで選べる。何もない所をドラッグすると、編み図が動く
      ・四角・自由な線：角と辺をドラッグ＝大きさを変える／中をドラッグ＝移動。直線：両端の丸をドラッグ＝長さ・向き／線をドラッグ＝移動
      ・線のデータは、いったん別のものに作り直してから入れ替える（もどす・やりなおしの記録を、壊さないため） */
+  var TAP_SELECT = { tolPx: 4, skipTiny: true, dotCenterPx: 8 };    // ちょんと触れて線を選ぶ時の決まり
   var tapSelNoted = false;                         // 「ちょんと触れて線を選ぶ」お知らせは、最初の1回だけ
   var selStroke = null, editing = null, selEngaged = false, attrSession = null, attrTimer = null, uiKey = '';       // selEngaged：選んだ線を、自分でさわった（つまみ・本体・「選択」の道具で選んだ）
   var selLayer = document.createElement('div'), selBar = $('sel-bar');
   selLayer.id = 'sel-layer'; selLayer.hidden = true;
-  selLayer.innerHTML = '<div class="sel-frame"></div>' +
+  selLayer.innerHTML = '<svg class="sel-frame"><rect class="sf-halo" width="100%" height="100%"/><rect class="sf-dash" width="100%" height="100%"/></svg>' +
     '<i class="sel-h c" data-n="tl"></i><i class="sel-h c" data-n="tr"></i><i class="sel-h c" data-n="bl"></i><i class="sel-h c" data-n="br"></i>' +
     '<i class="sel-h eh" data-n="t"></i><i class="sel-h eh" data-n="b"></i><i class="sel-h ev" data-n="l"></i><i class="sel-h ev" data-n="r"></i>' +
     '<i class="sel-end" data-n="e0"></i><i class="sel-end" data-n="e1"></i>' +
@@ -962,7 +998,7 @@
   function frameOf(st) { var b = strokeBox(st), pd = padOf(st); return { minX: b.minX - pd, minY: b.minY - pd, maxX: b.maxX + pd, maxY: b.maxY + pd }; }
   function toScr(x, y) { return [x * scale + offsetX, y * scale + offsetY]; }
   function cloneStroke(st, pts, kind) { return { k: kind || st.k, c: st.c, a: st.a, w: st.w, p: pts || st.p.map(function (q) { return [q[0], q[1]]; }) }; }
-  function clearSel() { endAttrSession(); selEngaged = false; if (selStroke) { selStroke = null; requestDraw(false); } }
+  function clearSel() { endAttrSession(); hideFillPop(); selEngaged = false; if (selStroke) { selStroke = null; requestDraw(false); } }
   // 回転：線・自由な線は、点を回す。四角は、ななめになると、多角形（'f'）になる（まっすぐに戻れば、また四角('r')）
   function rotatePts(pts, c, th) { var co = Math.cos(th), si = Math.sin(th); return pts.map(function (q) { return [c[0] + (q[0] - c[0]) * co - (q[1] - c[1]) * si, c[1] + (q[0] - c[0]) * si + (q[1] - c[1]) * co]; }); }
   function rectCorners(o) { if (o.k === 'r') { var b = strokeBox(o); return [[b.minX, b.minY], [b.maxX, b.minY], [b.maxX, b.maxY], [b.minX, b.maxY]]; } return o.p; }
@@ -1010,6 +1046,10 @@
     selLayer.hidden = false;
     var st = selStroke, F = frameOf(st), a = toScr(F.minX, F.minY), b = toScr(F.maxX, F.maxY);
     var line = isLineStroke(st), dot = isDotStroke(st), poly = st.k === 'f', els = selLayer.children;
+    var noFlip = dot || st.k === 'e' || st.k === 'r';                          // 点・円・四角は、反転しても同じ形（複製で足りる）なので、「反転」ボタンを出さない。ななめにした四角（'f'）は、反転で向きが変わるので出す
+    $('sel-flip').hidden = noFlip;
+    $('sel-fill').hidden = !isClosedLoop(st);                                  // 輪っかになっている線を選んだ時だけ、「中を塗る」
+    if (noFlip && flipMode) { flipMode = false; $('sel-flip').classList.remove('on'); }
     var l = a[0], t = a[1], r = b[0], bt = b[1], cx = (l + r) / 2, cy = (t + bt) / 2;
     function put(n, x, y) { var el = selLayer.querySelector('[data-n="' + n + '"]'); el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.display = ''; return el; }
     for (var i = 0; i < els.length; i++) els[i].style.display = 'none';
@@ -1020,7 +1060,7 @@
       var pg = selLayer.querySelector('[data-n="poly"]'); pg.style.display = '';
       pg.querySelector('polygon').setAttribute('points', st.p.map(function (q) { var v = toScr(q[0], q[1]); return v[0] + ',' + v[1]; }).join(' '));
     } else {
-      var fr = selLayer.querySelector('.sel-frame'); fr.style.display = ''; fr.style.left = l + 'px'; fr.style.top = t + 'px'; fr.style.width = (r - l) + 'px'; fr.style.height = (bt - t) + 'px';
+      var fr = selLayer.querySelector('.sel-frame'), pf = (dot || st.k === 'e') ? 3 : 0; fr.style.display = ''; fr.style.left = (l - pf) + 'px'; fr.style.top = (t - pf) + 'px'; fr.style.width = (r - l + 2 * pf) + 'px'; fr.style.height = (bt - t + 2 * pf) + 'px';
       if (!dot) { put('tl', l, t); put('tr', r, t); put('bl', l, bt); put('br', r, bt); put('t', cx, t); put('b', cx, bt); put('l', l, cy); put('r', r, cy); }
     }
     var rotShown = !dot && !flipMode;               // 回転の丸いつまみ（枠の上）。「反転」の矢印が出ている間は、隠す
@@ -1061,7 +1101,7 @@
     }
     if (st.k === 'f') return hit(st, (px - offsetX) / scale, (py - offsetY) / scale, 6 / scale) ? { type: 'move' } : null;    // ななめの四角：動かす・回すだけ（大きさは、まっすぐな時に決める）
     var F = frameOf(st), a = toScr(F.minX, F.minY), b = toScr(F.maxX, F.maxY), l = a[0], t = a[1], r = b[0], bt = b[1], hw = (r - l) / 2, hh = (bt - t) / 2;
-    if (isDotStroke(st)) return (px >= l - 8 && px <= r + 8 && py >= t - 8 && py <= bt + 8) ? { type: 'move' } : null;
+    if (isDotStroke(st)) return Math.hypot(px - (l + r) / 2, py - (t + bt) / 2) <= Math.max(10, (r - l) / 2) ? { type: 'move' } : null;       // 点：点そのもの（小さい点は、最低10px）だけ。となりに点を打ちたい時に、動かしてしまわないように
     var cr = Math.max(10, Math.min(20, hw - 6, hh - 6)), esV = Math.min(12, Math.max(4, hh - 6)), esH = Math.min(12, Math.max(4, hw - 6));
     var cs = [['l', 't', l, t], ['r', 't', r, t], ['l', 'b', l, bt], ['r', 'b', r, bt]];
     for (i = 0; i < 4; i++) if (Math.hypot(px - cs[i][2], py - cs[i][3]) <= cr) return { type: 'corner', cx: cs[i][0], cy: cs[i][1] };
@@ -1090,9 +1130,48 @@
     strokes[idx] = ns; selStroke = ns; ver++; requestDraw(false);
     if (final) endAttrSession(); else { clearTimeout(attrTimer); attrTimer = setTimeout(endAttrSession, 700); }
   }
-  function selectAt(px, py) {                       // タップした所の、いちばん上の線を選ぶ
-    var x = (px - offsetX) / scale, y = (py - offsetY) / scale, tol = 14 / scale;
-    for (var i = strokes.length - 1; i >= 0; i--) if (hit(strokes[i], x, y, tol)) return strokes[i];
+  /* ---------- 中を塗る：ぐるっと一周描いた線（なぞる）の、中を塗りつぶす ---------- */
+  function isClosedLoop(st) {                       // 描き終わりが、はじめの近くに戻って、輪っかになっている線か
+    if (st.k !== 'p' || st.p.length < 10) return false;
+    var p = st.p, n = p.length, L = 0, i, b = strokeBox(st), w = b.maxX - b.minX, h = b.maxY - b.minY;
+    for (i = 1; i < n; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]);
+    if (Math.max(w, h) < 12 || Math.min(w, h) < 0.1 * Math.max(w, h)) return false;       // 小さすぎる・ひらたすぎる（行って戻っただけ）は、輪っかではない
+    if (Math.hypot(p[0][0] - p[n - 1][0], p[0][1] - p[n - 1][1]) > 0.2 * L) return false;   // 描き終わりが、はじめから遠い（開いている）
+    var A = 0; for (i = 0; i < n; i++) { var q = p[(i + 1) % n]; A += p[i][0] * q[1] - q[0] * p[i][1]; }
+    return Math.abs(A) / 2 >= 0.15 * w * h;                                                  // 囲んだ面積が、ある程度ある
+  }
+  var fillPop = $('fill-pop'), fillPopTimer = null, fillTarget = null;
+  function hideFillPop() { clearTimeout(fillPopTimer); if (fillPop) fillPop.hidden = true; fillTarget = null; }
+  function showFillPop(st) {                        // 描き終わりの近くに、「中を塗る」を、4秒だけ出す
+    var last = st.p[st.p.length - 1], x = last[0] * scale + offsetX, y = last[1] * scale + offsetY;
+    fillTarget = st; fillPop.classList.remove('fade'); fillPop.hidden = false;
+    fillPop.style.left = Math.max(70, Math.min(window.innerWidth - 70, x)) + 'px';
+    fillPop.style.top = (y - 56 < 64 ? y + 28 : y - 56) + 'px';
+    clearTimeout(fillPopTimer);
+    fillPopTimer = setTimeout(function () { fillPop.classList.add('fade'); fillPopTimer = setTimeout(hideFillPop, 500); }, 4000);
+  }
+  function fillStroke(st) {                         // 輪かくを、中まで塗った図形（'g'）に置きかえる。もどすで、もとの線にもどる
+    var idx = strokes.indexOf(st); if (idx < 0) return;
+    hideFillPop();
+    var before = strokes.slice(), ng = cloneStroke(st, undefined, 'g');
+    strokes[idx] = ng; if (selStroke === st) selStroke = ng;
+    commit(before); requestDraw(false);
+  }
+  $('fill-pop-btn').addEventListener('click', function () { if (fillTarget) fillStroke(fillTarget); });
+  $('sel-fill').addEventListener('click', function () { if (selStroke && isClosedLoop(selStroke)) fillStroke(selStroke); });
+  function isTinyStroke(st) {                       // 点（ちょんと打った点）、または、長さがほぼ0の線
+    return isDotStroke(st) || (st.k === 'l' && st.p.length === 2 && Math.hypot(st.p[1][0] - st.p[0][0], st.p[1][1] - st.p[0][1]) * scale < 3);
+  }
+  function selectAt(px, py, opt) {                  // タップした所の、いちばん上の線を選ぶ。opt.tolPx：選べる範囲（既定14px）／opt.skipTiny：点は選ばない
+    var x = (px - offsetX) / scale, y = (py - offsetY) / scale, tol = (opt && opt.tolPx != null ? opt.tolPx : 14) / scale;
+    for (var i = strokes.length - 1; i >= 0; i--) {
+      var st = strokes[i];
+      if (opt && opt.skipTiny && isTinyStroke(st)) {                       // 点は、中心の近く（8px以内。細い点でも、指で狙える6pxは確保）だけ、選べる
+        if (opt.dotCenterPx && Math.hypot(x - st.p[0][0], y - st.p[0][1]) * scale <= Math.min(opt.dotCenterPx, Math.max(6, st.w * scale / 2))) return st;
+        continue;
+      }
+      if (hit(st, x, y, tol)) return st;
+    }
     return null;
   }
   function startEdit(e, h) {
@@ -1168,7 +1247,7 @@
   }
   $('sel-dup').addEventListener('click', function () {
     if (!selStroke) return;
-    var o = selStroke, off = 20 / scale, cp = cloneStroke(o, o.p.map(function (q) { return [q[0] + off, q[1] + off]; }));
+    var o = selStroke, off = 20 / scale, cp = cloneStroke(o, o.p.map(function (q) { return [q[0] - off, q[1]]; }));       // 左側に、少しずらして置く
     var before = strokes.slice(); strokes.push(cp); commit(before); selStroke = cp; requestDraw(false);
   });
   function flipSel(dir) {                           // 反転したコピーを、元の線の枠の、すぐ左・右・上・下（'l' 'r' 't' 'b'）に、ぴったり並べて置く（元の線は、そのまま）
@@ -1341,13 +1420,13 @@
   }
   function hit(st, x, y, tol) {
     var p = st.p;
-    if (st.k === 'f') {                             // ななめの四角：中、または、ふちの近く
+    if (st.k === 'f' || st.k === 'g') {             // ななめの四角・中を塗った輪かく：中、または、ふちの近く（輪かくは、線の太さのぶんも）
       var inside = false, n = p.length, fi, fj;
       for (fi = 0, fj = n - 1; fi < n; fj = fi++) {
         if (((p[fi][1] > y) !== (p[fj][1] > y)) && (x < (p[fj][0] - p[fi][0]) * (y - p[fi][1]) / (p[fj][1] - p[fi][1]) + p[fi][0])) inside = !inside;
       }
       if (inside) return true;
-      for (fi = 0; fi < n; fi++) if (distSeg(x, y, p[fi], p[(fi + 1) % n]) <= tol) return true;
+      for (fi = 0; fi < n; fi++) if (distSeg(x, y, p[fi], p[(fi + 1) % n]) <= tol + (st.k === 'g' ? st.w / 2 : 0)) return true;
       return false;
     }
     if (st.k === 'e') {                             // 円（楕円）：中、または、ふちの近く
@@ -1402,13 +1481,16 @@
     if (eraseBefore) {
       if (strokes.length !== eraseBefore.length) commit(eraseBefore);
       eraseBefore = null; eraserPos = null;
-    } else if (cur && cur.p.length && maxMove < 6 && (Date.now() - strokeT0) < 600 && selectAt(startPt[0], startPt[1])) {
-      // ちょんと触れた（動かさずに離した）所に、塗った線があれば、点を打たずに、その線を選ぶ（「選択」の道具に切りかえなくても、選べる）
-      selStroke = selectAt(startPt[0], startPt[1]); selEngaged = true;
+    } else if (cur && cur.p.length && maxMove < 6 && (Date.now() - strokeT0) < 600 && selectAt(startPt[0], startPt[1], TAP_SELECT)) {
+      // ちょんと触れた（動かさずに離した）所の「真上」に、塗った線があれば、点を打たずに、その線を選ぶ（「選択」の道具に切りかえなくても、選べる）。
+      // 点は、中心（8px以内）をねらった時だけ選ぶ。選べる範囲もせまい（4px）：編み図の目に、点を、となりあわせに打っていく時に、前の点が、選ばれてしまわないように
+      selStroke = selectAt(startPt[0], startPt[1], TAP_SELECT); selEngaged = true;
       if (!tapSelNoted) { tapSelNoted = true; showNote('線を選びました。「×」で、やめられます'); }
     } else if (cur && cur.p.length) {
+      if (cur.k === 'l' && cur.p.length === 2 && Math.hypot(cur.p[1][0] - cur.p[0][0], cur.p[1][1] - cur.p[0][1]) * scale < 3) cur = { k: 'p', c: cur.c, a: cur.a, w: cur.w, p: [cur.p[0]] };       // 直線の道具で、ちょんと触れた時は、長さ0の線ではなく、点にする（点は、自動で選ばれない）
       var tiny = (cur.k === 'r' || cur.k === 'e') && Math.abs(cur.p[1][0] - cur.p[0][0]) * scale < 3 && Math.abs(cur.p[1][1] - cur.p[0][1]) * scale < 3;
-      if (!tiny) { var before = strokes.slice(); strokes.push(cur); commit(before); if (cur.k === 'r' || cur.k === 'l' || cur.k === 'e') { selStroke = cur; selEngaged = false; } }
+      if (!tiny) { var before = strokes.slice(); strokes.push(cur); commit(before); if (cur.k === 'r' || cur.k === 'l' || cur.k === 'e') { selStroke = cur; selEngaged = false; }
+        else if (PEN.tool === 'pen' && isClosedLoop(cur) && Math.max(strokeBox(cur).maxX - strokeBox(cur).minX, strokeBox(cur).maxY - strokeBox(cur).minY) * scale >= 24) showFillPop(cur); }
     }
     clearTimeout(holdTimer); held = false; cur = null; painting = false; pid = null; resetSnap(); syncBtns(); requestDraw(false);
   }
@@ -1421,7 +1503,7 @@
   viewer.addEventListener('pointerdown', function (e) {
     if (!img) return;
     if (e.pointerType === 'mouse' && e.button > 2) return;
-    closeMenu();
+    closeMenu(); hideFillPop();
     try { viewer.setPointerCapture(e.pointerId); } catch (err) {}
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     e.preventDefault();
@@ -1610,6 +1692,16 @@
   }
   /* ---------- 操作盤（道具・カラー・太さ・濃さ・一括削除・開閉） ---------- */
   var TOOL_HINT = { pen: 'なぞったところを、塗ります', line: 'ドラッグした長さの、まっすぐな線を引きます', rect: 'ドラッグした範囲を、四角く塗ります', ellipse: 'ドラッグした範囲を、円（楕円）に塗ります。ほぼ正円なら、正円になります', select: '線をタップして選ぶと、動かす・大きさを変える・回す・複製・反転・削除ができます', erase: '触れた線を、1本ずつ消します' };
+  function penCursor(c) {                           // 蛍光ペンの形の矢印（44px）。先（ななめカットの平らな先）の中心が、触れる位置。先とキャップが、ペンの色。本体は白っぽい
+    var o = 'stroke="#6B5258" stroke-opacity=".45" stroke-width="1.4"';
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44"><g transform="translate(6,40) rotate(40) scale(.66)">' +
+      '<rect x="-8" y="-72" width="16" height="56" rx="5" fill="#F7F2F4" ' + o + '/>' +
+      '<rect x="-8" y="-72" width="16" height="12" rx="5" fill="' + c + '" ' + o + '/>' +
+      '<rect x="-8" y="-34" width="16" height="5" fill="' + c + '" opacity=".55"/>' +            /* ライン：本体の真ん中より、先に近い下側 */
+      '<rect x="-6.5" y="-16" width="13" height="4" rx="1.5" fill="#D9CDD2"/>' +
+      '<polygon points="-6,-12 6,-12 6,-4.5 -6,4.5" fill="' + c + '" ' + o + ' stroke-linejoin="round"/></g></svg>';       /* ペン先：短く（長さ18 → 12） */
+    return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") 6 40, crosshair';
+  }
   function syncUI() {
     document.querySelectorAll('.mk-t').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === PEN.tool); });
     var tg = selTarget(), showCol = tg ? tg.c : PEN.color, showAl = tg ? tg.a : PEN.alpha;       // 選んだ線をさわっている間は、その線の色・濃さを見せる
@@ -1625,6 +1717,9 @@
     $('mk-row-in').hidden = !PEN.penSeen;                                // ペンで触れたことがあるまで、「入力」の行は出さない
     document.querySelectorAll('.mk-i').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-i') === PEN.input); });
     viewer.classList.toggle('inpen', PEN.input === 'pen');
+    var drawTool = PEN.tool === 'pen' || PEN.tool === 'line' || PEN.tool === 'rect' || PEN.tool === 'ellipse';
+    viewer.classList.toggle('pencur', PEN.input === 'hand' && drawTool);                       // マウスで書く時だけ、矢印が、ペンの形になる。指・Apple Pencilには、関係ない
+    viewer.style.setProperty('--pen-cursor', penCursor(PEN.color));
     viewer.classList.toggle('insel', PEN.tool === 'select');
     syncBarScroll();
     document.querySelectorAll('.mk-w').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-w') === PEN.width); });
@@ -1802,6 +1897,68 @@
       b.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
   });
+  /* ---------- 塗った編み図を、画像（PNG）で保存 ----------
+     編み図の元の大きさで、白い下地 → 編み図 → 蛍光ペン（乗算）の順に重ねる。画面と同じ見た目になる。
+     すべてこの端末の中だけで作る（外には送らない）。 */
+  var exporting = false;
+  function exportImage() {
+    if (!img || exporting) return;
+    if (!strokes.length) { showNote('まだ塗った所がありません'); return; }
+    exporting = true; showNote('画像を作っています…');
+    var iw = img.naturalWidth, ih = img.naturalHeight;
+    var k = Math.min(1, Math.sqrt(16000000 / (iw * ih)), 8192 / iw, 8192 / ih);          // 大きすぎる画像は、端末が作れる大きさまで縮める
+    var W = Math.max(1, Math.round(iw * k)), H = Math.max(1, Math.round(ih * k));
+    var name = (chartName || '編み図').replace(/\.[^.]*$/, '') + '_蛍光ペン.png';
+    setTimeout(function () {                                                             // 「作っています」を、先に画面に出すため、少し待つ
+      var base = null, layer = null;
+      try {
+        base = document.createElement('canvas'); base.width = W; base.height = H;
+        var bc = base.getContext('2d');
+        bc.fillStyle = '#FFFFFF'; bc.fillRect(0, 0, W, H);
+        bc.imageSmoothingEnabled = true; bc.imageSmoothingQuality = 'high';
+        bc.drawImage(img, 0, 0, W, H);
+        layer = document.createElement('canvas'); layer.width = W; layer.height = H;
+        var lc = layer.getContext('2d');
+        var sv = [scale, offsetX, offsetY];
+        scale = k; offsetX = 0; offsetY = 0;                                             // 描く部品をそのまま使うため、一時的に「画像と同じ大きさ」にして描く
+        try { strokes.forEach(function (s) { drawStroke(lc, s, 1); }); }
+        finally { scale = sv[0]; offsetX = sv[1]; offsetY = sv[2]; }
+        bc.globalCompositeOperation = 'multiply'; bc.drawImage(layer, 0, 0);
+        layer.width = layer.height = 0;
+        base.toBlob(function (blob) {
+          base.width = base.height = 0; exporting = false;
+          if (!blob) { showNote('画像を作れませんでした。画像が大きすぎるかもしれません。'); return; }
+          finishExport(blob, name, k < 1);
+        }, 'image/png');
+      } catch (e) {
+        exporting = false;
+        showNote('画像を作れませんでした。画像が大きすぎるかもしれません。');
+      }
+      requestDraw();
+    }, 60);
+  }
+  // スマホ・タブレット：「保存する」ボタン（押した瞬間に、共有メニューを開く）／ パソコン：そのままダウンロード
+  function finishExport(blob, name, shrunk) {
+    var file = null;
+    try { file = new File([blob], name, { type: 'image/png' }); } catch (e) {}
+    var canShare = !!(file && navigator.share && navigator.canShare && (navigator.maxTouchPoints || 0) > 0 && navigator.canShare({ files: [file] }));
+    if (!canShare) { downloadBlob(blob, name); return; }
+    showModal('塗った編み図の画像ができました。' + (shrunk ? '\n（画像が大きいため、少し小さくしています）' : '') + '\n保存しますか？', '保存する', function () {
+      navigator.share({ files: [file] }).catch(function (e) {
+        if (e && e.name === 'AbortError') return;                                         // 自分でやめた時は、何も出さない
+        downloadBlob(blob, name);
+      });
+    }, true, 'やめる');
+  }
+  function downloadBlob(blob, name) {
+    try {
+      var url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+      showNote('画像を保存しました（ダウンロードの場所をご確認ください）');
+    } catch (e) { showNote('画像を保存できませんでした。'); }
+  }
+  $('export-btn').addEventListener('click', exportImage);
   $('reload-btn').addEventListener('click', function () { location.href = location.pathname + '?v=' + Date.now(); });
 
   /* ---------- 自動保存と復元（編み図の画像ごと） ----------
@@ -1825,7 +1982,7 @@
     var c = /^#[0-9a-fA-F]{6}$/.test(a[1]) ? a[1] : PEN.color;
     var al = (isFinite(a[2]) && a[2] > 0 && a[2] <= 1) ? +a[2] : PEN.alpha;
     var w = (isFinite(a[3]) && a[3] > 0) ? +a[3] : PEN.width;
-    return { k: a[0] === 'p' || a[0] === 'l' || a[0] === 'r' || a[0] === 'f' || a[0] === 'e' ? a[0] : 'p', c: c, a: al, w: w, p: p };
+    return { k: a[0] === 'p' || a[0] === 'l' || a[0] === 'r' || a[0] === 'f' || a[0] === 'e' || a[0] === 'g' ? a[0] : 'p', c: c, a: al, w: w, p: p };
   }
   function readAll() {
     try { var o = JSON.parse(localStorage.getItem(DKEY)); if (o && typeof o.items === 'object' && o.items) return o; } catch (e) {}
