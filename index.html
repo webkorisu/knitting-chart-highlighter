@@ -68,7 +68,7 @@
     /* ===== 編み図エリア（画像がないとき）：編み図ルーラーと同じ、文字だけ ===== */
     #placeholder {
       position: fixed; inset: 0; z-index: 5; display: flex; overflow-y: auto;
-      padding: 68px 16px; background: #FFFFFF;
+      padding: calc(var(--tb-h, 72px) + 16px) 16px 16px; background: #FFFFFF;
     }
     /* 編み図エリアの案内文：大きさ・字間・色は、編み図ルーラーと同じ */
     #work-hint { margin: auto; text-align: center; color: rgba(160, 112, 128, .80); transition: opacity .2s; }
@@ -78,13 +78,12 @@
     .wh-note { margin-top: 13px; font-family: 'Zen Maru Gothic', sans-serif; font-size: 11px; letter-spacing: .04em; line-height: 1.7; color: rgba(160, 112, 128, .70); }
     .wh-note span { white-space: nowrap; }
 
-        #tap-hint {                                      /* 右上のヒント：大きさ・字間・色は、編み図ルーラーと同じ */
+    #tap-hint {                                      /* 左下のヒント：大きさ・字間・色は、編み図ルーラーと同じ */
       position: fixed; z-index: 6; display: none; pointer-events: none; user-select: none; -webkit-user-select: none;
-      top: calc(env(safe-area-inset-top, 0px) + 14px); right: calc(env(safe-area-inset-right, 0px) + 16px);
-      font-family: 'Zen Maru Gothic', sans-serif; font-size: 10px; letter-spacing: .06em; color: rgba(160, 112, 128, .75); white-space: nowrap;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); left: calc(env(safe-area-inset-left, 0px) + 16px); max-width: calc(100vw - 200px);
+      font-family: 'Zen Maru Gothic', sans-serif; font-size: 10px; letter-spacing: .06em; line-height: 1.5; color: rgba(160, 112, 128, .75);
     }
     body.menu-open #tap-hint { display: block; }
-    @media (max-width: 679px) { html body #menu-panel { top: calc(env(safe-area-inset-top, 0px) + 40px); } }       /* スマホ幅：ヒントがパネルに隠れないよう、パネルを下にずらす（ルーラーと同じ） */
 
     /* メニューの一番上：タイトルブロック（日本語→英語→サブ→ブランド）。大きさは、編み図ルーラーに合わせた */
     header { text-align: center; }
@@ -122,7 +121,6 @@
       vertical-align: .05em;        /* 大文字の上下にそろう高さ */
     }
     /* パネルのヘッダー（帯）の中：11px・文字色を少しうすく・padding-top 6px。帯の中のロゴは、リンクにしない。ふわっと消す動きは、外側の .menu-sub にかけている */
-    #menu-head .brand { font-size: 11px; padding-top: 6px; color: var(--text); opacity: .82; }
 
     /* ===== ボタン ===== */
     .pill-btn {
@@ -138,133 +136,172 @@
     @media (hover: hover) { .pill-btn:hover { background: #EEF4F4; } }
     .pill-btn.on { background: var(--sel-bg); border-color: var(--sel-line); }
 
-    /* ===== 右上：蛍光ペンの操作盤 ===== */
-    #mk-panel {
-      position: fixed; z-index: 20;
-      top: calc(env(safe-area-inset-top, 0px) + 12px);
-      right: calc(env(safe-area-inset-right, 0px) + 12px);
+    /* ===== 一番上の帯＋操作エリア（編み図メーカーと同じ形：帯にタイトル、その下に道具） ===== */
+    :root {
+      --band: #C4DAE1; --band-line: #B3CDD6;           /* 一番上の帯 */
+      --ctl-bg: #F6FAFB; --ctl-line: #D5E3E8;          /* 操作エリア */
+      --seg-bg: #EAF2F4; --seg-on: #BFDCE6;            /* 道具の背景／選んでいるボタン */
+      --on-text: #5E464C; --accent: #4A7888;
+      --seg-h: 34px; --pill-h: 38px; --dot: 34px; --circle: 40px;      /* ボタンの大きさ（指で触る画面：押しやすさを残して、少しコンパクト） */
     }
-    /* 操作盤は、1枚のカードにまとめる：いちばん上の「つかむ帯」→ 見出し行（タイトル＋もどす・やりなおす・削除）→ 中身 */
-    #mk-card {
-      width: min(204px, calc(100vw - 24px)); background: var(--surface); border: 1.5px solid var(--edge); border-radius: 18px;       /* 幅を狭めた（300px → 236px → 204px） */
-      box-shadow: 0 4px 12px rgba(70, 105, 120, .20); user-select: none; -webkit-user-select: none;
-      cursor: grab; touch-action: none;                 /* 白いところは、どこでもつかんで動かせる */
+    @media (pointer: fine) { :root { --seg-h: 30px; --pill-h: 34px; --dot: 28px; } }      /* マウスのPC：さらにコンパクト */
+    #topbar { position: fixed; z-index: 28; top: 0; left: 0; right: 0; --cy: 10px; }
+    #tb-band {
+      position: relative; display: flex; align-items: center; justify-content: center;
+      min-height: calc(60px + env(safe-area-inset-top, 0px)); padding: calc(env(safe-area-inset-top, 0px) + 4px) 64px 4px;
+      background: var(--band); border-bottom: 1px solid var(--band-line);
     }
-    #mk-card.dragging { cursor: grabbing; }
-    #mk-head { display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 8px 10px 12px 8px; }          /* 見出しは2行：タイトル／↺ ↻ 🗑️ */
-    .mk-title {
-      display: inline-flex; align-self: stretch; justify-content: center; align-items: center; gap: 7px; flex: 0 1 auto; max-width: 100%; min-width: 0; min-height: 40px; padding: 6px 10px 8px; background: #F2F7F8; border: none; border-radius: 12px;
-      font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: .02em; cursor: pointer; white-space: nowrap; transition: background .15s;
+    /* サブタイトルと「✿ YUCCHI ✿」（タイトルの下の2行）：ふわっと出て、しばらくしたら、ふわっと消える */
+    .tb-sub { max-height: 0; opacity: 0; overflow: hidden; transition: max-height .35s ease, opacity .35s ease; }
+    .tb-sub.show { max-height: 46px; opacity: 1; }
+    #tb-band .title-ja-sub { font-size: 11px; opacity: .9; margin-top: 2px; }
+    #tb-band .title-ja-sub .sub-text { white-space: nowrap; }
+    #tb-band .brand { color: var(--on-text); font-size: 14px; }
+    .tb-title { cursor: default; }
+    .tb-circle {
+      position: absolute; top: calc(env(safe-area-inset-top, 0px) + var(--cy)); width: var(--circle); height: var(--circle); padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface); color: var(--text); border: 1px solid var(--edge); border-radius: 50%;
+      box-shadow: var(--shadow); cursor: pointer; transition: background .15s, transform .1s;
     }
-    .mk-label { overflow: hidden; text-overflow: ellipsis; }
-    .mk-now { flex: none; }
-    .mk-arrow { flex: none; }
-    @media (hover: hover) { .mk-title:hover { background: #E8F2F5; } }
-    .mk-acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding-left: 2px; }       /* 道具と同じ、1行に3つずつ */
-    .round-btn {
-      position: relative; width: auto; height: 38px; padding: 0 0 2px; border-radius: 10px;
-      display: inline-flex; align-items: center; justify-content: center;
-      background: var(--surface); color: var(--text); border: 1.5px solid var(--border);
-      font-size: 19px; line-height: 1; cursor: pointer;
+    .tb-circle:active { transform: scale(.94); }
+    @media (hover: hover) { .tb-circle:hover { background: #EEF4F4; } }
+    .tb-circle svg { display: block; }
+    #mk-toggle { right: calc(env(safe-area-inset-right, 0px) + 16px); }
+    #menu-head { left: calc(env(safe-area-inset-left, 0px) + 16px); }
+    #menu-head[aria-expanded="true"] { background: var(--seg-on); }          /* メニューを開いている間 */
+    #mk-toggle .ic-down { display: none; }
+    #topbar.closed #mk-toggle .ic-min { display: none; }
+    #topbar.closed #mk-toggle .ic-down { display: block; }
+    #tb-band .tb-title { min-width: 0; text-align: center; }
+    #tb-band h1 { font-family: 'Zen Maru Gothic', sans-serif; font-size: 14px; font-weight: 700; color: var(--on-text); letter-spacing: .18em; line-height: 1.5; margin: 0; white-space: nowrap; }
+    #tb-band h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 27px; font-weight: 500; color: var(--on-text); letter-spacing: .14em; line-height: 1.1; margin: 0; opacity: 1; white-space: nowrap; }
+    /* いまのペン（画像を開いている間、帯に出す。押すと、操作エリアが開く／たたむ。せまい画面では出さない） */
+    .tb-now {
+      position: absolute; top: calc(env(safe-area-inset-top, 0px) + var(--cy)); right: calc(env(safe-area-inset-right, 0px) + 68px);
+      display: none; align-items: center; justify-content: flex-start; gap: 6px; width: 112px; height: var(--circle); padding: 0 8px 0 12px; overflow: hidden;
+      background: var(--surface); border: 1px solid var(--edge); border-radius: 999px;
+      font-family: inherit; font-size: 14px; font-weight: 700; letter-spacing: .08em; color: var(--on-text); white-space: nowrap;
+      cursor: pointer; box-shadow: var(--shadow); transition: background .15s, transform .1s;
+    }
+    .tb-now:active { transform: scale(.96); }
+    @media (hover: hover) { .tb-now:hover { background: #EEF4F4; } }
+    body.has-cp .tb-now { display: flex; }                                         /* 画像を開いている間は、いつも出す（開いていても、たたんでいても） */
+    .mk-now { display: block; flex: none; --sz: 14px; width: var(--sz); height: var(--sz); margin: calc((24px - var(--sz)) / 2); border-radius: 50%; box-shadow: 0 0 0 1px rgba(107, 82, 88, .28); transition: width .15s, height .15s, margin .15s; }       /* いまのペンの見本：丸い点。色・濃さ・太さが、そのまま見える（点の大きさが変わっても、まわりの余白で、ボタンの大きさは変わらない） */
+    @media (max-width: 819px) { .tb-now { display: none !important; } }
+
+
+    /* 操作パネル：一番上の帯の下に、固定。たたむと、帯だけが残る */
+    #mk-panel { background: var(--ctl-bg); border-bottom: 1px solid var(--ctl-line); box-shadow: 0 3px 8px rgba(70, 105, 120, .12); }
+    #mk-panel.closed { display: none; }
+    #mk-card { padding: 6px calc(env(safe-area-inset-right, 0px) + 16px) 8px calc(env(safe-area-inset-left, 0px) + 16px); user-select: none; -webkit-user-select: none; }
+    #mk-bar { display: flex; flex-direction: column; gap: 6px; }
+    .cb-line1 { display: flex; align-items: center; gap: 14px; }
+    .cb-tools { flex: 1; min-width: 0; }
+    .cb-acts { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .cb-line2 { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 14px; }
+    .cb-ws { display: flex; align-items: center; gap: 12px; }
+    .mk-seg { display: flex; padding: 2px; gap: 2px; border-radius: 999px; background: var(--surface); border: 1.5px solid var(--edge); }
+    #mk-tseg { background: var(--seg-bg); width: 100%; }
+    .mk-seg-b {
+      flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 6px; height: var(--seg-h); padding: 0 12px;
+      background: transparent; border: 0; border-radius: 999px; font-size: 14px; font-weight: 500; letter-spacing: .06em; color: var(--text);
+      white-space: nowrap; cursor: pointer; transition: background .15s;
+    }
+    #mk-tseg .mk-seg-b { flex: 1; padding: 0 4px; font-size: 15px; letter-spacing: .1em; }
+    .mk-seg-b.on { background: var(--seg-on); color: var(--on-text); font-weight: 700; }
+    @media (hover: hover) { .mk-seg-b:not(.on):hover { background: var(--sel-bg); } }
+    .mk-seg-b i { display: block; flex: none; border-radius: 50%; background: var(--text-sub); }
+    .mk-seg-b.on i { background: var(--text); }
+    /* もどす・やりなおす・ゴミ箱・画像保存 */
+    .cb-pill {
+      height: var(--pill-h); padding: 0 14px; display: flex; align-items: center; justify-content: center; gap: 6px;
+      background: var(--surface); color: var(--text); border: 1.5px solid var(--edge); border-radius: 999px;
+      font-size: 14px; font-weight: 500; letter-spacing: .06em; white-space: nowrap; cursor: pointer;
       transition: background .15s, transform .1s, opacity .15s; user-select: none; -webkit-user-select: none;
     }
-    .round-btn.emoji { font-size: 16px; padding-bottom: 0; }
-    .round-btn:active { transform: scale(.94); }
-    .round-btn:disabled { opacity: .4; cursor: default; transform: none; }
-    @media (hover: hover) {
-      .round-btn:not(:disabled):hover { background: #EEF4F4; }
-      .round-btn::after {
-        content: attr(data-tip); position: absolute; top: calc(100% + 6px); right: 0;
-        background: var(--text); color: #fff; font-size: 10px; font-weight: 500; letter-spacing: .04em; line-height: 1.4;
-        padding: 4px 8px; border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 25;
-      }
-      .round-btn:hover::after { opacity: .88; }
+    .cb-pill.cb-round { width: var(--pill-h); padding: 0; }
+    .cb-pill:active, .cb-save:active { transform: scale(.96); }
+    .cb-pill:disabled { opacity: .4; cursor: default; transform: none; }
+    @media (hover: hover) { .cb-pill:not(:disabled):hover { background: #EEF4F4; } }
+    .cb-save {
+      height: var(--pill-h); padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 6px;
+      background: var(--accent); color: #FFFFFF; border: 0; border-radius: 999px;
+      font-size: 14px; font-weight: 700; letter-spacing: .08em; white-space: nowrap; cursor: pointer;
+      box-shadow: var(--shadow); transition: transform .1s; user-select: none; -webkit-user-select: none;
     }
-    .mk-now { display: block; width: 30px; height: 9px; border-radius: 999px; box-shadow: 0 0 0 1px rgba(107, 82, 88, .28); transition: height .15s; }       /* いまのペンの見本：色・濃さ・太さが、そのまま見える */
-    .mk-arrow { font-size: 10px; opacity: .6; transition: transform .2s; display: inline-block; }
-    #mk-panel.closed .mk-arrow { transform: rotate(180deg); }
-    #mk-panel.closed #mk-bar { display: none; }
-
-    #mk-bar {
-      display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 10px 12px; border-top: 1px solid var(--border);
-      max-height: 70vh; max-height: calc(100dvh - 190px); overflow-y: auto; touch-action: none;   /* スクロール領域でも、指の動きを、ブラウザに取られないようにする */
-    }
-    .mk-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-sub); letter-spacing: .05em; }
-    .mk-seg { display: flex; gap: 8px; flex: 1; }
-    .mk-seg-b {
-      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-      min-height: 38px; padding: 4px 2px 3px; background: #fff; border: 1.5px solid var(--border); border-radius: 10px;
-      font-size: 10px; font-weight: 700; color: var(--text-sub); cursor: pointer; transition: background .15s;
-    }
-    .mk-seg-b.tl { min-height: 38px; font-size: 11px; letter-spacing: 0; white-space: nowrap; }
-    #mk-tseg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }       /* 道具：1行に3つずつ */
-    /* 点と文字：点の大きさがちがっても、文字の高さがそろうよう、点の枠を同じ高さにして、上下の余白を同じにする */
-    .mk-seg-sq {
-      flex: 1; min-width: 0; height: 46px; min-height: 0; padding: 0 2px; line-height: 1.2;
-      --dot-slot: 22px;
-      display: grid; grid-template-rows: var(--dot-slot) auto; align-content: center; justify-items: center; align-items: center; gap: 0;
-    }
-    /* 「細」「中」は、点が小さいので、文字だけを少し上げる（点の枠を4px低くすると、点は動かず、文字だけが2px上がる） */
-    .mk-w[data-w="8"], .mk-w[data-w="18"] { grid-template-rows: calc(var(--dot-slot) - 4px) auto; }
-    /* 「濃さ」の3つは、点と文字をまとめて、1px上げる（下の余白を2px足すと、中身が1px上がる） */
-    .mk-a { padding-bottom: 2px; }
-    .mk-seg-sq i { display: block; flex: none; border-radius: 50%; background: var(--text-sub); }
-    #mk-card button, #mk-card label { cursor: pointer; }
-    #mk-card button:disabled { cursor: default; }
-    #mk-bar.scrolls { touch-action: pan-y; }              /* 中身が長くて、スクロールが必要な時だけ、縦スクロールを優先する */
-    .mk-seg-b.on { background: var(--sel-bg); border-color: var(--sel-line); box-shadow: inset 0 0 0 1px var(--sel-line); color: var(--text); }
-    @media (hover: hover) { .mk-seg-b:not(.on):hover { background: #EEF4F4; } }
-    #mk-colors { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 0; justify-items: center; align-items: center; }       /* 色：1行に4つずつ */
+    .cb-pill svg, .cb-save svg { flex: none; display: block; }
+    /* 色 */
+    #mk-colors { display: flex; align-items: center; gap: 8px; }
     .mk-dot {
-      box-sizing: border-box; flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent;
-      padding: 0; cursor: pointer; transition: transform .15s;
+      box-sizing: border-box; flex: none; width: var(--dot); height: var(--dot); padding: 0; border-radius: 50%;
+      border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px var(--edge); cursor: pointer; transition: box-shadow .15s;
     }
-    .mk-dot.on { border-color: #fff; box-shadow: 0 0 0 2px var(--text); transform: scale(1.05); }
+    .mk-dot.on { box-shadow: 0 0 0 3px var(--sel-line); }
     #mk-custom { position: absolute; width: 0; height: 0; opacity: 0; border: none; padding: 0; }
     /* 好きな色のボタン：点線の丸に「＋」（押すと、色選びが開く）。好きな色を使っている間は、その色で塗りつぶした丸になる */
     #mk-custom-label {
-      position: relative; box-sizing: border-box; display: block; flex: none; width: 24px; height: 24px; border-radius: 50%;
-      border: 1.5px dashed #8AA5AF; background: transparent; cursor: pointer; transition: border-color .15s, background .15s;
+      position: relative; box-sizing: border-box; display: block; flex: none; width: var(--dot); height: var(--dot); border-radius: 50%;
+      border: 2px dashed #8FB3BF; background: #FFFFFF; cursor: pointer; transition: border-color .15s, background .15s;
     }
-    #mk-custom-label::before, #mk-custom-label::after { content: ''; position: absolute; left: 50%; top: 50%; background: #8AA5AF; transform: translate(-50%, -50%); transition: background .15s; }
-    #mk-custom-label::before { width: 10px; height: 1.5px; }
-    #mk-custom-label::after { width: 1.5px; height: 10px; }
-    #mk-custom-label.custom-on { border: 2px solid #fff; box-shadow: 0 0 0 2px var(--text); transform: scale(1.05); }
-    #mk-custom-label.custom-on::before, #mk-custom-label.custom-on::after { background: #fff; box-shadow: 0 0 0 1px rgba(107, 82, 88, .55); }
-    @media (hover: hover) { #mk-custom-label:hover { border-color: #6F9AAA; background: #F2F7F8; } #mk-custom-label:hover::before, #mk-custom-label:hover::after { background: #6F9AAA; } }
-    #mk-bar > * { flex: 0 0 100%; }
-    #mk-wseg, #mk-aseg { gap: 6px; }                                                /* 「太さ」「濃さ」も、道具と同じ、1行に3つずつ */
-    @media (max-width: 559px), (max-height: 559px) {          /* 狭い画面：さらに、ぎゅっとまとめる */
-      #mk-bar { gap: 8px; padding: 10px; }
+    #mk-custom-label::before, #mk-custom-label::after { content: ''; position: absolute; left: 50%; top: 50%; background: #6B8F9C; transform: translate(-50%, -50%); transition: background .15s; }
+    #mk-custom-label::before { width: 12px; height: 2px; }
+    #mk-custom-label::after { width: 2px; height: 12px; }
+    #mk-custom-label.custom-on { border: 2px solid #FFFFFF; box-shadow: 0 0 0 3px var(--sel-line); }
+    #mk-custom-label.custom-on::before, #mk-custom-label.custom-on::after { background: #FFFFFF; box-shadow: 0 0 0 1px rgba(107, 82, 88, .55); }
+    @media (hover: hover) { #mk-custom-label:hover { border-color: #6F9AAA; background: #F2F7F8; } }
+    #mk-card button, #mk-card label { cursor: pointer; }
+    #mk-card button:disabled { cursor: default; }
+
+    @media (min-width: 900px) and (max-width: 1099px) {   /* ふつうの幅のPC・横向きの小さめのタブレット：2段のまま収めるため、「もどす」「やりなおす」はアイコンだけ */
+      .cb-pill:not(.cb-round) { width: var(--pill-h); padding: 0; }
+      .cb-pill:not(.cb-round) .cb-txt { display: none; }
+      #mk-tseg .mk-seg-b { font-size: 14px; letter-spacing: .06em; }
+      #mk-colors { gap: 6px; }
+    }
+    @media (max-width: 899px) {                       /* 縦向きのiPadなど：1段目は「入力・ボタン」、2段目は「道具」、3段目は「太さ・濃さ・色」 */
+      .cb-line1 { flex-wrap: wrap; }
+      #mk-row-in { order: 1; }
+      .cb-acts { order: 2; }
+      .cb-tools { order: 3; flex: 1 0 100%; }
+      #mk-tseg .mk-seg-b { font-size: 14px; }
+      .cb-ws .mk-seg-b { padding: 0 12px; }
+      #mk-colors { gap: 6px; }
+    }
+    @media (max-width: 559px) {                       /* スマホ：ボタンはアイコンだけ。太さ・濃さ・色は、中央に */
+      #topbar { --cy: 8px; }
+      #tb-band { min-height: calc(56px + env(safe-area-inset-top, 0px)); padding: calc(env(safe-area-inset-top, 0px) + 9px) 56px 9px; }
+      #tb-band h1 { font-size: 12px; letter-spacing: .14em; }
+      #tb-band h2 { font-size: 18px; letter-spacing: .08em; }
+      #mk-toggle { right: calc(env(safe-area-inset-right, 0px) + 10px); }
+      #menu-head { left: calc(env(safe-area-inset-left, 0px) + 10px); }
+      #mk-card { padding: 5px calc(env(safe-area-inset-right, 0px) + 12px) 7px calc(env(safe-area-inset-left, 0px) + 12px); }
+      #mk-bar { gap: 5px; }
+      .cb-acts { gap: 6px; }
+      .cb-txt { display: none; }
+      .cb-pill, .cb-save { width: var(--pill-h); padding: 0; }
+      .cb-line2 { flex-direction: column; align-items: stretch; justify-content: center; gap: 5px; }      /* 各段の左右の端を、そろえる */
+      .cb-ws { width: 100%; gap: 8px; }
+      #mk-row-w, #mk-row-a { flex: 1; min-width: 0; }                      /* 太さと濃さは、同じ幅（半分ずつ） */
+      #mk-row-w .mk-seg, #mk-row-a .mk-seg { width: 100%; }
+      #mk-row-w .mk-w, #mk-row-a .mk-a { flex: 1; width: auto; padding: 0; }
+      .mk-seg-b { padding: 0 10px; font-size: 13px; }
+      .cb-ws .mk-w { padding: 0; width: calc(var(--seg-h) + 4px); }
+      #mk-tseg .mk-seg-b { font-size: 13px; letter-spacing: .02em; }
+      #mk-colors { width: 100%; gap: 0; justify-content: space-between; }
     }
 
-    /* ===== メニュー ===== */
-    #menu-panel {                                   /* 左上のパネル：タイトルを押すと、中身が開いたり閉じたりする（編み図ルーラーと同じ） */
+    /* ===== メニュー（左上の「≡」を押すと、帯の下に開く） ===== */
+    #menu-panel {
       position: fixed; z-index: 30; overflow-x: hidden; overflow-y: auto;
-      top: calc(env(safe-area-inset-top, 0px) + 12px);
-      left: calc(env(safe-area-inset-left, 0px) + 12px);
-      width: min(300px, calc(100vw - 24px));
-      max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px);
+      top: calc(var(--band-h, 72px) + 6px); left: calc(env(safe-area-inset-left, 0px) + 12px);
+      width: min(340px, calc(100vw - 24px));
+      max-height: calc(100vh - var(--band-h, 72px) - 18px); max-height: calc(100dvh - var(--band-h, 72px) - 18px);
       background: var(--surface); border: 1.5px solid var(--edge); border-radius: var(--radius);
       padding: 0; box-shadow: 0 4px 12px rgba(70, 105, 120, .20);
     }
-    #menu-panel.collapsed { overflow: hidden; }                       /* 閉じても、幅は、開いている時と同じ */
-    #menu-panel.collapsed #menu-body { display: none; }
-    #menu-head {                                    /* ルーラーと同じ、うすい水色の帯。押すと、開く／閉じる */
-      position: relative; cursor: pointer; -webkit-user-select: none; user-select: none; outline: none; -webkit-tap-highlight-color: transparent;
-      background: var(--primary); padding: 9px 42px;                    /* 左右の余白を同じにして、タイトルを、まんなかに置く（右の42pxは、開閉のしるしの場所） */
-    }
-    #menu-head:focus-visible { box-shadow: inset 0 0 0 2px var(--sel-line); }      /* キーボードで選んだ時だけ、枠を出す */
-    #menu-body { padding: 10px 12px 12px; }
-    .menu-toggle {                                  /* 右はしの、開閉のしるし：開いている時は「−」、閉じている時は「＋」 */
-      position: absolute; top: 50%; right: 10px; width: 26px; height: 26px; margin-top: -13px; border-radius: 50%;
-      background: rgba(255, 255, 255, .6); border: 1px solid rgba(107, 82, 88, .2);
-    }
-    .menu-toggle::before, .menu-toggle::after { content: ''; position: absolute; left: 50%; top: 50%; background: var(--text); opacity: .7; transform: translate(-50%, -50%); }
-    .menu-toggle::before { width: 10px; height: 1.5px; }
-    .menu-toggle::after { width: 1.5px; height: 10px; display: none; }
-    #menu-panel.collapsed .menu-toggle::after { display: block; }
-    @media (hover: hover) { #menu-head:hover .menu-toggle { background: rgba(255, 255, 255, .9); } }
+    #menu-panel.collapsed { display: none; }
+    #menu-body { padding: 12px; }
     .menu-sub { opacity: 0; max-height: 0; overflow: hidden; pointer-events: none; transition: opacity .6s ease, max-height .4s ease; }
     .menu-sub.show { opacity: 1; max-height: 64px; pointer-events: auto; }        /* パネルを開いて、3秒だけ見える */
     .acc-list { display: flex; flex-direction: column; gap: 5px; }
@@ -470,53 +507,78 @@
 
 <div id="tap-hint">編み図エリアをタップでメニューを閉じられます</div>
 
-<!-- ===== 右上：蛍光ペンの操作盤 ===== -->
-<div id="mk-panel" hidden>
- <div id="mk-card">
-  <div id="mk-head">
-    <button type="button" class="mk-title" id="mk-toggle" aria-expanded="true" aria-controls="mk-bar"><i class="mk-now" id="mk-now"></i><span class="mk-label" id="mk-label">選択中の蛍光ペン</span><span class="mk-arrow">▾</span></button>
-    <div class="mk-acts">
-      <button type="button" class="round-btn" id="undo-btn" aria-label="1つ前に戻る" data-tip="1つ前に戻る" disabled>↺</button>
-      <button type="button" class="round-btn" id="redo-btn" aria-label="1つ先に進む" data-tip="1つ先に進む" disabled>↻</button>
-      <button type="button" class="round-btn emoji" id="clear-btn" aria-label="塗った内容を一括削除" data-tip="塗った内容を一括削除" disabled>🗑️</button>
+<!-- ===== 一番上の帯（「−」操作エリアをたたむ／タイトル／「≡」メニュー）＋ 操作エリア ===== -->
+<div id="topbar">
+  <header id="tb-band">
+    <button type="button" class="tb-circle" id="mk-toggle" aria-expanded="true" aria-controls="mk-panel" aria-label="操作パネルをたたむ" hidden>
+      <svg class="ic-min" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>
+      <svg class="ic-down" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <div class="tb-title">
+      <h1>編み図のための蛍光ペン</h1>
+      <h2>Knitting Chart Highlighter</h2>
+      <div class="tb-sub" id="tb-sub">
+        <div class="title-ja-sub"><div class="sub-text"><span>編みながら蛍光ペンが引けるアプリ</span></div></div>
+        <div class="brand"><span class="brand-deco">✿</span>&nbsp;&nbsp;Y&nbsp;U&nbsp;C&nbsp;C&nbsp;H&nbsp;I&nbsp;&nbsp;<span class="brand-deco">✿</span></div>
+      </div>
     </div>
+    <button type="button" class="tb-now" id="tb-now" aria-label="操作パネルを開く"><i class="mk-now" id="mk-now"></i><span class="mk-label" id="mk-label"></span></button>
+    <button type="button" class="tb-circle" id="menu-head" aria-expanded="false" aria-controls="menu-body" aria-label="メニュー（ファイル・使い方・このアプリについて・データについて）">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>
+    </button>
+  </header>
+
+  <div id="mk-panel" hidden>
+   <div id="mk-card">
+    <div id="mk-bar">
+      <div class="cb-line1">
+        <div class="mk-row" id="mk-row-in" role="group" aria-label="入力" hidden><div class="mk-seg" id="mk-iseg">
+          <button type="button" class="mk-seg-b mk-i" data-i="hand">指</button>
+          <button type="button" class="mk-seg-b mk-i" data-i="pen">ペン</button>
+        </div></div>
+        <div class="cb-tools" role="group" aria-label="道具"><div class="mk-seg" id="mk-tseg">
+          <button type="button" class="mk-seg-b mk-t" data-t="pen">なぞる</button>
+          <button type="button" class="mk-seg-b mk-t" data-t="line">直線</button>
+          <button type="button" class="mk-seg-b mk-t" data-t="rect">四角</button>
+          <button type="button" class="mk-seg-b mk-t" data-t="ellipse">円</button>
+          <button type="button" class="mk-seg-b mk-t" data-t="select">選択</button>
+          <button type="button" class="mk-seg-b mk-t" data-t="erase">消しゴム</button>
+        </div></div>
+        <div class="cb-acts">
+          <button type="button" class="cb-pill" id="undo-btn" aria-label="1つ前に戻る" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span class="cb-txt">もどす</span></button>
+          <button type="button" class="cb-pill" id="redo-btn" aria-label="1つ先に進む" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg><span class="cb-txt">やりなおす</span></button>
+          <button type="button" class="cb-pill cb-round" id="clear-btn" aria-label="塗った内容を一括削除" title="塗った内容を一括削除" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="m6 7 1 13h10l1-13"/></svg></button>
+          <button type="button" class="cb-save" id="export-btn" aria-label="塗った編み図を画像で保存" title="塗った編み図を画像で保存" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg><span class="cb-txt">画像保存</span></button>
+        </div>
+      </div>
+      <div class="cb-line2">
+        <div class="cb-ws">
+          <div class="mk-row" id="mk-row-w" role="group" aria-label="太さ"><div class="mk-seg" id="mk-wseg">
+            <button type="button" class="mk-seg-b mk-w" data-w="8" aria-label="細い"><i style="width:6px;height:6px"></i><span class="cb-txt">細</span></button>
+            <button type="button" class="mk-seg-b mk-w" data-w="18" aria-label="ふつうの太さ"><i style="width:12px;height:12px"></i><span class="cb-txt">中</span></button>
+            <button type="button" class="mk-seg-b mk-w" data-w="36" aria-label="太い"><i style="width:18px;height:18px"></i><span class="cb-txt">太</span></button>
+          </div></div>
+          <div class="mk-row" id="mk-row-a" role="group" aria-label="濃さ"><div class="mk-seg" id="mk-aseg">
+            <button type="button" class="mk-seg-b mk-a" data-a="0.3">うすい</button>
+            <button type="button" class="mk-seg-b mk-a" data-a="0.45">ふつう</button>
+            <button type="button" class="mk-seg-b mk-a" data-a="0.65">こい</button>
+          </div></div>
+        </div>
+        <div id="mk-colors" role="group" aria-label="カラー">
+          <button type="button" class="mk-dot" data-c="#FF4F7B" style="background:#FF4F7B" aria-label="赤"></button>
+          <button type="button" class="mk-dot" data-c="#FF9F1C" style="background:#FF9F1C" aria-label="橙"></button>
+          <button type="button" class="mk-dot" data-c="#FFF200" style="background:#FFF200" aria-label="黄"></button>
+          <button type="button" class="mk-dot" data-c="#7DFF3C" style="background:#7DFF3C" aria-label="緑"></button>
+          <button type="button" class="mk-dot" data-c="#2EDBFF" style="background:#2EDBFF" aria-label="青"></button>
+          <button type="button" class="mk-dot" data-c="#7A8CFF" style="background:#7A8CFF" aria-label="藍"></button>
+          <button type="button" class="mk-dot" data-c="#D45BFF" style="background:#D45BFF" aria-label="紫"></button>
+          <label for="mk-custom" id="mk-custom-label" title="好きな色を追加" aria-label="好きな色を追加"></label>
+          <input type="color" id="mk-custom" aria-label="好きな色">
+        </div>
+      </div>
+    </div>
+   </div>
   </div>
-  <div id="mk-bar">
-    <div class="mk-row" role="group" aria-label="道具"><div class="mk-seg" id="mk-tseg">
-      <button type="button" class="mk-seg-b tl mk-t" data-t="pen">なぞる</button>
-      <button type="button" class="mk-seg-b tl mk-t" data-t="select">選択</button>
-      <button type="button" class="mk-seg-b tl mk-t" data-t="erase">消しゴム</button>
-      <button type="button" class="mk-seg-b tl mk-t" data-t="line">直線</button>
-      <button type="button" class="mk-seg-b tl mk-t" data-t="rect">四角</button>
-      <button type="button" class="mk-seg-b tl mk-t" data-t="ellipse">円</button>
-    </div></div>
-    <div class="mk-row" role="group" aria-label="カラー"><div id="mk-colors">
-      <button type="button" class="mk-dot" data-c="#FF4F7B" style="background:#FF4F7B" aria-label="赤"></button>
-      <button type="button" class="mk-dot" data-c="#FF9F1C" style="background:#FF9F1C" aria-label="橙"></button>
-      <button type="button" class="mk-dot" data-c="#FFF200" style="background:#FFF200" aria-label="黄"></button>
-      <button type="button" class="mk-dot" data-c="#7DFF3C" style="background:#7DFF3C" aria-label="緑"></button>
-      <button type="button" class="mk-dot" data-c="#2EDBFF" style="background:#2EDBFF" aria-label="青"></button>
-      <button type="button" class="mk-dot" data-c="#7A8CFF" style="background:#7A8CFF" aria-label="藍"></button>
-      <button type="button" class="mk-dot" data-c="#D45BFF" style="background:#D45BFF" aria-label="紫"></button>
-      <label for="mk-custom" id="mk-custom-label" title="好きな色を追加" aria-label="好きな色を追加"></label>
-      <input type="color" id="mk-custom" aria-label="好きな色">
-    </div></div>
-    <div class="mk-row" id="mk-row-w" role="group" aria-label="太さ"><div class="mk-seg" id="mk-wseg">
-      <button type="button" class="mk-seg-b mk-seg-sq mk-w" data-w="8"><i style="width:6px;height:6px"></i>細</button>
-      <button type="button" class="mk-seg-b mk-seg-sq mk-w" data-w="18"><i style="width:12px;height:12px"></i>中</button>
-      <button type="button" class="mk-seg-b mk-seg-sq mk-w" data-w="36"><i style="width:20px;height:20px"></i>太</button>
-    </div></div>
-    <div class="mk-row" id="mk-row-a" role="group" aria-label="濃さ"><div class="mk-seg" id="mk-aseg">
-      <button type="button" class="mk-seg-b mk-seg-sq mk-a" data-a="0.3"><i style="width:16px;height:16px;border:1px solid var(--border)"></i>うすい</button>
-      <button type="button" class="mk-seg-b mk-seg-sq mk-a" data-a="0.45"><i style="width:16px;height:16px;border:1px solid var(--border)"></i>ふつう</button>
-      <button type="button" class="mk-seg-b mk-seg-sq mk-a" data-a="0.65"><i style="width:16px;height:16px;border:1px solid var(--border)"></i>こい</button>
-    </div></div>
-    <div class="mk-row" id="mk-row-in" role="group" aria-label="入力" hidden><div class="mk-seg" id="mk-iseg">
-      <button type="button" class="mk-seg-b tl mk-i" data-i="hand">👆 指モード</button>
-      <button type="button" class="mk-seg-b tl mk-i" data-i="pen">✏️ ペンモード</button>
-    </div></div>
-  </div>
- </div>
 </div>
 
 <!-- ===== ぐるっと一周描いたあとに、ふわっと出る「中を塗る」ボタン ===== -->
@@ -548,17 +610,8 @@
   </div>
 </div>
 
-<!-- ===== メニュー（使い方・このアプリについて・データについて・リンク） ===== -->
+<!-- ===== メニュー（左上の「≡」を押すと、帯の下に開く：ファイル・使い方・このアプリについて・データについて・リンク） ===== -->
 <div id="menu-panel" role="region" aria-label="メニュー">
-  <header id="menu-head" role="button" tabindex="0" aria-expanded="true" aria-controls="menu-body" title="押すと、開いたり閉じたりします">
-    <span class="menu-toggle" aria-hidden="true"></span>
-      <h1>編み図のための蛍光ペン</h1>
-      <h2>Knitting Chart Highlighter</h2>
-      <div class="menu-sub show" id="menu-sub">
-      <div class="title-ja-sub"><div class="sub-text"><span>編みながら蛍光ペンが引けるアプリ</span></div></div>
-      <div class="brand"><span class="brand-deco">✿</span>&nbsp;&nbsp;Y&nbsp;U&nbsp;C&nbsp;C&nbsp;H&nbsp;I&nbsp;&nbsp;<span class="brand-deco">✿</span></div>
-      </div>
-    </header>
   <div id="menu-body">
   <div id="file-slot">
     <button type="button" class="file-pick" id="file-pick"><b>📂 ファイルを選択して編み図を開く</b></button>
@@ -567,7 +620,6 @@
       <button type="button" class="file-close" id="file-close" aria-label="編み図を閉じる" title="編み図を閉じる">✕</button>
     </div>
   </div>
-  <button type="button" class="menu-act" id="export-btn" hidden>🖼️ 塗った編み図を画像で保存</button>
   <div id="menu-info-slot">
 <div id="info-block">
   <div class="acc-list">
@@ -576,23 +628,23 @@
       <button type="button" class="data-note-btn" aria-expanded="false"><span>✿ 使い方</span><span class="data-note-arrow">▼</span></button>
       <div class="data-note-body">
         <ol>
-          <li>左上のパネルの「ファイルを選択して編み図を開く」から、編み図の画像を開きます。パネルは、タイトルを押すと、開いたり閉じたりできます。</li>
-          <li>指（またはペン・マウス）でなぞると、蛍光ペンで塗れます。右上の操作盤で、道具（なぞる・直線・四角・円・選択・消しゴム）、色、太さ、濃さを選べます。いちばん右の点線の「＋」では、好きな色を選べます（選んだ色は、「＋」の丸に出ます）。</li>
+          <li>画面の左上の「≡」を押すと、メニューが開きます（タイトルの下に、少しのあいだ、サブタイトルと「✿ YUCCHI ✿」が、ふわっと出ます。タイトルを押しても、出し入れできます）。「ファイルを選択して編み図を開く」から、編み図の画像を開きます。メニューは、「≡」をもう一度押すか、編み図エリアをタップすると、閉じます。</li>
+          <li>指（またはペン・マウス）でなぞると、蛍光ペンで塗れます。画面の上の操作エリアで、道具（なぞる・直線・四角・円・選択・消しゴム）、太さ、濃さ、色を選べます。いちばん右の点線の「＋」では、好きな色を選べます（選んだ色は、「＋」の丸に出ます）。</li>
           <li>「四角」「円」は、ドラッグした範囲を塗りつぶします。編んだところを隠すのに便利です。</li>
           <li>「なぞる」で塗ったあと、ペンや指を止めて少し待つと（約0.5秒）、きれいな直線・円・四角に整います。直線は、止めたまま動かすと、向きや長さを変えられます。円や四角は、そのまま動かし続けると、整える前のなぞった線にもどります。</li>
           <li>「四角」「直線」で描いた直後は、角や辺（直線は両端の丸）をドラッグして、大きさを変えられます。中をドラッグすると、動きます。</li>
           <li>塗った線は、ちょんと触れる（動かさずに離す）と選べます（線の真上だけです。点は、中心をねらったときだけ選ばれるので、続けて打てます）。「選択」の道具なら、どの線もタップで選べます。選ぶと、動かす・大きさを変えることができ、枠の上の丸いつまみをドラッグすると回せます（15度ごとに止まります）。「複製」（左側に、少しずらして置きます）「反転」「中を塗る」「削除」のボタンも出ます。「×」で、選ぶのをやめられます。何もない所をドラッグすると、編み図が動きます。</li>
-          <li>選んだ線をさわっている間は、見出しが「選んだ線を変更」になり、色・濃さ・太さのボタンは、その線を変えます。</li>
+          <li>選んだ線をさわっている間は、帯の右上の表示が「線を変更」になり、色・濃さ・太さのボタンは、その線を変えます。</li>
           <li>「反転」を押すと、四方に矢印が出て、押した側に、ひっくり返したコピーを、ぴったり並べて置きます。</li>
           <li>ぐるっと一周なぞると、線のそばに「中を塗る」ボタンが出て、輪っかの中を塗りつぶせます（あとから、線を選んで「中を塗る」でも塗れます）。</li>
-          <li>ペンで触れると、操作盤に「入力」の行が出ます。「ペンモード」は、ペンで塗って、指で編み図を動かします。「指モード」は、指でもペンでも塗れます。</li>
-          <li>操作盤は、白いところや「選択中の蛍光ペン」の文字をつかんでドラッグすると、好きな場所に動かせます（白いところを2回タップすると、もとの位置にもどります）。</li>
+          <li>ペンで触れると、操作エリアに「指／ペン」の切りかえが出ます。「ペン」は、ペンで塗って、指で編み図を動かします。「指」は、指でもペンでも塗れます。</li>
+          <li>右上の「−」（またはその左の、いまのペンのボタン）を押すと、操作エリアがたたまれて、編み図が広く使えます。もう一度押すと、開きます。</li>
           <li>右下のカウンターで、段数を数えられます。＋で1つ増やし、－で1つ減らします（0〜999）。「−」を長押し（約1秒）すると、0にもどします（確認が出ます）。数は、編み図ごとに自動で保存されます。カウンターも、白いところをつかんで動かせます。</li>
-          <li>↺で1つ前に戻り、↻でやり直せます。🗑️で、塗った内容を一括削除します。「蛍光ペン」を押すと、操作盤を閉じたり開いたりできます。</li>
+          <li>「もどす」で1つ前に戻り、「やりなおす」でやり直せます。ゴミ箱のボタンで、塗った内容を一括削除します。</li>
           <li>2本指で広げると拡大、つまむと縮小します。2本指のまま動かすと、編み図が動きます。</li>
           <li>パソコンのトラックパッドは、2本指でなぞると編み図が動き、ピンチ（つまむ・広げる）で拡大・縮小します。マウスは、ホイールで上下に動き、Ctrl（Macは⌘）を押しながらホイールで拡大・縮小します。右ボタン（またはスペースキーを押しながら）のドラッグでも動かせます。</li>
-          <li>左上のパネルに、開いている画像の名前が出ます。✕を押すと、画像だけ閉じます（塗った内容は、自動で保存されています）。画像を変えたいときは、そのファイル名の枠を押します。</li>
-          <li>ファイル名の下の「🖼️ 塗った編み図を画像で保存」を押すと、蛍光ペンを塗った状態の編み図を、画像（PNG）にして残せます。進み具合の記録や、SNSへの投稿にどうぞ。</li>
+          <li>メニューの中に、開いている画像の名前が出ます。✕を押すと、画像だけ閉じます（塗った内容は、自動で保存されています）。画像を変えたいときは、そのファイル名の枠を押します。</li>
+          <li>操作エリアの「画像保存」を押すと、蛍光ペンを塗った状態の編み図を、画像（PNG）にして残せます。進み具合の記録や、SNSへの投稿にどうぞ。</li>
         </ol>
         <p>塗った内容は、自動で保存されます。次の日も、前回と同じ画像を選ぶと、続きから再開できます。</p>
       </div>
@@ -639,7 +691,7 @@
         </svg>
       </a>
     </div>
-    <div class="last-updated">最終更新：2026.10.15</div>
+    <div class="last-updated">最終更新：2026.10.16</div>
   </div>
   </div>
   </div>
@@ -669,14 +721,14 @@
   var chartId = null;                // 画像の見分け方：名前|大きさ|更新日時|縦横サイズ（手順5の自動保存で使う）
   var scale = 1, offsetX = 0, offsetY = 0;        // 画面の位置 = offset + 画像の位置 × scale
   var minScale = 0.1, maxScale = 12;
-  var lastW = window.innerWidth, lastH = window.innerHeight;
+  var lastW = window.innerWidth, lastH = window.innerHeight, lastT = 0;
 
   var $ = function (id) { return document.getElementById(id); };
   var viewer = $('viewer'), cv = $('chart-canvas'), ctx = cv.getContext('2d');
   var mkCv = $('marker-canvas'), mctx = mkCv.getContext('2d');
   var cache = document.createElement('canvas'), cctx = cache.getContext('2d');   // 塗った線の描き置き
   var fileInput = $('file-input'), placeholder = $('placeholder');
-  var menuPanel = $('menu-panel'), menuHead = $('menu-head'), note = $('note');
+  var menuPanel = $('menu-panel'), menuHead = $('menu-head'), note = $('note'), topbar = $('topbar');
 
   /* ---------- お知らせ（タップで閉じる） ---------- */
   var noteTimer = null;
@@ -702,7 +754,6 @@
       if (/^#[0-9a-fA-F]{6}$/.test(s0.color)) PEN.color = s0.color;
       if (isFinite(s0.alpha)) PEN.alpha = nearest(ALPHAS, +s0.alpha);
       if (isFinite(s0.width)) PEN.width = nearest(WIDTHS, +s0.width);
-      if (s0.pos && isFinite(s0.pos.r) && isFinite(s0.pos.t)) panelPos = { r: +s0.pos.r, t: +s0.pos.t };
       if (s0.input === 'pen' || s0.input === 'hand') PEN.input = s0.input;
       if (s0.cpos && isFinite(s0.cpos.r) && isFinite(s0.cpos.b)) cpPos = { r: +s0.cpos.r, b: +s0.cpos.b };
       if (s0.penDetected === true) PEN.penSeen = true;          // ペンで触れたことが記録されている端末だけ、ペンありとみなす
@@ -858,7 +909,8 @@
     syncBtns();
     placeholder.hidden = true;
     viewer.classList.remove('empty', 'dragging');
-    $('mk-panel').hidden = false;
+    $('mk-panel').hidden = false; $('mk-toggle').hidden = false;
+    if (window.innerHeight < 560) setBarClosed(true);                // 横向きのスマホなど、縦がせまい時は、たたんだ状態で始める
     cpPanel.hidden = false; document.body.classList.add('has-cp'); syncCounter(); applyCpPos();
     syncFileSlot();
     closeMenu(); applyPos(); syncBarScroll();
@@ -873,7 +925,7 @@
     syncBtns();
     placeholder.hidden = false;
     viewer.classList.add('empty'); viewer.classList.remove('dragging');
-    $('mk-panel').hidden = true; cpPanel.hidden = true; document.body.classList.remove('has-cp'); syncCounter();
+    $('mk-panel').hidden = true; $('mk-toggle').hidden = true; setBarClosed(false); cpPanel.hidden = true; document.body.classList.remove('has-cp'); syncCounter();
     chartName = '';
     syncFileSlot();
     setMenu(true); requestDraw();                   // 画像を閉じたら、メニューを開いて、すぐ次の画像を選べるようにする
@@ -898,14 +950,15 @@
   });
 
   /* ---------- 表示（拡大・縮小・移動） ---------- */
-  function fitRaw() { return Math.min(window.innerWidth / img.naturalWidth, window.innerHeight / img.naturalHeight); }
+  function topInset() { return (topbar && !topbar.hidden) ? Math.round(topbar.getBoundingClientRect().bottom) : 0; }          // 一番上の帯（操作パネルをふくむ）の下はし。編み図は、ここから下に置く
+  function fitRaw() { return Math.min(window.innerWidth / img.naturalWidth, (window.innerHeight - topInset()) / img.naturalHeight); }
   function updateLimits() { var f = fitRaw(); minScale = f * 0.3; maxScale = Math.max(12, f * 8); }
   function fitImage() {
     if (!img) return;
     updateLimits();
     scale = Math.min(fitRaw() * 0.96, 3);
     offsetX = (window.innerWidth - img.naturalWidth * scale) / 2;
-    offsetY = (window.innerHeight - img.naturalHeight * scale) / 2;
+    var T = topInset(); offsetY = T + (window.innerHeight - T - img.naturalHeight * scale) / 2; lastT = T;
     requestDraw();
   }
   function clampOffset() {                        // 画像が、画面の外に消えてしまわないように
@@ -913,7 +966,7 @@
     var W = window.innerWidth, H = window.innerHeight, w = img.naturalWidth * scale, h = img.naturalHeight * scale;
     var mx = Math.min(80, w), my = Math.min(80, h);
     offsetX = Math.min(W - mx, Math.max(mx - w, offsetX));
-    offsetY = Math.min(H - my, Math.max(my - h, offsetY));
+    var T = topInset(); offsetY = Math.min(H - my, Math.max(T + my - h, offsetY));
   }
   function zoomAt(cx, cy, factor) {
     var ns = Math.min(maxScale, Math.max(minScale, scale * factor)), ratio = ns / scale;
@@ -1079,14 +1132,14 @@
     if (showBar) {
       var bhw = (selBar.offsetWidth || 200) / 2 + 8, cand = flipMode ? t - 82 : (rotShown ? t - 80 : t - 52);
       selBar.style.left = Math.max(bhw, Math.min(window.innerWidth - bhw, cx)) + 'px';
-      selBar.style.top = (cand < 56 ? bt + (flipMode ? 60 : 14) : cand) + 'px';
+      selBar.style.top = (cand < topInset() + 56 ? bt + (flipMode ? 60 : 14) : cand) + 'px';
     }
     if (showArrows) {                               // 四方の矢印。編み図の外になる側は、押せない
       var iw = img.naturalWidth, ih = img.naturalHeight, W = window.innerWidth, H = window.innerHeight;
       var pos = { t: [cx, t - 26, F.minY <= 0], b: [cx, bt + 26, F.maxY >= ih], l: [l - 26, cy, F.minX <= 0], r: [r + 26, cy, F.maxX >= iw] };
       Array.prototype.forEach.call(selArrows.children, function (el) {
         var p = pos[el.getAttribute('data-d')];
-        el.style.left = Math.max(20, Math.min(W - 20, p[0])) + 'px'; el.style.top = Math.max(20, Math.min(H - 20, p[1])) + 'px'; el.disabled = !!p[2];
+        el.style.left = Math.max(20, Math.min(W - 20, p[0])) + 'px'; el.style.top = Math.max(topInset() + 20, Math.min(H - 20, p[1])) + 'px'; el.disabled = !!p[2];
       });
     }
   }
@@ -1136,6 +1189,8 @@
     var p = st.p, n = p.length, L = 0, i, b = strokeBox(st), w = b.maxX - b.minX, h = b.maxY - b.minY;
     for (i = 1; i < n; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]);
     if (Math.max(w, h) < 12 || Math.min(w, h) < 0.1 * Math.max(w, h)) return false;       // 小さすぎる・ひらたすぎる（行って戻っただけ）は、輪っかではない
+    if (Math.min(w, h) < 3 * st.w) return false;                                           // ペンの太さにくらべて小さい（中がほとんど残らない）輪っかは、塗る意味がないので、出さない
+    if (L > 3.5 * (w + h)) return false;                                                   // 行ったり来たりして、すでに塗りつぶした線（ぐるぐる塗り）は、輪っかではない
     if (Math.hypot(p[0][0] - p[n - 1][0], p[0][1] - p[n - 1][1]) > 0.2 * L) return false;   // 描き終わりが、はじめから遠い（開いている）
     var A = 0; for (i = 0; i < n; i++) { var q = p[(i + 1) % n]; A += p[i][0] * q[1] - q[0] * p[i][1]; }
     return Math.abs(A) / 2 >= 0.15 * w * h;                                                  // 囲んだ面積が、ある程度ある
@@ -1146,7 +1201,7 @@
     var last = st.p[st.p.length - 1], x = last[0] * scale + offsetX, y = last[1] * scale + offsetY;
     fillTarget = st; fillPop.classList.remove('fade'); fillPop.hidden = false;
     fillPop.style.left = Math.max(70, Math.min(window.innerWidth - 70, x)) + 'px';
-    fillPop.style.top = (y - 56 < 64 ? y + 28 : y - 56) + 'px';
+    fillPop.style.top = (y - 56 < topInset() + 64 ? y + 28 : y - 56) + 'px';
     clearTimeout(fillPopTimer);
     fillPopTimer = setTimeout(function () { fillPop.classList.add('fade'); fillPopTimer = setTimeout(hideFillPop, 500); }, 4000);
   }
@@ -1490,7 +1545,7 @@
       if (cur.k === 'l' && cur.p.length === 2 && Math.hypot(cur.p[1][0] - cur.p[0][0], cur.p[1][1] - cur.p[0][1]) * scale < 3) cur = { k: 'p', c: cur.c, a: cur.a, w: cur.w, p: [cur.p[0]] };       // 直線の道具で、ちょんと触れた時は、長さ0の線ではなく、点にする（点は、自動で選ばれない）
       var tiny = (cur.k === 'r' || cur.k === 'e') && Math.abs(cur.p[1][0] - cur.p[0][0]) * scale < 3 && Math.abs(cur.p[1][1] - cur.p[0][1]) * scale < 3;
       if (!tiny) { var before = strokes.slice(); strokes.push(cur); commit(before); if (cur.k === 'r' || cur.k === 'l' || cur.k === 'e') { selStroke = cur; selEngaged = false; }
-        else if (PEN.tool === 'pen' && isClosedLoop(cur) && Math.max(strokeBox(cur).maxX - strokeBox(cur).minX, strokeBox(cur).maxY - strokeBox(cur).minY) * scale >= 24) showFillPop(cur); }
+        else if (PEN.tool === 'pen' && isClosedLoop(cur) && Math.max(strokeBox(cur).maxX - strokeBox(cur).minX, strokeBox(cur).maxY - strokeBox(cur).minY) * scale >= 40) showFillPop(cur); }
     }
     clearTimeout(holdTimer); held = false; cur = null; painting = false; pid = null; resetSnap(); syncBtns(); requestDraw(false);
   }
@@ -1705,7 +1760,8 @@
   function syncUI() {
     document.querySelectorAll('.mk-t').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === PEN.tool); });
     var tg = selTarget(), showCol = tg ? tg.c : PEN.color, showAl = tg ? tg.a : PEN.alpha;       // 選んだ線をさわっている間は、その線の色・濃さを見せる
-    $('mk-label').textContent = tg ? '選んだ線を変更' : '選択中の蛍光ペン';
+    $('mk-label').textContent = tg ? '線を変更' : ({ pen: 'なぞる', line: '直線', rect: '四角', ellipse: '円', select: '選択', erase: '消しゴム' }[PEN.tool] || '');
+    topbar.classList.toggle('editing', !!tg);
     document.querySelectorAll('.mk-dot').forEach(function (b) {
       b.classList.toggle('on', !b.hidden && b.getAttribute('data-c').toLowerCase() === showCol.toLowerCase());
     });
@@ -1713,7 +1769,8 @@
     cl.classList.toggle('custom-on', !isPreset); cl.style.background = isPreset ? '' : showCol;
     $('mk-custom').value = showCol;
     var nowEl = $('mk-now'); nowEl.style.background = showCol; nowEl.style.opacity = showAl;
-    nowEl.style.height = ({ 8: 5, 18: 9, 36: 14 }[PEN.width] || 9) + 'px';                 // 太さ（細・中・太）に合わせて、見本の太さも変わる
+    nowEl.style.setProperty('--sz', ({ 8: 8, 18: 14, 36: 22 }[PEN.width] || 14) + 'px');           // 太さ（細・中・太）に合わせて、点の大きさも変わる
+    nowEl.style.visibility = (PEN.tool === 'erase' && !tg) ? 'hidden' : '';                  // 消しゴムの時は、色の見本を出さない（場所は残して、文字が動かないようにする）
     $('mk-row-in').hidden = !PEN.penSeen;                                // ペンで触れたことがあるまで、「入力」の行は出さない
     document.querySelectorAll('.mk-i').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-i') === PEN.input); });
     viewer.classList.toggle('inpen', PEN.input === 'pen');
@@ -1725,7 +1782,7 @@
     document.querySelectorAll('.mk-w').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-w') === PEN.width); });
     document.querySelectorAll('.mk-a').forEach(function (b) {
       var a = +b.getAttribute('data-a'), dot = b.querySelector('i');
-      b.classList.toggle('on', a === showAl); dot.style.background = showCol; dot.style.opacity = a;
+      b.classList.toggle('on', a === showAl); if (dot) { dot.style.background = showCol; dot.style.opacity = a; }
     });
   }
   document.querySelectorAll('.mk-t').forEach(function (b) {
@@ -1776,12 +1833,13 @@
       clearSel(); var before = strokes.slice(); strokes = []; commit(before); requestDraw(false);
     });
   });
-  $('mk-toggle').addEventListener('click', function () {
-    var closed = $('mk-panel').classList.toggle('closed');
-    $('mk-toggle').setAttribute('aria-expanded', closed ? 'false' : 'true');
-    if (panelPos) applyPos();                       // 開いて、画面の外にはみ出す時は、位置を収める
-    syncBarScroll();
-  });
+  function setBarClosed(closed) {                    // 操作エリアを、たたむ／開く（帯のタイトルだけ残して、編み図を広く使える）
+    $('mk-panel').classList.toggle('closed', closed); topbar.classList.toggle('closed', closed);
+    var tg = $('mk-toggle'); tg.setAttribute('aria-expanded', closed ? 'false' : 'true'); tg.setAttribute('aria-label', closed ? '操作パネルを開く' : '操作パネルをたたむ'); $('tb-now').setAttribute('aria-label', closed ? '操作パネルを開く' : '操作パネルをたたむ');
+    syncTop(); lastT = topInset();
+  }
+  $('mk-toggle').addEventListener('click', function () { setBarClosed(!$('mk-panel').classList.contains('closed')); });
+  $('tb-now').addEventListener('click', function () { setBarClosed(!$('mk-panel').classList.contains('closed')); });       // 「いまのペン」を押しても、「−」と同じように、開く／たたむ
   syncUI();
 
   $('undo-btn').addEventListener('click', undo);
@@ -1798,92 +1856,42 @@
 
   // 画面の大きさ・向きが変わったとき：画面の中心にあった場所を、そのまま中心に保つ
   function onResize() {
-    var W = window.innerWidth, H = window.innerHeight;
+    var W = window.innerWidth, H = window.innerHeight, T = topInset();
     if (img) {
-      var cx = (lastW / 2 - offsetX) / scale, cy = (lastH / 2 - offsetY) / scale;
+      var cx = (lastW / 2 - offsetX) / scale, cy = ((lastT + lastH) / 2 - offsetY) / scale;       // 編み図が見えている範囲（帯の下）の、中心を保つ
       updateLimits();
-      offsetX = W / 2 - cx * scale; offsetY = H / 2 - cy * scale;
+      offsetX = W / 2 - cx * scale; offsetY = (T + H) / 2 - cy * scale;
       clampOffset();
     }
-    lastW = W; lastH = H; requestDraw();
+    lastW = W; lastH = H; lastT = T; requestDraw();
   }
   window.addEventListener('resize', onResize);
   window.addEventListener('orientationchange', onResize);
 
-  /* ---------- 右上の操作盤の位置：スマホで、左上のボタンが2段になっても、重ならないように ---------- */
-  var mkPanel = $('mk-panel');
-  function layoutPanel() {                          // 左上のボタンと重なる時だけ、操作盤を、ボタンの下にずらす（動かした位置があるときは、そちらを優先）
-    if (panelPos) return;
-    mkPanel.style.top = '';
-    if (mkPanel.hidden) { layoutTapHint(); return; }
-    var mt = window.innerWidth <= 679 ? 40 : 12, t = { left: 12, top: mt, right: 12 + Math.min(300, window.innerWidth - 24), bottom: mt + 56 };       // 左上のパネルを閉じた時の、見出しの大きさ
-    var c = $('mk-card').getBoundingClientRect(), hb = $('mk-head').getBoundingClientRect().bottom;
-    var overlap = t.right + 8 > c.left && t.left - 8 < c.right && t.bottom + 8 > c.top && t.top - 8 < hb;
-    if (overlap) mkPanel.style.top = (t.bottom + 8) + 'px';
-    layoutTapHint();
+  /* ---------- 一番上の帯の高さ：メニューの位置や、開く前の案内の位置に使う ---------- */
+  function syncTop() {
+    var root = document.documentElement.style;
+    root.setProperty('--band-h', Math.round($('tb-band').getBoundingClientRect().bottom) + 'px');
+    root.setProperty('--tb-h', Math.round(topbar.getBoundingClientRect().bottom) + 'px');
   }
-  function layoutTapHint() {                       // 右上のヒント：右上に操作盤があって重なる時は、操作盤の左に寄せる
-    var h = $('tap-hint'); h.style.right = '';
-    if (!document.body.classList.contains('menu-open') || mkPanel.hidden) return;
-    var r = $('mk-card').getBoundingClientRect(), hr = h.getBoundingClientRect();
-    if (r.top < hr.bottom + 6 && r.left < hr.right && r.right > hr.left) h.style.right = (window.innerWidth - r.left + 12) + 'px';
-  }
-  function applyPos() {                             // 動かした位置を反映（画面の外に出ないように収める）
-    if (!panelPos) { mkPanel.style.right = ''; mkPanel.style.top = ''; layoutPanel(); return; }
-    if (mkPanel.hidden) { layoutTapHint(); return; }
-    var w = mkPanel.offsetWidth, h = mkPanel.offsetHeight;
-    panelPos.r = Math.min(Math.max(4, window.innerWidth - w - 4), Math.max(4, panelPos.r));
-    panelPos.t = Math.min(Math.max(4, window.innerHeight - h - 4), Math.max(4, panelPos.t));
-    mkPanel.style.right = panelPos.r + 'px'; mkPanel.style.top = panelPos.t + 'px';
-    layoutTapHint();
-  }
-  window.addEventListener('resize', function () { if (panelPos) applyPos(); else layoutPanel(); syncBarScroll(); if (cpPos) applyCpPos(); });
-
-  var mkCard = $('mk-card'), mkBar = $('mk-bar'), gDrag = null, lastTap = 0;
-  function syncBarScroll() { var bar = $('mk-bar'); bar.classList.toggle('scrolls', bar.scrollHeight > bar.clientHeight + 1); }
-  mkCard.addEventListener('pointerdown', function (e) {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    var onToggle = !!e.target.closest('#mk-toggle');                     // 見出しのボタンは、押すと開閉。ドラッグすると、操作盤が動く
-    if (!onToggle && e.target.closest('button, input, label, a')) return;   // ほかのボタン・色の丸などは、ふつうに押す
-    if (e.target.closest('#mk-bar') && mkBar.scrollHeight > mkBar.clientHeight + 1) return;   // 中身をスクロールする時は、つかまない
-    if (!onToggle) { e.preventDefault(); try { mkCard.setPointerCapture(e.pointerId); } catch (err) {} mkCard.classList.add('dragging'); }
-    var r = mkPanel.getBoundingClientRect();
-    gDrag = { id: e.pointerId, x: e.clientX, y: e.clientY, right: window.innerWidth - r.right, top: r.top, moved: false, fromToggle: onToggle };
-  });
-  mkCard.addEventListener('pointermove', function (e) {
-    if (!gDrag || e.pointerId !== gDrag.id) return;
-    var dx = e.clientX - gDrag.x, dy = e.clientY - gDrag.y;
-    if (!gDrag.moved && Math.hypot(dx, dy) < 4) return;       // ちょっと触れただけでは、動かさない
-    if (!gDrag.moved && gDrag.fromToggle) {                   // 見出しのボタンから動かし始めた：ここで、つかむ（このあとの「押した」扱いは、なくなる）
-      try { mkCard.setPointerCapture(e.pointerId); } catch (err) {}
-      mkCard.classList.add('dragging');
-    }
-    gDrag.moved = true;
-    panelPos = { r: gDrag.right - dx, t: gDrag.top + dy }; applyPos();
-  });
-  function cardEnd(e) {
-    if (!gDrag || e.pointerId !== gDrag.id) return;
-    var moved = gDrag.moved, fromToggle = gDrag.fromToggle; gDrag = null; mkCard.classList.remove('dragging');
-    if (moved) { saveSt(); lastTap = 0; return; }
-    if (fromToggle) return;                         // 見出しのボタンを押しただけ：開閉するだけ（2回タップのもどす操作には、数えない）
-    var now = Date.now();                           // 白いところを触れただけ：1回目は何もしない。2回続けてタップしたら、もとの位置にもどす
-    if (now - lastTap < 400) {
-      panelPos = null; applyPos(); saveSt(); lastTap = 0; showNote('操作盤を、もとの位置にもどしました');
-    } else {
-      lastTap = now;
-    }
-  }
-  mkCard.addEventListener('pointerup', cardEnd);
-  mkCard.addEventListener('pointercancel', cardEnd);
+  function layoutPanel() { syncTop(); }
+  function applyPos() { syncTop(); }
+  function syncBarScroll() {}
+  if (window.ResizeObserver) new ResizeObserver(syncTop).observe(topbar);
+  window.addEventListener('resize', function () { syncTop(); if (cpPos) applyCpPos(); });
+  syncTop();
 
   /* ---------- メニュー ---------- */
-  var menuSub = $('menu-sub'), menuSubTimer = null;
+  var subEl = $('tb-sub'), subTimer = null;
+  function showSub(on) {                             // タイトルの下の2行（サブタイトル・ブランド名）を、ふわっと出す／しばらくしたら、ふわっと消す
+    clearTimeout(subTimer); subEl.classList.toggle('show', on);
+    if (on) subTimer = setTimeout(function () { subEl.classList.remove('show'); }, 3500);
+  }
+  $('tb-band').querySelector('.tb-title').addEventListener('click', function () { showSub(!subEl.classList.contains('show')); });      // タイトルを押しても、出す／消す
   function setMenu(open) {
     menuPanel.classList.toggle('collapsed', !open); document.body.classList.toggle('menu-open', open);
-    clearTimeout(menuSubTimer);                                       // サブタイトルとブランド名：開いた時、ふわっと出て、3秒後に、ふわっと消える（編み図ルーラーと同じ）
-    if (open) { menuSub.classList.add('show'); menuSubTimer = setTimeout(function () { menuSub.classList.remove('show'); }, 3000); }
-    else menuSub.classList.remove('show');
     menuHead.setAttribute('aria-expanded', open ? 'true' : 'false');
+    showSub(open);                                   // メニューを開いた時に出して、閉じた時は、すぐ消す
     layoutPanel();
   }
   function closeMenu() { setMenu(false); }
