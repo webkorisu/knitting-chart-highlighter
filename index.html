@@ -220,8 +220,7 @@
     .mk-cap { position: relative; padding: 0 8px; }
     .mk-cap svg { display: block; width: 24px; height: 12px; flex: none; }
     .mk-cap:disabled { cursor: default; }
-    .mk-cap.mk-ring svg, #count-btn svg { width: 18px; height: 18px; }                       /* 円の「塗りつぶし・ふち・数える」の絵は、正方形 */
-    #count-btn.on { background: var(--seg-on); color: var(--on-text); }
+    .mk-cap.mk-ring svg { width: 18px; height: 18px; }                       /* 円の「塗りつぶし・ふち・数える」の絵は、正方形 */
     @media (hover: hover) {                                                                 /* PC：マウスを乗せると、説明が出る（ほかのボタンと同じ） */
       .mk-cap[data-tip]:not(:disabled):hover::after {
         content: attr(data-tip); position: absolute; z-index: 40; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); padding: 6px 10px; border-radius: 8px;
@@ -629,7 +628,6 @@
           </div><div class="mk-seg" id="mk-ringseg" hidden>
             <button type="button" class="mk-seg-b mk-cap mk-ring" data-ring="0" aria-label="塗りつぶし" data-tip="塗りつぶし"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="currentColor"/></svg></button>
             <button type="button" class="mk-seg-b mk-cap mk-ring" data-ring="1" aria-label="ふち（輪）" data-tip="ふち（輪）"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.8" fill="none" stroke="currentColor" stroke-width="4"/></svg></button>
-            <button type="button" class="mk-seg-b mk-cap" id="count-btn" aria-pressed="false" aria-label="記号を数える" data-tip="記号を数える"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="4.5" r="2" fill="currentColor"/><circle cx="18.5" cy="8.2" r="2" fill="currentColor"/><circle cx="18.5" cy="15.8" r="2" fill="currentColor"/><circle cx="12" cy="19.5" r="2" fill="currentColor"/><circle cx="5.5" cy="15.8" r="2" fill="currentColor"/><circle cx="5.5" cy="8.2" r="2" fill="currentColor"/></svg></button>
           </div></div>
         </div>
         <div id="mk-colors" role="group" aria-label="カラー">
@@ -706,7 +704,7 @@
           <li>右下のカウンターで、段数を数えられます（「−」を長押しすると、0にもどります）。</li>
           <li>マス目の編み図は、マスのマークを押すと、直線・四角・円が、マスにぴったり合って、目数や段数が出ます（もう一度押すと、点線が消えて、もう一度で、やめます。かぎ針の記号図などでは、押さずに使います）。</li>
           <li>なぞる・直線の道具では、操作エリアの「ペンの先」で、はしの形（角丸・斜め・ぴったり）を選べます。</li>
-          <li>円の道具で、「ふち」を選ぶと、輪で段ごとに塗れます（輪の太さは、ペンの太さで変わります）。「数える」を入れると、輪が通る記号の数が、約○目と出ます（鎖編みの印は1つ、丸つき数字は数えません）。</li>
+          <li>円の道具で、「ふち」を選ぶと、輪で段ごとに塗れます（輪の太さは、ペンの太さで変わります）。</li>
           <li>白黒のマーク（半分塗ったまる）で、編み図を白黒にして、塗りやすくできます。</li>
           <li>ダウンロードのマークで、塗った編み図を画像にして残せます。</li>
           <li>2本指で、拡大・縮小・移動ができます。</li>
@@ -816,7 +814,6 @@
   var grid = null, gridOn = false, gridShow = true;       // gridShow：マス目の点線を見せるか（吸着は、見せなくても、続く）
   var _g0 = 0;                  // grid：見つけたマス目 { px, ox, py, oy }（横の線は x = ox + n×px、縦の線は y = oy + n×py）／ gridOn：マス目への吸着・表示の入／切
   var mono = false, monoSrc = null;                // mono：白黒表示の入／切  monoSrc：白黒にした画像（元の画像は、書き換えない）
-  var countOn = false;                              // 円の輪が通る記号の数を、数えて見せるか（編み図ごと）
   var PEN = { ring: false, cap: 'r', tool: 'pen', input: 'hand', penSeen: false, color: '#FFF200', alpha: 0.45, width: 18 };   // width は、画面での太さ[px]／ input：'hand'＝指モード、'pen'＝ペンモード
   function nearest(list, v) { var b = list[0]; list.forEach(function (x) { if (Math.abs(x - v) < Math.abs(b - v)) b = x; }); return b; }
   try {
@@ -1023,7 +1020,6 @@
     Array.prototype.forEach.call(capSeg.querySelectorAll('.mk-cap'), function (b) { b.classList.toggle('on', b.getAttribute('data-cap') === cap); b.disabled = !enabled; });
     var isRing = tr ? !!tr.ring : PEN.ring;
     Array.prototype.forEach.call($('mk-ringseg').querySelectorAll('.mk-ring'), function (b) { b.classList.toggle('on', (b.getAttribute('data-ring') === '1') === isRing); b.disabled = !enabled; });
-    var cb = $('count-btn'); cb.classList.toggle('on', countOn); cb.setAttribute('aria-pressed', countOn ? 'true' : 'false'); cb.disabled = !enabled || !isRing;       // 数えるのは、ふち（輪）のとき
   }
   capSeg.addEventListener('click', function (e) {
     var b = e.target.closest('.mk-cap'); if (!b || b.disabled) return;
@@ -1033,115 +1029,12 @@
   });
   $('mk-ringseg').addEventListener('click', function (e) {
     var b = e.target.closest('.mk-cap'); if (!b || b.disabled) return;
-    if (b.id === 'count-btn') { countOn = !countOn; scheduleSave(); updateCapSeg(); requestDraw(false); showNote(countOn ? '記号を数えます（輪が通る記号の数が、約○目と出ます）' : '記号を数えるのを、やめました'); return; }
     var v = b.getAttribute('data-ring') === '1'; PEN.ring = v; saveSt();
     if (ringTarget()) applyToSel({ ring: v }, true);
     updateCapSeg(); requestDraw(false);
   });
-  /* ---------- 円の「ふち（輪）」が通る、記号の数：輪の真ん中の線に沿って、暗い線（記号）を横切る回数を数える。数えた場所には、点も出す ---------- */
-  var pixCache = null, ringRes = null, ringKey = '';
-  function getPix() {                               // 数えるために、編み図の明るさを、細かく調べておく（端末の中だけ）
-    if (pixCache && pixCache.img === img) return pixCache;
-    var iw = img.naturalWidth, ih = img.naturalHeight, k = Math.min(1, 1800 / Math.max(iw, ih)), W = Math.max(1, Math.round(iw * k)), H = Math.max(1, Math.round(ih * k));
-    var cv4 = document.createElement('canvas'); cv4.width = W; cv4.height = H; var c4 = cv4.getContext('2d', { willReadFrequently: true });
-    c4.fillStyle = '#FFFFFF'; c4.fillRect(0, 0, W, H); c4.drawImage(img, 0, 0, W, H);
-    var dd = c4.getImageData(0, 0, W, H).data, gg = new Uint8Array(W * H), q, j;
-    for (q = 0, j = 0; q < dd.length; q += 4, j++) gg[j] = (0.299 * dd[q] + 0.587 * dd[q + 1] + 0.114 * dd[q + 2]) | 0;
-    pixCache = { img: img, W: W, H: H, k: k, g: gg }; return pixCache;
-  }
-  function labelPix(P) {                           // 黒っぽい部分を、つながり（まとまり）ごとに、番号をつける。あわせて、「鎖編みの印」「丸つき数字」を見分ける（1つの編み図で1回だけ）
-    if (P.flag) return;
-    var W = P.W, H = P.H, g = P.g, N = W * H, TH = 140, lab = new Int32Array(N), par = new Int32Array((N >> 1) + 2), nl = 0, x, y, i, v, m, r1, r2;
-    var find = function (q) { while (par[q] !== q) { par[q] = par[par[q]]; q = par[q]; } return q; };
-    for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
-      i = y * W + x; if (g[i] >= TH) continue;
-      var nb = [x > 0 ? lab[i - 1] : 0, (y > 0 && x > 0) ? lab[i - W - 1] : 0, y > 0 ? lab[i - W] : 0, (y > 0 && x < W - 1) ? lab[i - W + 1] : 0];
-      m = 0; for (v = 0; v < 4; v++) if (nb[v] && (!m || nb[v] < m)) m = nb[v];
-      if (!m) { nl++; par[nl] = nl; lab[i] = nl; }
-      else { lab[i] = m; for (v = 0; v < 4; v++) if (nb[v]) { r1 = find(nb[v]); r2 = find(m); if (r1 !== r2) par[Math.max(r1, r2)] = Math.min(r1, r2); } }
-    }
-    for (i = 0; i < N; i++) if (lab[i]) lab[i] = find(lab[i]);
-    var state = new Uint8Array(N), stack = new Int32Array(N), flag = new Uint8Array(nl + 1), sp, j, nx, ny, ni;       // 光る所：0＝まだ、1＝外につながる、2＝囲まれた穴
-    var fill = function (start, mark, collect) {      // 明るい所を、4方向で、つながる限り、塗り広げる（穴の大きさと、まわりの黒いまとまりも、集める）
-      var area = 0, adj = []; sp = 0; stack[sp++] = start; state[start] = mark;
-      while (sp) {
-        j = stack[--sp]; area++; var fx = j % W, fy = (j - fx) / W;                  // （外側の x・y とは、別の変数にする）
-        for (var d = 0; d < 4; d++) {
-          nx = fx + (d === 0 ? 1 : d === 1 ? -1 : 0); ny = fy + (d === 2 ? 1 : d === 3 ? -1 : 0);
-          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
-          ni = ny * W + nx;
-          if (g[ni] >= TH) { if (!state[ni]) { state[ni] = mark; stack[sp++] = ni; } }
-          else if (collect && lab[ni] && adj.indexOf(lab[ni]) < 0) adj.push(lab[ni]);
-        }
-      }
-      return { area: area, adj: adj };
-    };
-    for (x = 0; x < W; x++) { if (g[x] >= TH && !state[x]) fill(x, 1, false); i = (H - 1) * W + x; if (g[i] >= TH && !state[i]) fill(i, 1, false); }
-    for (y = 0; y < H; y++) { i = y * W; if (g[i] >= TH && !state[i]) fill(i, 1, false); i = y * W + W - 1; if (g[i] >= TH && !state[i]) fill(i, 1, false); }
-    for (i = 0; i < N; i++) {
-      if (g[i] >= TH && !state[i]) {                  // 囲まれた穴
-        var hole = fill(i, 2, true);
-        if (hole.area >= 30 && hole.area <= 4000) {
-          if (hole.adj.length === 1) { if (!flag[hole.adj[0]]) flag[hole.adj[0]] = 1; }                      // 中が空いた輪っか：鎖編みの印
-          else if (hole.adj.length >= 2) hole.adj.forEach(function (q) { flag[q] = 2; });                    // 中に、ほかの黒いもの（数字など）がある輪っか：丸つき数字など。数えない
-        }
-      }
-    }
-    P.lab = lab; P.flag = flag;
-  }
-  function ringCount(st) {                          // 戻り値：{ n：数、pts：数えた場所（画像の座標） }
-    var p = st.p, cx = (p[0][0] + p[1][0]) / 2, cy = (p[0][1] + p[1][1]) / 2, rx = Math.abs(p[1][0] - p[0][0]) / 2, ry = Math.abs(p[1][1] - p[0][1]) / 2, t = Math.min(st.w, rx, ry);
-    var mx = rx - t / 2, my = ry - t / 2; if (mx < 4 || my < 4) return null;
-    var key = chartId + '|' + [cx, cy, mx, my].map(function (v) { return Math.round(v * 10); }).join('|'); if (key === ringKey && ringRes) return ringRes;
-    var P = getPix(); labelPix(P);
-    var k = P.k, n = Math.max(360, Math.min(6000, Math.round(Math.PI * (mx + my) * 1.5 * k))), dark = new Uint8Array(n), dlab = new Int32Array(n), i, o, TH = 140;
-    for (i = 0; i < n; i++) {
-      var th = 2 * Math.PI * i / n, ux = Math.cos(th), uy = Math.sin(th);
-      for (o = -1; o <= 1; o++) {                   // 線は細いので、すこし内側・外側も、さがす
-        var x = Math.round((cx + (mx + o) * ux) * k), y = Math.round((cy + (my + o) * uy) * k);
-        if (x >= 0 && y >= 0 && x < P.W && y < P.H && P.g[y * P.W + x] < TH) { dark[i] = 1; dlab[i] = P.lab[y * P.W + x]; break; }
-      }
-    }
-    var s0 = -1; for (i = 0; i < n; i++) if (!dark[i]) { s0 = i; break; }
-    var pts = [], runStart = -1, seen = {};
-    if (s0 >= 0) for (var m = 0; m <= n; m++) {    // 明るい所から始めて、暗い連続を、1つずつ数える（円の始まりをまたぐ線も、1つ）
-      var ii = (s0 + m) % n, dk = m < n ? dark[ii] : 0;
-      if (dk && runStart < 0) runStart = m;
-      else if (!dk && runStart >= 0) {
-        var runLab = dlab[(s0 + runStart) % n], fl = runLab ? P.flag[runLab] : 0;
-        if (fl === 2) { /* 丸つき数字など：数えない */ }
-        else if (fl === 1 && seen[runLab]) { /* 鎖編みの印：すでに数えた（何回横切っても、1つ） */ }
-        else { if (fl === 1) seen[runLab] = 1; var mid = (s0 + (runStart + m - 1) / 2) % n, tt = 2 * Math.PI * mid / n; pts.push([cx + mx * Math.cos(tt), cy + my * Math.sin(tt)]); }
-        runStart = -1;
-      }
-    }
-    ringKey = key; ringRes = { n: pts.length, pts: pts }; return ringRes;
-  }
-  function ringMeasTarget() {                       // 数える対象：描いている途中の輪、または、選んでいる輪
-    var ok = function (st) { return st && st.k === 'e' && st.ring && st.p.length >= 2; };
-    if (cur && ok(cur)) return cur;
-    if (selStroke && !grp && ok(selStroke)) return selStroke;
-    return null;
-  }
-  function updateRingMeasure() {
-    var t = ringMeasTarget(), res = t ? ringCount(t) : null;
-    if (!res) { if (!measBtn.hidden) measBtn.hidden = true; return; }
-    var a = t.p[0], b = t.p[1];
-    measBtn.textContent = '約' + res.n + '目'; measBtn.className = 'live'; measBtn.title = '';
-    var m = toScr((a[0] + b[0]) / 2, Math.max(a[1], b[1])), W = window.innerWidth, H = window.innerHeight, hw = (measBtn.offsetWidth || 80) / 2 + 6;
-    measBtn.style.left = Math.max(hw, Math.min(W - hw, m[0])) + 'px'; measBtn.style.top = Math.max(topInset() + 20, Math.min(H - 20, m[1] + 30)) + 'px';
-    measBtn.hidden = false;
-  }
-  function drawRingDots(c, dpr) {                   // 数えた場所に、小さな点
-    if (!countOn || !img || (gridOn && grid)) return;
-    var t = ringMeasTarget(), res = t ? ringCount(t) : null; if (!res) return;
-    c.save(); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.globalAlpha = 1; c.fillStyle = '#C81E5A';
-    res.pts.forEach(function (q) { var v = toScr(q[0], q[1]); c.beginPath(); c.arc(v[0], v[1], 3.4, 0, Math.PI * 2); c.fill(); });
-    c.restore();
-  }
-  function updateMeasure() {                        // 目数・段数は、マス目に合わせている時だけ出す。円の輪は、「数える」を入れている時だけ、記号の数を出す
+  function updateMeasure() {                        // 目数・段数は、マス目に合わせている時だけ出す（マス目が切の時は、計測しない）
     if (img && gridOn && grid) { updateGridMeasure(); return; }
-    if (img && countOn) { updateRingMeasure(); return; }
     if (!measBtn.hidden) measBtn.hidden = true;
   }
   /* ---------- コピー機のような白黒：白は白のまま、色は、グレーに。いちばん濃い所（黒）も、濃いグレーまで ----------
@@ -1275,7 +1168,6 @@
     }
     mctx.drawImage(cache, 0, 0);
     if (cur && !held) drawStroke(mctx, cur, dpr);
-    drawRingDots(mctx, dpr);
     if (painting && !held && PEN.tool === 'erase' && eraserPos) {          // 消しゴムの目印（丸）
       mctx.save(); mctx.setTransform(1, 0, 0, 1, 0, 0);
       mctx.globalAlpha = 1; mctx.strokeStyle = '#7C9AA5'; mctx.lineWidth = 2 * dpr;
@@ -1327,8 +1219,8 @@
     // 画像の見分け方：名前・大きさ・更新日時・縦横サイズ（編み図ルーラーと同じ）
     chartId = [file.name, file.size, file.lastModified, im.naturalWidth + 'x' + im.naturalHeight].join('|');
     chartName = file.name;
-    strokes = loadFor(chartId); count = loadCount(chartId); grid = loadGrid(chartId); countOn = loadCnt(chartId); gridOn = !!(grid && grid.on); gridShow = !grid || grid.show !== false; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
-    if (strokes.length || count || grid || countOn) scheduleSave();       // 「最近使った画像」として、保存の日時を更新しておく
+    strokes = loadFor(chartId); count = loadCount(chartId); grid = loadGrid(chartId); gridOn = !!(grid && grid.on); gridShow = !grid || grid.show !== false; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
+    if (strokes.length || count || grid) scheduleSave();       // 「最近使った画像」として、保存の日時を更新しておく
     syncGridBtn(); syncBtns();
     placeholder.hidden = true;
     viewer.classList.remove('empty', 'dragging');
@@ -1344,7 +1236,7 @@
   function closeImage() {
     cancelPaint(); mode = 'idle'; pts.clear(); pinchLast = 0; midLast = null; editing = null; selStroke = null; grp = null; cancelLasso();
     flush();
-    img = null; monoSrc = null; chartId = null; grid = null; gridOn = false; gridShow = true; countOn = false; strokes = []; count = 0; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
+    img = null; monoSrc = null; chartId = null; grid = null; gridOn = false; gridShow = true; strokes = []; count = 0; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
     syncBtns();
     placeholder.hidden = false;
     viewer.classList.add('empty'); viewer.classList.remove('dragging');
@@ -2711,7 +2603,7 @@
     var capOk = (s.k === 'l' || s.k === 'p') && s.p.length >= 2, out = [s.k, s.c, s.a, Math.round(s.w * 100) / 100, f], capc = capOk && s.cap === 'c' ? (s.sl === -1 ? 'C' : 'c') : (capOk && s.cap === 'f' ? 'f' : null);
     if (s.k === 'e' && s.ring) capc = 'o';           // 円の「ふち（輪）」：o
     if (s.gid || capc) out.push(s.gid || '');
-    if (capc) out.push(capc);                        // はしの形：c＝斜め／C＝斜め（反転）／f＝ぴったり
+    if (capc) out.push(capc);                        // はしの形：c＝斜め／C＝斜め（反転）／f＝ぴったり／o＝輪
     return out;
   }
   function unpack(a) {                              // 保存データが壊れていても、アプリが止まらないように、1本ずつ確認する
@@ -2752,10 +2644,6 @@
     } catch (e) {}
     return null;
   }
-  function loadCnt(id) {                            // この編み図で、「記号を数える」を入れていたか
-    if (!storageOk) return false;
-    try { var it = readAll().items[id]; return !!(it && it.cnt === 1); } catch (e) { return false; }
-  }
   function loadCount(id) {
     if (!storageOk) return 0;
     try {
@@ -2775,9 +2663,9 @@
     if (count > 0) it.n = count; else delete it.n;                                  // カウンターの数も、同じ記録に入れる
     if (grid) it.grid = [Math.round(grid.px * 100) / 100, Math.round(grid.ox * 100) / 100, Math.round(grid.py * 100) / 100, Math.round(grid.oy * 100) / 100, grid.i0, grid.i1, grid.j0, grid.j1, gridOn ? 1 : 0, gridShow ? 1 : 0]; else delete it.grid;       // 見つけたマス目と、使っているかどうかも
     delete it.cal;                                                                  // （前の版の、合わせた目の大きさは、もう使わないので、消す）
-    if (countOn) it.cnt = 1; else delete it.cnt;                                       // 「記号を数える」の入／切
+    delete it.cnt;                                                                  // （前の版の、「記号を数える」の記録は、もう使わないので、消す）
     it.t = Date.now();
-    if (it.s || it.n || it.grid || it.cnt) all.items[chartId] = it; else delete all.items[chartId];      // 塗りもカウンターも空なら、記録ごと消す
+    if (it.s || it.n || it.grid) all.items[chartId] = it; else delete all.items[chartId];      // 塗りもカウンターも空なら、記録ごと消す
     var keys = Object.keys(all.items);
     if (keys.length > MAX_ITEMS) {                  // 編み図が増えすぎたら、古いものから整理
       keys.filter(function (k) { return k !== chartId; }).sort(function (a, b) { return (all.items[a].t || 0) - (all.items[b].t || 0); })
