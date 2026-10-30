@@ -622,6 +622,18 @@
     .tl-info { display: flex; align-items: baseline; gap: 5px; font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: .04em; white-space: nowrap; padding: 0 4px; }
     .tl-info b { font-size: 19px; font-weight: 700; letter-spacing: .02em; line-height: 1; }
     .tl-info .tl-sub { color: var(--text-sub); font-weight: 500; }
+.tl-info b { font-variant-numeric: tabular-nums; }       /* 数字の幅を、そろえる */
+.tl-info { min-width: 137px; }                             /* 数が増えても、ボタンが動かないよう、数字の場所の幅を、最大の桁数（数99・ぜんぶ9999）ぶん、確保する */
+.tl-info .tl-all { font-size: 14px; font-weight: 500; color: var(--text-sub); }       /* ぜんぶの数：小さく・うすく */
+.tl-dot { align-self: center; flex: none; width: 17px; height: 17px; margin-right: 1px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px rgba(107, 82, 88, .3); }       /* 数えている色（選んでいる色の丸） */
+.tl-colors { display: flex; align-items: center; gap: 7px; padding: 0 3px; }
+.tl-c { flex: none; width: 27px; height: 27px; padding: 0; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px rgba(107, 82, 88, .28); cursor: pointer; transition: transform .12s; }       /* 数える色（6色） */
+.tl-c.on { box-shadow: 0 0 0 3px var(--sel-line); }
+.tl-c:active { transform: scale(.92); }
+#tl-colors { flex-basis: 100%; }       /* 色の丸は、いつも、次の行（広い画面では、1行にまとまる） */
+@media (min-width: 900px) { #tl-colors { flex-basis: auto; } }
+@media (max-width: 389px) { .tl-c { width: 22px; height: 22px; } .tl-colors { gap: 5px; } .tl-info { gap: 3px; min-width: 129px; } .tl-dot { width: 15px; height: 15px; } #tl-row .tl-btn { padding: 0 10px; font-size: 12px; } }
+@media (max-width: 359px) { #tl-row { gap: 5px 6px; } .tl-info { font-size: 11px; padding: 0; min-width: 115px; } .tl-info b { font-size: 17px; } #tl-row .tl-btn { padding: 0 8px; font-size: 11.5px; } }       /* さらにせまい幅 */       /* せまいスマホ：色の丸を、少し小さく（かぞえる行が、はみ出さないように） */
     .tl-btn { height: var(--pill-h); padding: 0 13px; background: var(--surface); color: var(--text); border: 1.5px solid var(--edge); border-radius: 999px; font: inherit; font-size: 13px; font-weight: 700; letter-spacing: .04em; white-space: nowrap; cursor: pointer; }
     .tl-btn.accent { background: var(--seg-on); border-color: var(--sel-line); color: var(--on-text); }
     .tl-btn:active { transform: scale(.96); }
@@ -728,10 +740,10 @@
           </div>
           <!-- かぞえる▼ -->
           <div id="tl-row" hidden>
-            <div class="tl-info"><b id="tl-g">1</b><span>段目</span><b id="tl-n">0</b><span class="tl-sub">／ ぜんぶ</span><b id="tl-all">0</b></div>
-            <button type="button" class="tl-btn" id="tl-undo">ひとつもどす</button>
-            <button type="button" class="tl-btn accent" id="tl-next">次の段へ</button>
+            <div class="tl-info"><i class="tl-dot" id="tl-dot" title="数えている色" aria-hidden="true"></i><b id="tl-n">0</b><span class="tl-sub">／ 合計</span><b id="tl-all" class="tl-all">0</b></div>
+            <button type="button" class="tl-btn" id="tl-again" title="選んでいる色の数を、1から数え直します（前の印は、残ります）">1からかぞえる</button>
             <button type="button" class="tl-btn" id="tl-clear">リセット</button>
+            <div class="tl-colors" id="tl-colors" role="group" aria-label="数える色"><button type="button" class="tl-c" data-i="0" aria-label="数える色 1"></button><button type="button" class="tl-c" data-i="1" aria-label="数える色 2"></button><button type="button" class="tl-c" data-i="2" aria-label="数える色 3"></button><button type="button" class="tl-c" data-i="3" aria-label="数える色 4"></button><button type="button" class="tl-c" data-i="4" aria-label="数える色 5"></button><button type="button" class="tl-c" data-i="5" aria-label="数える色 6"></button><button type="button" class="tl-c" data-i="6" aria-label="数える色 7"></button></div>
           </div>
           <!-- かぞえる▲ -->
         </div>
@@ -817,7 +829,7 @@
           <li>選んでいる線は、上からドラッグすると動かせます。近くに新しい線を描くときは、先に、何もない所を1回タップします。</li>
           <li>「選択」で囲むと、まとめて選んで、動かす・回す・色を変える、ができます。</li>
           <li>直線・四角では、マスのマークで、目数・段数をかぞえます。</li>
-          <li>「メモ」は、ふつうのペンと文字です。「かぞえる」は、タップで番号がつきます。</li>
+          <li>「メモ」は、ふつうのペンと文字です。「かぞえる」は、色を選んで、タップすると、番号がつきます（色ごとに99まで）。</li>
           <li>半分塗ったまるのマークで、編み図が、白黒・うすい色になります。</li>
           <li>ダウンロードのマークで、画像にして残せます。</li>
           <li>2本指で、拡大・縮小・移動ができます。</li>
@@ -865,7 +877,7 @@
         </svg>
       </a>
     </div>
-    <div class="last-updated">最終更新：2026.10.29</div>
+    <div class="last-updated">最終更新：2026.10.30</div>
   </div>
   </div>
   </div>
@@ -931,7 +943,7 @@
   var CAP_SLANT = 0.45;                            // 斜めのペン先（蛍光ペン風）の、切り口の傾き：小さいほど、まっすぐに近い（以前は 0.7）
   var MEMO_COLORS = ['#4A3238', '#E0476A', '#3F6FB5', '#3E8E5B', '#8E5BC9', '#E08A1E', '#8A7A7F'];       // メモの色（こげ茶・赤・青・緑・紫・橙・灰）：#000000は使わない
   var MEMO_PEN_PX = { 8: 1.8, 18: 3, 36: 5.5 }, MEMO_FS_PX = { 8: 13, 18: 18, 36: 28 };                  // メモペンの太さ／文字の大きさ（画面のpx）：細・中・太 → 小・中・大
-  var PEN = { ring: false, cap: 'r', tool: 'pen', last: 'pen', shape: 'rect', eraseW: 18, memo: 'pen', memoColor: '#4A3238', memoW: 18, custom: null, memoCustom: null, input: 'hand', penSeen: false, color: '#FFF200', alpha: 0.45, width: 18 };   // width は、画面での太さ[px]／ input：'hand'＝指モード、'pen'＝ペンモード
+  var PEN = { ring: false, cap: 'r', tool: 'pen', last: 'pen', shape: 'rect', eraseW: 18, memo: 'pen', memoColor: '#4A3238', memoW: 18, custom: null, memoCustom: null, tallyColor: 0, input: 'hand', penSeen: false, color: '#FFF200', alpha: 0.45, width: 18 };   // width は、画面での太さ[px]／ input：'hand'＝指モード、'pen'＝ペンモード
   function nearest(list, v) { var b = list[0]; list.forEach(function (x) { if (Math.abs(x - v) < Math.abs(b - v)) b = x; }); return b; }
   try {
     var s0 = JSON.parse(localStorage.getItem(SKEY));
@@ -947,6 +959,7 @@
       if (s0.memoW === 8 || s0.memoW === 18 || s0.memoW === 36) PEN.memoW = s0.memoW;
       if (/^#[0-9a-fA-F]{6}$/.test(s0.custom)) PEN.custom = s0.custom;                           // 好きな色（蛍光ペン用・メモ用）：ボタンに、残して見せる
       if (/^#[0-9a-fA-F]{6}$/.test(s0.memoCustom)) PEN.memoCustom = s0.memoCustom;
+      if (s0.tallyColor === 0 || s0.tallyColor === 1 || s0.tallyColor === 2 || s0.tallyColor === 3 || s0.tallyColor === 4 || s0.tallyColor === 5 || s0.tallyColor === 6) PEN.tallyColor = s0.tallyColor;       // かぞえる：数える色（蛍光ペンの7色のうち、何番目か）
       if (/^#[0-9a-fA-F]{6}$/.test(s0.color)) PEN.color = s0.color;
       if (isFinite(s0.alpha)) PEN.alpha = nearest(ALPHAS, +s0.alpha);
       if (isFinite(s0.width)) PEN.width = nearest(WIDTHS, +s0.width);
@@ -961,7 +974,7 @@
   if (!PEN.penSeen && PEN.input === 'pen') PEN.input = 'hand';
   function saveSt() {
     if (!storageOk) return;
-    try { localStorage.setItem(SKEY, JSON.stringify({ mono: mono, fade: fade, cap: PEN.cap, ring: PEN.ring, tool: PEN.tool, last: PEN.last, shape: PEN.shape, eraseW: PEN.eraseW, memo: PEN.memo, memoColor: PEN.memoColor, memoW: PEN.memoW, custom: PEN.custom, memoCustom: PEN.memoCustom, input: PEN.input, penDetected: PEN.penSeen, color: PEN.color, alpha: PEN.alpha, width: PEN.width, pos: panelPos ? { r: Math.round(panelPos.r), t: Math.round(panelPos.t) } : null, cpos: cpPos ? { r: Math.round(cpPos.r), b: Math.round(cpPos.b) } : null })); } catch (e) {}
+    try { localStorage.setItem(SKEY, JSON.stringify({ mono: mono, fade: fade, cap: PEN.cap, ring: PEN.ring, tool: PEN.tool, last: PEN.last, shape: PEN.shape, eraseW: PEN.eraseW, memo: PEN.memo, memoColor: PEN.memoColor, memoW: PEN.memoW, custom: PEN.custom, memoCustom: PEN.memoCustom, tallyColor: PEN.tallyColor, input: PEN.input, penDetected: PEN.penSeen, color: PEN.color, alpha: PEN.alpha, width: PEN.width, pos: panelPos ? { r: Math.round(panelPos.r), t: Math.round(panelPos.t) } : null, cpos: cpPos ? { r: Math.round(cpPos.r), b: Math.round(cpPos.b) } : null })); } catch (e) {}
   }
   var strokes = [], hist = [], redoH = [], cur = null, ver = 0, cacheKey = '';
   var painting = false, pid = null, penStroke = false, held = false, holdTimer = null, strokeT0 = 0, startPt = null, maxMove = 0;
@@ -2937,13 +2950,26 @@
      ・保存：別の保存キー（yucchi_chartHighlighter_tally）です。塗った内容・設定の保存には、触れません
      ・使い方：番号がついた丸をタップ＝その印が消える／「次の段へ」＝1からかぞえ直し（色も変わる）／ドラッグ＝編み図が動く */
   var TALLY_ON = true;
-  var TALLY_KEY = 'yucchi_chartHighlighter_tally', TALLY_R = 11, TALLY_MAX = 30, TALLY_ROW_MAX = 99, TALLY_ROWS_MAX = 99;       // TALLY_MAX：保存する編み図の数／TALLY_ROW_MAX：1段に、数えられる数の上限／TALLY_ROWS_MAX：段の数の上限
-  var TALLY_COLORS = ['#FF8FB1', '#7FD6EA', '#FFC06A', '#B9A6FF', '#9BE58A', '#FFE766'];       // 段ごとに、色が変わる（やさしい色）
+  var TALLY_KEY = 'yucchi_chartHighlighter_tally', TALLY_R = 11, TALLY_MAX = 30, TALLY_ROW_MAX = 99, TALLY_GENS_MAX = 50;       // TALLY_MAX：保存する編み図の数／TALLY_ROW_MAX：1つの色（かたまり）に、数えられる数の上限／TALLY_GENS_MAX：同じ色を、1から数え直せる回数の上限
+  var TALLY_COLORS = ['#FF4F7B', '#FF9F1C', '#FFF200', '#7DFF3C', '#2EDBFF', '#7A8CFF', '#D45BFF'], TALLY_NC = 7;       // 数える色：蛍光ペンの、カラーパレットと同じ7色（赤・橙・黄・緑・青・藍・紫）／TALLY_NC：色の数
   var tallyAll = {}, tallyNoted = false;
   try { var tl0 = JSON.parse(localStorage.getItem(TALLY_KEY) || '{}'); if (tl0 && typeof tl0 === 'object' && !Array.isArray(tl0)) tallyAll = tl0; } catch (e) {}
+  Object.keys(tallyAll).forEach(function (k) {         // 古い記録（6色の数え方）は、7色の数え方に直す：かたまり＝回×6＋色 → 回×7＋色（色の番号は、そのまま）
+    var d = tallyAll[k]; if (!d || !Array.isArray(d.m) || d.v === TALLY_NC) return;
+    d.m.forEach(function (q) { var c = q[2] % 6, g = Math.floor(q[2] / 6); q[2] = g * TALLY_NC + c; });
+    if (d.gen && d.gen.length === 6) d.gen = d.gen.concat([0]); else delete d.gen;
+    d.v = TALLY_NC; delete d.g; delete d.rw;
+  });
   function tallyGet() { return chartId && tallyAll[chartId] ? tallyAll[chartId] : null; }
+  Array.prototype.forEach.call($('tl-colors').children, function (b, k) { b.style.background = TALLY_COLORS[k]; });
+  function tallyGen(d) {                            // 色ごとの、いまの「数え直しの回」（0から）。印は、[x, y, かたまり] で、かたまり＝回×7＋色（色＝かたまり÷7の、あまり）
+    if (d && d.gen && d.gen.length === TALLY_NC) return d.gen.slice();
+    var g6 = [0, 0, 0, 0, 0, 0, 0]; if (d) d.m.forEach(function (q) { var c = q[2] % TALLY_NC, k = Math.floor(q[2] / TALLY_NC); if (k > g6[c]) g6[c] = k; });       // その色で、いちばん新しい回（gen がない記録）
+    return g6;
+  }
+  function tallyCur(d) { var c = PEN.tallyColor; return (d ? tallyGen(d)[c] : 0) * TALLY_NC + c; }       // いま数えている、かたまりの番号
   function tallySnap() { var d = chartId && tallyAll[chartId]; return d ? JSON.parse(JSON.stringify(d)) : null; }       // かぞえるの記録（この編み図の分）の、写し
-  function tallyRestore(sn) {                       // 写しの状態に、もどす（「もどす」「やりなおす」から）
+  function tallyRestore(sn) {                       // （写しは、7色の数え方の記録）                       // 写しの状態に、もどす（「もどす」「やりなおす」から）
     if (!chartId) return;
     if (sn) tallyAll[chartId] = JSON.parse(JSON.stringify(sn)); else delete tallyAll[chartId];
     tallySave(); tallySync();
@@ -2953,11 +2979,11 @@
     hist.push({ b: strokes.slice(), a: strokes.slice(), tb: before, ta: after, tl: true }); if (hist.length > 100) hist.shift();
     redoH = []; syncBtns();
   }
-  function tallyEnsure() { if (!tallyAll[chartId]) tallyAll[chartId] = { m: [], g: 0, t: Date.now(), r: TALLY_R / scale }; return tallyAll[chartId]; }       // r：丸の大きさ（画像の上での半径）。最初に置いた時の画面の大きさ（11px）が基準で、拡大・縮小に合わせて、いっしょに大きさが変わる
+  function tallyEnsure() { if (!tallyAll[chartId]) tallyAll[chartId] = { v: TALLY_NC, m: [], t: Date.now(), r: TALLY_R / scale }; return tallyAll[chartId]; }       // r：丸の大きさ（画像の上での半径）。最初に置いた時の画面の大きさ（11px）が基準で、拡大・縮小に合わせて、いっしょに大きさが変わる
   function tallyCount(d, g) { var n = 0; d.m.forEach(function (q) { if (q[2] === g) n++; }); return n; }
   function tallySave() {
     try {
-      Object.keys(tallyAll).forEach(function (k) { if (!tallyAll[k].m.length && !tallyAll[k].g) delete tallyAll[k]; });          // 空になったものは、消す
+      Object.keys(tallyAll).forEach(function (k) { if (!tallyAll[k].m.length) delete tallyAll[k]; });          // 印が1つもないものは、消す
       var ks = Object.keys(tallyAll);
       if (ks.length > TALLY_MAX) { ks.sort(function (a, b) { return tallyAll[a].t - tallyAll[b].t; }); ks.slice(0, ks.length - TALLY_MAX).forEach(function (k) { delete tallyAll[k]; }); }       // 古いものから、30枚ぶんまで
       localStorage.setItem(TALLY_KEY, JSON.stringify(tallyAll));
@@ -3009,9 +3035,11 @@
     $('mk-card').classList.toggle('tl-on', on); $('tl-row').hidden = !on;
     if (!on) return;
     tallyPlace();
-    var d = tallyGet(), g = d ? d.g : 0, n = d ? tallyCount(d, g) : 0, all = d ? d.m.length : 0;
-    $('tl-g').textContent = g + 1; $('tl-n').textContent = n; $('tl-all').textContent = all;
-    $('tl-undo').disabled = !(all > 0 || g > 0); $('tl-next').disabled = n === 0 || g + 1 >= TALLY_ROWS_MAX;       // 数えた丸が無い段・最後の段（99段目）では、押せない $('tl-clear').disabled = !(all > 0 || g > 0);
+    var d = tallyGet(), cur = tallyCur(d), n = d ? tallyCount(d, cur) : 0, all = d ? d.m.length : 0;
+    $('tl-n').textContent = n; $('tl-all').textContent = all; $('tl-dot').style.background = TALLY_COLORS[PEN.tallyColor];       // 数えている色の丸／その色で、数えた数／ぜんぶ
+    Array.prototype.forEach.call($('tl-colors').children, function (b, k) { b.classList.toggle('on', k === PEN.tallyColor); b.setAttribute('aria-pressed', k === PEN.tallyColor ? 'true' : 'false'); });
+    $('tl-again').disabled = n === 0 || (d && tallyGen(d)[PEN.tallyColor] + 1 >= TALLY_GENS_MAX);       // この色の印が1つもない時は、押せない
+    $('tl-clear').disabled = all === 0;
   }
   function tallyPlace() {                           // かぞえる行を、見えなくなった設定の行（太さ・濃さ・ペンの先・マス目・色）の、ちょうど上に重ねる（操作盤の高さは、ほかのモードと同じ）
     var row = $('tl-row'); if (!row || row.hidden) return;
@@ -3038,23 +3066,23 @@
     else {
       var q = toImg(e); if (q[0] < 0 || q[1] < 0 || q[0] > img.naturalWidth || q[1] > img.naturalHeight) return;
       d = tallyEnsure();
-      if (tallyCount(d, d.g) >= TALLY_ROW_MAX) { showNote(d.g + 1 >= TALLY_ROWS_MAX ? 'これ以上は、数えられません（' + TALLY_ROWS_MAX + '段・1段' + TALLY_ROW_MAX + '個まで）' : '1段に数えられるのは、' + TALLY_ROW_MAX + 'までです。「次の段へ」を押してください'); return; }
-      d.m.push([Math.round(q[0] * 10) / 10, Math.round(q[1] * 10) / 10, d.g]);
+      var cur = tallyCur(d);
+      if (tallyCount(d, cur) >= TALLY_ROW_MAX) { showNote('この色で数えられるのは、' + TALLY_ROW_MAX + 'までです。「1からかぞえる」を押すか、ほかの色を選んでください'); return; }
+      d.m.push([Math.round(q[0] * 10) / 10, Math.round(q[1] * 10) / 10, cur]);
       if (!tallyNoted && d.m.length === 1) { tallyNoted = true; showNote('番号をタップすると、その印が消えます'); }
     }
     d.t = Date.now(); tallySave(); tallySync(); tallyCommit(tlBefore); requestDraw(false);
   }
   if (!TALLY_ON) $('tl-tool-btn').hidden = true;
-  $('tl-undo').addEventListener('click', function () {            // ひとつもどす：いまの段が空なら、前の段にもどる／印があれば、いちばん新しい印を消す
-    var d = tallyGet(); if (!d) return; var tlBefore = tallySnap();
-    if (tallyCount(d, d.g) === 0 && d.g > 0) d.g--; else if (d.m.length) d.m.pop(); else return;
-    d.t = Date.now(); tallySave(); tallySync(); tallyCommit(tlBefore); requestDraw(false);
+  $('tl-colors').addEventListener('click', function (e) {          // 数える色を選ぶ（色ごとに、1〜99を数える。前の色にもどると、前の数の続きから）
+    var b = e.target.closest('.tl-c'); if (!b) return;
+    PEN.tallyColor = +b.getAttribute('data-i'); saveSt(); tallySync();
   });
-  $('tl-next').addEventListener('click', function () {
-    var d = tallyGet(); if (!d || tallyCount(d, d.g) === 0) return;
-    if (d.g + 1 >= TALLY_ROWS_MAX) { showNote(TALLY_ROWS_MAX + '段までです'); return; }
-    var tlBefore = tallySnap();
-    d.g++; d.t = Date.now(); tallySave(); tallySync(); tallyCommit(tlBefore); showNote((d.g + 1) + (d.g + 1 >= TALLY_ROWS_MAX ? '段目：これが、最後の段です。1から、かぞえます' : '段目：1から、かぞえます')); requestDraw(false);
+  $('tl-again').addEventListener('click', function () {             // 1からかぞえる：選んでいる色の数を、1から数え直す（前の印は、残る）
+    var d = tallyGet(); if (!d) return; var c = PEN.tallyColor, gens = tallyGen(d);
+    if (tallyCount(d, gens[c] * TALLY_NC + c) === 0) return;
+    if (gens[c] + 1 >= TALLY_GENS_MAX) { showNote('この色は、これ以上、数え直せません'); return; }
+    var tlBefore = tallySnap(); gens[c]++; d.gen = gens; d.t = Date.now(); tallySave(); tallySync(); tallyCommit(tlBefore); requestDraw(false);
   });
   $('tl-clear').addEventListener('click', function () {
     var d = tallyGet(); if (!d) return;
@@ -3062,7 +3090,7 @@
   });
   /* ===== ✿ かぞえるモード ▲ ここまで ===== */
   /* ---------- 操作盤（道具・カラー・太さ・濃さ・一括削除・開閉） ---------- */
-  var TOOL_HINT = { pen: 'なぞったところを、塗ります', line: 'ドラッグした長さの、まっすぐな線を引きます', rect: 'ドラッグした範囲を、四角く塗ります', ellipse: 'ドラッグした範囲を、円（楕円）に塗ります。ほぼ正円なら、正円になります', select: '線をタップして選ぶと、動かす・大きさを変える・回す・複製・反転・削除ができます', erase: '触れた所だけを、消します（線は、途中で切れます）。四角や円は、触れると全体が消えます', memo: 'メモ：ふつうのペンで書き込んだり、文字を置いたりできます（色が、そのまま出ます）', tally: 'タップした所に、1・2・3…と番号がつきます（かぞえる）' };
+  var TOOL_HINT = { pen: 'なぞったところを、塗ります', line: 'ドラッグした長さの、まっすぐな線を引きます', rect: 'ドラッグした範囲を、四角く塗ります', ellipse: 'ドラッグした範囲を、円（楕円）に塗ります。ほぼ正円なら、正円になります', select: '線をタップして選ぶと、動かす・大きさを変える・回す・複製・反転・削除ができます', erase: '触れた所だけを、消します（線は、途中で切れます）。四角や円は、触れると全体が消えます', memo: 'メモ：ふつうのペンで書き込んだり、文字を置いたりできます（色が、そのまま出ます）', tally: 'タップした所に、1・2・3…と番号がつきます。色を選んで、色ごとに、99まで数えられます' };
   var TOOL_TIP = { pen: TOOL_HINT.pen, line: TOOL_HINT.line, shape: '四角・円・ふちを、ドラッグして塗ります（小さなメニューで切りかえ）', memo: 'ふつうのペンで書き込んだり、文字を置いたりできます（色が、そのまま出ます）。小さなメニューで切りかえ', select: TOOL_HINT.select, erase: TOOL_HINT.erase, tally: TOOL_HINT.tally };
   document.querySelectorAll('.mk-t').forEach(function (b) { var t = TOOL_TIP[b.getAttribute('data-t')]; if (t) b.setAttribute('data-tip', t); });       // 道具のボタン：マウスを乗せた時の、説明
   function penCursor(c) {                           // 蛍光ペンの形の矢印（44px）。先（ななめカットの平らな先）の中心が、触れる位置。先とキャップが、ペンの色。本体は白っぽい
