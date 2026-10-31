@@ -261,8 +261,8 @@
     .cb-pill.cb-round { width: var(--pill-h); padding: 0; }
     .cb-pill:active { transform: scale(.96); }
     .cb-pill { position: relative; }
-    @media (hover: hover) {                                                                   /* PC：マウスを乗せると、ボタンの説明が、少しおいて、ふわっと出る（指で触る画面には、出さない） */
-      .cb-pill[data-tip]:hover::after {
+    @media (hover: hover) {                                                                   /* PC：マウスを乗せると、ボタンの説明が、少しおいて、ふわっと出る（指で触る画面には、出さない）。白抜き（押せない）の間は、道具のボタンと同じく、出さない */
+      .cb-pill[data-tip]:not(:disabled):not(.notip):hover::after {
         content: attr(data-tip); position: absolute; z-index: 40; top: calc(100% + 8px); right: -4px; padding: 6px 10px; border-radius: 8px;
         background: rgba(94, 70, 76, .94); color: #FFFFFF; font-size: 12px; font-weight: 500; letter-spacing: .04em; white-space: nowrap; line-height: 1.4;
         box-shadow: 0 2px 6px rgba(70, 105, 120, .25); pointer-events: none; animation: tip-in .18s ease .4s both;
@@ -273,7 +273,9 @@
     .cb-pill.on { background: var(--seg-on); border-color: var(--sel-line); }                  /* 入っている間（白黒表示など） */
     .cb-pill.inert, .cb-pill.on.inert { background: var(--surface); border: 1.5px solid var(--edge); color: #B6A7AB; }      /* 白抜き：いまの道具（なぞる・選択・消しゴム）では、目数の計測ができないので、入でも切でも、白抜き */
     .cb-pill:disabled { opacity: .4; cursor: default; transform: none; }
-    @media (hover: hover) { .cb-pill:not(:disabled):hover { background: #EEF4F4; } }
+    #mk-card .cb-pill.notip { cursor: default; }                                                     /* マス目のボタン：画像を開く前は、ほかの白抜きのボタンと同じく、手のマークを出さない */
+    .cb-pill.notip:active { transform: none; }
+    @media (hover: hover) { .cb-pill:not(:disabled):not(.notip):hover { background: #EEF4F4; } }
     .cb-pill svg { flex: none; display: block; }
     /* 色 */
     #mk-colors { display: flex; align-items: center; gap: 8px; }
@@ -827,7 +829,7 @@
           <li>指やペンでなぞって塗ります。道具・太さ・色は、上の操作エリアで選びます。</li>
           <li>「もどす」で、塗りも、かぞえるの番号も、起きた順にもどせます（「すべて消す」のあとも、もどせます）。</li>
           <li>選んでいる線は、上からドラッグすると動かせます。近くに新しい線を描くときは、先に、何もない所を1回タップします。</li>
-          <li>「選択」で囲むと、まとめて選んで、動かす・回す・色を変える、ができます。</li>
+          <li>「選択」で線を囲むと、まとめて選んで、動かす・回す・色を変える、ができます。</li>
           <li>直線・四角では、マスのマークで、目数・段数をかぞえます。</li>
           <li>「メモ」は、ふつうのペンと文字です。「かぞえる」は、色を選んで、タップすると、番号がつきます（色ごとに99まで）。</li>
           <li>半分塗ったまるのマークで、編み図が、白黒・うすい色になります。</li>
@@ -1081,7 +1083,8 @@
   function gridSize() { return { nx: grid.i1 - grid.i0, ny: grid.j1 - grid.j0 }; }
   function gridToolOk() { return PEN.tool === 'line' || PEN.tool === 'rect'; }       // マス目（目数・段数をかぞえる）が使える道具：直線・四角だけ
   function syncGridBtn() {
-    var gb = $('grid-btn'), act = !!(gridOn && grid), inert = !gridToolOk() || !img; gb.classList.toggle('on', act); gb.classList.toggle('noguide', act && !gridShow); gb.classList.toggle('inert', inert); gb.setAttribute('aria-pressed', act ? 'true' : 'false');
+    var gb = $('grid-btn'), act = !!(gridOn && grid), inert = !gridToolOk() || !img; gb.classList.toggle('on', act); gb.classList.toggle('noguide', act && !gridShow); gb.classList.toggle('inert', inert); gb.classList.toggle('notip', !img);       // 画像を開く前は、ほかの白抜きのボタンと同じく、説明を出さない
+    gb.setAttribute('aria-pressed', act ? 'true' : 'false');
     var tip = inert ? 'マス目の目数・段数をかぞえる（直線・四角で使えます）' : (act ? 'マス目の目数・段数をかぞえる（もう一度押すと、やめる）' : 'マス目の目数・段数をかぞえる'); gb.setAttribute('aria-disabled', inert ? 'true' : 'false');
      gb.setAttribute('data-tip', tip); gb.setAttribute('aria-label', tip);
   }
@@ -1634,6 +1637,7 @@
   }
   function syncNoImage() {                          // 画像を開く前は、📂以外のボタンを白抜きにする（開いたら、使える）
     var no = !img;
+    syncGridBtn();                                  // マス目のボタンも、画像を開いた・閉じた時に、切りかえる
     Array.prototype.forEach.call(document.querySelectorAll('.mk-t'), function (b) { b.disabled = no; });
     $('mk-tseg').classList.toggle('off', no);
     ['mono-btn', 'file-close', 'export-btn'].forEach(function (id) { $(id).disabled = no; });
@@ -2272,9 +2276,10 @@
   }
   function finishLasso() {
     var L = lasso; cancelLasso();
-    if (!L || L.pts.length < 6) return;               // ちょんと触れただけ：何も選ばない（まえの選択は、すでに外れている）
+    var add = L && L.add ? L.add.filter(function (o) { return strokes.indexOf(o) >= 0; }) : null;       // Shiftを押して囲んだ時：いまの選択に、足す
+    if (!L || L.pts.length < 6) { if (add && add.length) setSelection(add); return; }               // ちょんと触れただけ：何も足さない（Shiftの時は、前の選択を、そのまま戻す）
     var xs = L.pts.map(function (q) { return q[0]; }), ys = L.pts.map(function (q) { return q[1]; });
-    if (Math.max.apply(null, xs) - Math.min.apply(null, xs) < 16 && Math.max.apply(null, ys) - Math.min.apply(null, ys) < 16) return;
+    if (Math.max.apply(null, xs) - Math.min.apply(null, xs) < 16 && Math.max.apply(null, ys) - Math.min.apply(null, ys) < 16) { if (add && add.length) setSelection(add); return; }
     var chosen = strokes.filter(function (st) {       // 線の半分以上が、輪の中に入っていたら、選ぶ
       var sp = strokeSamples(st), c = 0;
       sp.forEach(function (q) { var v = toScr(q[0], q[1]); if (inPoly(v[0], v[1], L.pts)) c++; });
@@ -2282,15 +2287,45 @@
     });
     var gids = {}; chosen.forEach(function (o) { if (o.gid) gids[o.gid] = 1; });                  // グループの線が入っていたら、グループ全体を、選んだことにする
     if (Object.keys(gids).length) strokes.forEach(function (o) { if (o.gid && gids[o.gid] && chosen.indexOf(o) < 0) chosen.push(o); });
-    if (!chosen.length) { showNote('囲んだ中に、線がありません'); return; }
+    if (!chosen.length) { if (add && add.length) setSelection(add); showNote('囲んだ中に、線がありません'); return; }
+    if (add && add.length) { add.forEach(function (o) { if (chosen.indexOf(o) < 0) chosen.push(o); }); setSelection(chosen); return; }       // Shiftで囲んだ時：いまの選択に、足す
     if (chosen.length === 1) { selStroke = chosen[0]; selEngaged = true; requestDraw(false); return; }       // 1本だけなら、いままでの、1本の選択
     var polyImg = simplify(L.pts, 3).map(function (q) { return [(q[0] - offsetX) / scale, (q[1] - offsetY) / scale]; });       // 震えをならして、画像の座標で覚える
     var g1 = chosen[0].gid, same = !!g1 && chosen.every(function (o) { return o.gid === g1; }) && membersOf(g1).length === chosen.length;
     grp = { items: chosen, poly: polyImg, keep: same, gid: same ? g1 : null }; flipMode = false; requestDraw(false);
   }
+  function setSelection(items) {                    // 選ぶ線を、まるごと入れかえる（0本＝選びなし／1本＝1本の選択／2本以上＝まとまり）
+    endAttrSession(); hideFillPop(); flipMode = false;
+    if (!items.length) { clearSel(); return; }
+    if (items.length === 1) { grp = null; selStroke = items[0]; selEngaged = true; }
+    else {
+      var g1 = items[0].gid, same = !!g1 && items.every(function (o) { return o.gid === g1; }) && membersOf(g1).length === items.length;
+      selStroke = null; selEngaged = false; grp = { items: items, poly: hullOutline(items), keep: same, gid: same ? g1 : null };
+    }
+    requestDraw(false);
+  }
+  function shiftPick(e) {                           // Shift＋クリック：線の上なら、選びに足す／すでに選んでいれば外す。何もない所なら、Shiftのまま囲んで、足せる
+    var cur = grp ? grp.items.slice() : (selStroke ? [selStroke] : []);
+    var st = selectAt(e.clientX, e.clientY);
+    if (st) {
+      var group = st.gid ? membersOf(st.gid) : [st]; if (!group.length) group = [st];       // グループの線は、グループ全体を、いっしょに
+      var allIn = group.every(function (o) { return cur.indexOf(o) >= 0; });
+      mode = 'ignore';
+      setSelection(allIn ? cur.filter(function (o) { return group.indexOf(o) < 0; }) : cur.concat(group.filter(function (o) { return cur.indexOf(o) < 0; })));
+      return true;
+    }
+    clearSel(); startLasso(e); lasso.add = cur;
+    return true;
+  }
   // 塗る前に呼ぶ：選んだ線のつまみ・中を触った／「選択」の道具のとき、の操作を受け持つ。受け持ったら true
   function beginAction(e) {
     lpPending = null;
+    if (PEN.tool === 'select' && e.shiftKey && e.pointerType !== 'touch') {       // Shiftを押しながら：選びを足す・外す（回転・拡大縮小・両端のつまみの上は、ふつうにつまむ）
+      var onHandle = false;
+      if (grp) { var rp0 = grpRotPos(); onHandle = Math.hypot(e.clientX - rp0[0], e.clientY - rp0[1]) <= 18 || !!grpCornerAt(e.clientX, e.clientY); }
+      else if (selStroke) { var h0 = hitSel(e.clientX, e.clientY); onHandle = !!h0 && h0.type !== 'move'; }
+      if (!onHandle && shiftPick(e)) return true;
+    }
     if (grp) {
       { var rp = grpRotPos(); if (Math.hypot(e.clientX - rp[0], e.clientY - rp[1]) <= 18) return startGrpEdit(e, 'rotate'); }       // 回転つまみ（反転の矢印が出ている間も、さわれる）
       var cnr = grpCornerAt(e.clientX, e.clientY); if (cnr) return startGrpEdit(e, 'scale', cnr);
@@ -2333,9 +2368,32 @@
     if (F.maxX + sh <= img.naturalWidth) return -sh;
     return null;
   }
+  var ARC_DUP_EXTRA = 0;                            // アーチの複製：両はしがつながる位置から、さらに重ねる量（線の太さの何倍か）。0なら、足と足が、ちょうど重なる。大きいほど、よく重なる
+  function arcDupVec(st) {                          // アーチ（円の一部：半円・浅いアーチ）の時だけ：複製の、すべらせる向きと長さ（左向き）。両はしがつながって、足が重なる。アーチでなければ、null
+    if (st.k !== 'p' || st.p.length < 8) return null;
+    var P = st.p, a = P[0], b = P[P.length - 1], d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (!(d * scale >= 20)) return null;
+    var f = circleFit(P), as = f ? Math.abs(f.span) : 0;
+    if (!f || f.er > 0.08 || as < 1.4 || as > 3.6 || f.sumAbs > as * 1.15 + 0.2) return null;       // 円にあてはまらない／曲がりが小さい（直線に近い）／曲がりすぎ／うねっている
+    var L = a[0] <= b[0] ? a : b, Rt = a[0] <= b[0] ? b : a, vx = L[0] - Rt[0], vy = L[1] - Rt[1];       // 右はしを、左はしに重ねる向き
+    if (Math.abs(vx) < d * 0.7) return null;                                                   // 横向きでない半円は、ふつうの複製
+    var vl = Math.hypot(vx, vy), kk = Math.max(0.5, (vl - ARC_DUP_EXTRA * st.w) / vl); vx *= kk; vy *= kk;       // 両はしがつながる位置から、さらに、線の太さの分だけ、重ねる（ズレがたまらないように）
+    var F = frameOf(st), W = img.naturalWidth, H = img.naturalHeight;
+    function fits(x, y) { return F.minX + x >= 0 && F.maxX + x <= W && F.minY + y >= 0 && F.maxY + y <= H; }
+    if (fits(vx, vy)) return [vx, vy];
+    if (fits(-vx, -vy)) return [-vx, -vy];                                                    // 左に入らなければ、右に
+    return null;
+  }
+  function frameDupShift(F) {                       // マス目がない時：複製を、元の線の枠の、すぐ左に、重ならないように置くための、横のずらし量（画像のpx。左へ＝＋）。左に入らなければ、右（−）。どちらも入らなければ、null
+    var sh = F.maxX - F.minX;
+    if (!(sh > 0)) return null;
+    if (F.minX - sh >= 0) return sh;
+    if (F.maxX + sh <= img.naturalWidth) return -sh;
+    return null;
+  }
   $('sel-dup').addEventListener('click', function () {
     if (grp) {                                       // まとまり：全部を、左側に、少しずらして複製
-      var offG = 20 / scale, gsh = (gridOn && grid) ? gridDupShift(grp.items, groupFrame()) : null; if (gsh !== null) offG = gsh;       // マス目の時は、左隣りのマスに、ぴったり
+      var offG = 20 / scale, gsh = (gridOn && grid) ? gridDupShift(grp.items, groupFrame()) : frameDupShift(groupFrame()); if (gsh !== null) offG = gsh;       // マス目の時は、左隣りのマスに、ぴったり
       var beforeG = strokes.slice(), gmap = {}, cps = grp.items.map(function (o) {
         var c = cloneStroke(o, o.p.map(function (q) { return [q[0] - offG, q[1]]; }));
         if (o.gid) { gmap[o.gid] = gmap[o.gid] || newGid(); c.gid = gmap[o.gid]; }                 // グループを複製すると、複製も、別のグループになる
@@ -2344,8 +2402,9 @@
       cps.forEach(function (c) { strokes.push(c); }); commit(beforeG); grp.items = cps; grp.gid = cps[0].gid || null; grp.poly = grp.poly.map(function (q) { return [q[0] - offG, q[1]]; }); requestDraw(false); return;
     }
     if (!selStroke) return;
-    var o = selStroke, off = 20 / scale, gsh1 = (gridOn && grid) ? gridDupShift([o], frameOf(o)) : null; if (gsh1 !== null) off = gsh1;       // 左側に、少しずらして置く（マス目の時は、左隣りのマスに、ぴったり）
-    var cp = cloneStroke(o, o.p.map(function (q) { return [q[0] - off, q[1]]; })); delete cp.gid;
+    var o = selStroke, off = 20 / scale, gsh1 = (gridOn && grid) ? gridDupShift([o], frameOf(o)) : frameDupShift(frameOf(o)); if (gsh1 !== null) off = gsh1;       // 左側に、少しずらして置く（マス目の時は、左隣りのマスに、ぴったり）
+    var av = (gridOn && grid) ? null : arcDupVec(o), sx = av ? av[0] : -off, sy = av ? av[1] : 0;       // 半円：両はしがつながる位置（少しだけ重なる）。マス目の時は、これまでどおり
+    var cp = cloneStroke(o, o.p.map(function (q) { return [q[0] + sx, q[1] + sy]; })); delete cp.gid;
     var before = strokes.slice(); strokes.push(cp); commit(before); selStroke = cp; requestDraw(false);
   });
   function flipSel(dir) {                           // 反転したコピーを、元の線の枠の、すぐ左・右・上・下（'l' 'r' 't' 'b'）に、ぴったり並べて置く（元の線は、そのまま）
@@ -2380,7 +2439,7 @@
     strokes = strokes.filter(function (x) { return x !== target; }); selStroke = null; commit(before); requestDraw(false);
   });
 
-  /* ---------- 形の補正：なぞったあと、止めると、直線・円・四角にととのえる（編み図ルーラーと同じ判定） ---------- */
+  /* ---------- 形の補正：なぞったあと、止めると、直線・半円（円弧）・円・四角にととのえる（編み図ルーラーと同じ判定） ---------- */
   var snapTimer = null, snapped = null, snapAnchor = null;
   var SNAP_MS = 550, SNAP_MOVE = 5;                 // 止めて約0.55秒で補正。5px以内の小さな揺れは、止まっているとみなす
   function resetSnap() { clearTimeout(snapTimer); snapTimer = null; snapped = null; snapAnchor = null; }
@@ -2434,7 +2493,60 @@
     });
     return best || { err: 9, a: 1, b: 1, th: 0, cx: mx, cy: my };
   }
-  function recognize(p) {                           // 直線・円（楕円）・四角のどれかに当てはまれば、整えた点の列を返す
+  function resamplePath(p, M) {                     // 線を、同じ間隔のM個の点にならべ直す（点のかたよりを、なくす）
+    var cum = [0], i, tot, q = [];
+    for (i = 1; i < p.length; i++) cum.push(cum[i - 1] + Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]));
+    tot = cum[cum.length - 1] || 1;
+    for (var m = 0, j = 1; m < M; m++) {
+      var target = tot * m / (M - 1);
+      while (j < cum.length - 1 && cum[j] < target) j++;
+      var seg = cum[j] - cum[j - 1] || 1, f = Math.max(0, Math.min(1, (target - cum[j - 1]) / seg));
+      q.push([p[j - 1][0] + (p[j][0] - p[j - 1][0]) * f, p[j - 1][1] + (p[j][1] - p[j - 1][1]) * f]);
+    }
+    return q;
+  }
+  function circleFit(p) {                           // 線に、円をあてはめる：中心・半径・ずれ・曲がりの大きさ（ラジアン）を返す
+    var M = 48, q = resamplePath(p, M), mx = 0, my = 0, k;
+    q.forEach(function (c) { mx += c[0]; my += c[1]; }); mx /= M; my /= M;
+    var Suu = 0, Svv = 0, Suv = 0, Suuu = 0, Svvv = 0, Suvv = 0, Svuu = 0;
+    q.forEach(function (c) { var u = c[0] - mx, v = c[1] - my; Suu += u * u; Svv += v * v; Suv += u * v; Suuu += u * u * u; Svvv += v * v * v; Suvv += u * v * v; Svuu += v * u * u; });
+    var det = Suu * Svv - Suv * Suv;
+    if (Math.abs(det) < 1e-9) return null;
+    var b1 = 0.5 * (Suuu + Suvv), b2 = 0.5 * (Svvv + Svuu), uc = (b1 * Svv - b2 * Suv) / det, vc = (Suu * b2 - Suv * b1) / det;
+    var cx = mx + uc, cy = my + vc, r = Math.sqrt(uc * uc + vc * vc + (Suu + Svv) / M);
+    if (!(r > 0)) return null;
+    var er = 0, acc = 0, sumAbs = 0, prev = Math.atan2(q[0][1] - cy, q[0][0] - cx);
+    for (k = 0; k < M; k++) {
+      er += Math.abs(Math.hypot(q[k][0] - cx, q[k][1] - cy) - r) / r;
+      if (k > 0) {
+        var ag = Math.atan2(q[k][1] - cy, q[k][0] - cx), dl = ag - prev;
+        while (dl > Math.PI) dl -= 2 * Math.PI; while (dl < -Math.PI) dl += 2 * Math.PI;
+        acc += dl; sumAbs += Math.abs(dl); prev = ag;
+      }
+    }
+    return { q: q, cx: cx, cy: cy, r: r, er: er / M, span: acc, sumAbs: sumAbs };
+  }
+  function recognizeArc(p, a, b) {                  // 開いたカーブ（半円・アーチ）：円の一部にあてはまれば、きれいな円弧に。半円に近ければ、ぴったり半円にする（ネット編みのアーチ用）
+    var f = circleFit(p), k;
+    if (!f) return null;
+    var q = f.q, cx = f.cx, cy = f.cy, r = f.r, er = f.er, acc = f.span, sumAbs = f.sumAbs;
+    var span = acc, aspan = Math.abs(span);
+    if (er > 0.08 || aspan < 1.2 || aspan > 5.0 || sumAbs > aspan * 1.15 + 0.2) return null;      // 円にあてはまらない／曲がりが小さすぎる／大きすぎる／うねっている：補正しない
+    var pts = [], N, t;
+    if (aspan >= 2.79 && aspan <= 3.49) {           // 半円（160〜200度）：始点と終点を、直径の両はしにして、ぴったり半円にする。ほぼ水平なら、水平にそろえる
+      var e2 = axisFix(a, b), dx = e2[0] - a[0], dy = e2[1] - a[1], dd = Math.hypot(dx, dy);
+      if (!(dd > 0)) return null;
+      var ux = dx / dd, uy = dy / dd, nx = -uy, ny = ux, ox = (a[0] + e2[0]) / 2, oy = (a[1] + e2[1]) / 2, R = dd / 2, far = 0;
+      q.forEach(function (c) { var sd = (c[0] - a[0]) * nx + (c[1] - a[1]) * ny; if (Math.abs(sd) > Math.abs(far)) far = sd; });       // ふくらんでいる側：弦から、いちばん遠い点のある側
+      var sg = far >= 0 ? 1 : -1; N = 48;
+      for (k = 0; k <= N; k++) { t = Math.PI * k / N; pts.push([ox - Math.cos(t) * R * ux + Math.sin(t) * R * sg * nx, oy - Math.cos(t) * R * uy + Math.sin(t) * R * sg * ny]); }
+      return { kind: 'arc', pts: pts };
+    }
+    var a0 = Math.atan2(a[1] - cy, a[0] - cx); N = Math.max(24, Math.ceil(aspan / (2 * Math.PI) * 72));
+    for (k = 0; k <= N; k++) { t = a0 + span * k / N; pts.push([cx + r * Math.cos(t), cy + r * Math.sin(t)]); }       // 半円でなければ、なぞった曲がり具合のまま、なめらかな円弧に
+    return { kind: 'arc', pts: pts };
+  }
+  function recognize(p) {                           // 直線・円弧（半円）・円（楕円）・四角のどれかに当てはまれば、整えた点の列を返す
     if (p.length < 8) return null;
     var n = p.length, L = 0, i, minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
     var sp = simplify(p, 2.5 / scale);              // 長さは、震えを除いた形で測る
@@ -2458,6 +2570,7 @@
       }
       if (dev / d < 0.19 && flips < 3) return { kind: 'line', pts: [a.slice(), axisFix(a, b)] };    // ゆるいカーブの線も、まっすぐにする
     }
+    if (d > 0.25 * L) return recognizeArc(p, a, b);       // 始点と終点が離れている（開いたカーブ）：円弧・半円かどうか
     if (L * scale < 60) return null;                // 閉じた形：始点と終点が近い（円・四角は、ある程度の大きさが必要）
     var w = maxX - minX, h = maxY - minY;
     if (d > 0.25 * L || w * scale < 24 || h * scale < 24) return null;
@@ -3090,7 +3203,7 @@
   });
   /* ===== ✿ かぞえるモード ▲ ここまで ===== */
   /* ---------- 操作盤（道具・カラー・太さ・濃さ・一括削除・開閉） ---------- */
-  var TOOL_HINT = { pen: 'なぞったところを、塗ります', line: 'ドラッグした長さの、まっすぐな線を引きます', rect: 'ドラッグした範囲を、四角く塗ります', ellipse: 'ドラッグした範囲を、円（楕円）に塗ります。ほぼ正円なら、正円になります', select: '線をタップして選ぶと、動かす・大きさを変える・回す・複製・反転・削除ができます', erase: '触れた所だけを、消します（線は、途中で切れます）。四角や円は、触れると全体が消えます', memo: 'メモ：ふつうのペンで書き込んだり、文字を置いたりできます（色が、そのまま出ます）', tally: 'タップした所に、1・2・3…と番号がつきます。色を選んで、色ごとに、99まで数えられます' };
+  var TOOL_HINT = { pen: 'なぞったところを、塗ります', line: 'ドラッグした長さの、まっすぐな線を引きます', rect: 'ドラッグした範囲を、四角く塗ります', ellipse: 'ドラッグした範囲を、円（楕円）に塗ります。ほぼ正円なら、正円になります', select: '線をタップして選びます。囲むと、まとめて選べます。動かす・大きさを変える・回す・複製・反転・削除ができます', erase: '触れた所だけを、消します（線は、途中で切れます）。四角や円は、触れると全体が消えます', memo: 'メモ：ふつうのペンで書き込んだり、文字を置いたりできます（色が、そのまま出ます）', tally: 'タップした所に、1・2・3…と番号がつきます。色を選んで、色ごとに、99まで数えられます' };
   var TOOL_TIP = { pen: TOOL_HINT.pen, line: TOOL_HINT.line, shape: '四角・円・ふちを、ドラッグして塗ります（小さなメニューで切りかえ）', memo: 'ふつうのペンで書き込んだり、文字を置いたりできます（色が、そのまま出ます）。小さなメニューで切りかえ', select: TOOL_HINT.select, erase: TOOL_HINT.erase, tally: TOOL_HINT.tally };
   document.querySelectorAll('.mk-t').forEach(function (b) { var t = TOOL_TIP[b.getAttribute('data-t')]; if (t) b.setAttribute('data-tip', t); });       // 道具のボタン：マウスを乗せた時の、説明
   function penCursor(c) {                           // 蛍光ペンの形の矢印（44px）。先（ななめカットの平らな先）の中心が、触れる位置。先とキャップが、ペンの色。本体は白っぽい
@@ -3242,6 +3355,64 @@
   });
   document.addEventListener('keyup', function (e) {
     if (e.key === ' ') { spaceDown = false; viewer.classList.remove('panmode'); }
+  });
+
+  /* ---------- パソコンのキー操作：Delete／Backspace＝削除、Ctrl（⌘）＋A＝全選択、＋D＝複製、＋X＝切り取り、＋C＝コピー、＋V＝貼り付け、Esc＝選択をやめる ---------- */
+  function keysBlocked(e) {                         // 入力中・ダイアログが出ている間・塗っている途中などは、キー操作を受けつけない
+    var t = e.target, tag = t && t.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return true;
+    if (!$('modal').hidden || !$('text-dlg').hidden) return true;
+    return !img || painting || !!editing || !!lasso;
+  }
+  function toSelectTool() { var b = document.querySelector('.mk-t[data-t="select"]'); if (PEN.tool !== 'select' && b) b.click(); }
+  /* コピー・切り取り・貼り付け：アプリの中だけで、覚えておく（パソコンのクリップボードは、使わない）。編み図を開き直しても、残るので、別の編み図にも貼れる */
+  var clip = null, mousePos = null, pasteKey = '', pasteRep = 0;
+  viewer.addEventListener('pointermove', function (e) { if (e.pointerType === 'mouse') mousePos = [e.clientX, e.clientY]; });
+  function copySel() {
+    var items = grp ? grp.items : (selStroke ? [selStroke] : null);
+    if (!items || !items.length) return false;
+    clip = items.map(function (o) { return cloneStroke(o); }); pasteKey = ''; pasteRep = 0;
+    return true;
+  }
+  function pasteClip() {
+    if (!clip || !clip.length) { showNote('貼り付けるものがありません。先に、コピーか切り取りをしてください'); return; }
+    var F = { minX: 1e9, minY: 1e9, maxX: -1e9, maxY: -1e9 }, W = img.naturalWidth, H = img.naturalHeight;
+    clip.forEach(function (o) { var f = frameOf(o); F.minX = Math.min(F.minX, f.minX); F.minY = Math.min(F.minY, f.minY); F.maxX = Math.max(F.maxX, f.maxX); F.maxY = Math.max(F.maxY, f.maxY); });
+    var tx = ((mousePos ? mousePos[0] : window.innerWidth / 2) - offsetX) / scale, ty = ((mousePos ? mousePos[1] : window.innerHeight / 2) - offsetY) / scale;       // マウスのある所（なければ画面の真ん中）に、真ん中をそろえて貼る
+    var key = Math.round(tx) + ',' + Math.round(ty); pasteRep = key === pasteKey ? pasteRep + 1 : 0; pasteKey = key;
+    tx += pasteRep * 20 / scale; ty += pasteRep * 20 / scale;                                                    // 同じ場所に続けて貼る時は、少しずつずらす
+    var dx = tx - (F.minX + F.maxX) / 2, dy = ty - (F.minY + F.maxY) / 2;
+    dx = (F.maxX - F.minX <= W) ? Math.max(-F.minX, Math.min(W - F.maxX, dx)) : (W - (F.maxX - F.minX)) / 2 - F.minX;       // 編み図の中に収める
+    dy = (F.maxY - F.minY <= H) ? Math.max(-F.minY, Math.min(H - F.maxY, dy)) : (H - (F.maxY - F.minY)) / 2 - F.minY;
+    var gmap = {}, pasted = clip.map(function (o) {
+      var c = cloneStroke(o, o.p.map(function (q) { return [q[0] + dx, q[1] + dy]; }));
+      if (o.gid) { gmap[o.gid] = gmap[o.gid] || newGid(); c.gid = gmap[o.gid]; }                                  // グループは、貼ったものも、別のグループに
+      return c;
+    });
+    toSelectTool(); clearSel();
+    var before = strokes.slice(); pasted.forEach(function (c) { strokes.push(c); }); commit(before);
+    if (pasted.length === 1) { selStroke = pasted[0]; selEngaged = true; }
+    else { var g1 = pasted[0].gid, same = !!g1 && pasted.every(function (o) { return o.gid === g1; }) && membersOf(g1).length === pasted.length; grp = { items: pasted, poly: hullOutline(pasted), keep: same, gid: same ? g1 : null }; flipMode = false; }
+    requestDraw(false); showNote('貼り付けました');
+  }
+  function selectAllStrokes() {                     // 全選択：いま開いている編み図の、塗った線・図形・文字、全部
+    if (!strokes.length) { showNote('選べる線がありません'); return; }
+    toSelectTool();                                  // 「選択」の道具に切りかえて、複製・削除のボタンも出す
+    clearSel();
+    if (strokes.length === 1) { selStroke = strokes[0]; selEngaged = true; requestDraw(false); return; }       // 1本だけなら、1本の選択
+    var items = strokes.slice(), g1 = items[0].gid, same = !!g1 && items.every(function (o) { return o.gid === g1; }) && membersOf(g1).length === items.length;
+    grp = { items: items, poly: hullOutline(items), keep: same, gid: same ? g1 : null }; flipMode = false; requestDraw(false);
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.isComposing || keysBlocked(e)) return;
+    var mod = e.ctrlKey || e.metaKey, k = (e.key || '').toLowerCase();
+    if (mod && !e.shiftKey && !e.altKey && k === 'a') { e.preventDefault(); selectAllStrokes(); return; }
+    if (mod && !e.shiftKey && !e.altKey && k === 'c') { if (copySel()) { e.preventDefault(); showNote('コピーしました。Ctrl＋V（⌘＋V）で貼り付けられます'); } return; }
+    if (mod && !e.shiftKey && !e.altKey && k === 'x') { if (copySel()) { e.preventDefault(); $('sel-del').click(); showNote('切り取りました。Ctrl＋V（⌘＋V）で貼り付けられます'); } return; }
+    if (mod && !e.shiftKey && !e.altKey && k === 'v') { e.preventDefault(); pasteClip(); return; }
+    if (mod && !e.shiftKey && !e.altKey && k === 'd') { if (grp || selStroke) { e.preventDefault(); $('sel-dup').click(); } return; }       // 選んでいる時だけ（ブラウザのブックマークは、止める）
+    if (!mod && (e.key === 'Delete' || e.key === 'Backspace')) { if (grp || selStroke) { e.preventDefault(); $('sel-del').click(); } return; }
+    if (e.key === 'Escape' && (grp || selStroke) && !document.body.classList.contains('menu-open')) { clearSel(); }       // メニューが開いている時は、Escで、メニューを先に閉じる
   });
 
   // 画面の大きさ・向きが変わったとき：画面の中心にあった場所を、そのまま中心に保つ
