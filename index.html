@@ -2054,21 +2054,21 @@
     }
   }
   // 選んだ線の、どこを触ったか：回転のつまみ／つまみ（角・辺・両端）／中（移動）／なし
-  var BODY_MOVE_IN_DRAW = true;                      // 「なぞる」「直線」「図形」「メモ」のまま、選んでいる線の上から、ドラッグし始めると、そのまま動かせるか。false にすると、長押しで動かす（次の段を描き始めた所が、直前の線の近くでも、動かしてしまわないように）
+  var BODY_MOVE_IN_DRAW = true;                      // 「なぞる」「直線」「図形」「メモ」のまま、選んでいる線の上から、ドラッグし始めると、そのまま動かせるか。false にすると、長押しで動かす（次の段を描き始めた所が、直前の線の近くでも、動かしてしまわないように）。つかめる範囲は、描く道具のときは、せまくしてある（本体＝線の上＋2px・はしのつまみ＝8px・四隅＝6〜10px。「選択」の道具は、広いまま）。次の段を、前の段のすぐ上から描き始めても、前の線を動かさないため
   function hitSel(px, py) {
     if (!selStroke) return null;
-    var st = selStroke, i, drawing = PEN.tool !== 'select', bodyOk = !drawing || BODY_MOVE_IN_DRAW, btol = (drawing ? 8 : 14) / scale;       // bodyOk：線の本体を、つかんで動かせるか／btol：つかめる範囲（描く道具のときは、せまく）。drawing：「選択」以外の道具で描いている時。次の段を描き始めた所が、直前の線の近くでも、線を動かしてしまわないように、つまみだけ（小さめ）にして、線の本体では動かさない
+    var st = selStroke, i, drawing = PEN.tool !== 'select', bodyOk = !drawing || BODY_MOVE_IN_DRAW, btol = (drawing ? 2 : 14) / scale;       // bodyOk：線の本体を、つかんで動かせるか／btol：つかめる範囲（描く道具のときは、せまく）。drawing：「選択」以外の道具で描いている時。次の段を描き始めた所が、直前の線の近くでも、線を動かしてしまわないように、つまみだけ（小さめ）にして、線の本体では動かさない
     if (!isDotStroke(st) && !(st.k === 'e' && st.ring)) { var rp = rotPos(st); if (Math.hypot(px - rp[0], py - rp[1]) <= (drawing ? 15 : 18)) return { type: 'rotate' }; }
     if (st.k === 'e' && st.ring) { var ipt = ringInnerScr(st); if (Math.hypot(px - ipt[0], py - ipt[1]) <= (drawing ? 14 : 20)) return { type: 'inner' }; }       // 輪の内側のつまみ
     if (isLineStroke(st)) {
-      for (i = 0; i < 2; i++) { var c = toScr(st.p[i][0], st.p[i][1]); if (Math.hypot(px - c[0], py - c[1]) <= (drawing ? 12 : 20)) return { type: 'end', i: i }; }
+      for (i = 0; i < 2; i++) { var c = toScr(st.p[i][0], st.p[i][1]); if (Math.hypot(px - c[0], py - c[1]) <= (drawing ? 8 : 20)) return { type: 'end', i: i }; }
       if (!bodyOk) return null;
       return hit(st, (px - offsetX) / scale, (py - offsetY) / scale, btol) ? { type: 'move' } : null;
     }
     if (st.k === 'f') return bodyOk && hit(st, (px - offsetX) / scale, (py - offsetY) / scale, 6 / scale) ? { type: 'move' } : null;    // ななめの四角：動かす・回すだけ（大きさは、まっすぐな時に決める）
     var F = frameOf(st), a = toScr(F.minX, F.minY), b = toScr(F.maxX, F.maxY), l = a[0], t = a[1], r = b[0], bt = b[1], hw = (r - l) / 2, hh = (bt - t) / 2;
     if (isDotStroke(st)) return !drawing && Math.hypot(px - (l + r) / 2, py - (t + bt) / 2) <= Math.max(10, (r - l) / 2) ? { type: 'move' } : null;       // 点：点そのもの（小さい点は、最低10px）だけ。となりに点を打ちたい時に、動かしてしまわないように
-    var cr = drawing ? Math.max(8, Math.min(13, hw - 6, hh - 6)) : Math.max(10, Math.min(20, hw - 6, hh - 6)), esV = Math.min(drawing ? 7 : 12, Math.max(4, hh - 6)), esH = Math.min(drawing ? 7 : 12, Math.max(4, hw - 6));
+    var cr = drawing ? Math.max(6, Math.min(10, hw - 6, hh - 6)) : Math.max(10, Math.min(20, hw - 6, hh - 6)), esV = Math.min(drawing ? 5 : 12, Math.max(4, hh - 6)), esH = Math.min(drawing ? 5 : 12, Math.max(4, hw - 6));
     var cs = [['l', 't', l, t], ['r', 't', r, t], ['l', 'b', l, bt], ['r', 'b', r, bt]];
     for (i = 0; i < 4; i++) if (Math.hypot(px - cs[i][2], py - cs[i][3]) <= cr) return { type: 'corner', cx: cs[i][0], cy: cs[i][1] };
     if (st.k !== 'x' && hh >= 12 && Math.abs(py - t) <= esV && px > l + cr && px < r - cr) return { type: 'edge', side: 't' };
@@ -2304,7 +2304,7 @@
     if (!grp) return false;
     var x = (px - offsetX) / scale, y = (py - offsetY) / scale;
     if (PEN.tool === 'select' && inPoly(x, y, grp.poly)) return true;
-    return (PEN.tool === 'select' || BODY_MOVE_IN_DRAW) && grp.items.some(function (o) { return hit(o, x, y, (PEN.tool === 'select' ? 10 : 8) / scale); });       // 描く道具のとき：線の上（約8px）。BODY_MOVE_IN_DRAW が false なら、動かさない
+    return (PEN.tool === 'select' || BODY_MOVE_IN_DRAW) && grp.items.some(function (o) { return hit(o, x, y, (PEN.tool === 'select' ? 10 : 2) / scale); });       // 描く道具のとき：線の上（約2px）。BODY_MOVE_IN_DRAW が false なら、動かさない
   }
   function startGrpEdit(e, type, cn) {              // まとまりを、動かす（'move'）／回す（'rotate'）／拡大縮小（'scale'：四隅のつまみ cn）
     endAttrSession();
