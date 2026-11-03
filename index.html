@@ -11,6 +11,23 @@
   <title>編み図のための蛍光ペン｜Knitting Chart Highlighter</title>
   <meta name="description" content="読み込んだ編み図に蛍光ペンを引いて、どこまで編んだかがひと目でわかるアプリ。編んだところを塗って消し込めます。段数カウンター付き。無料で使えて、データはお使いの端末の中だけに保存されます。">
 
+  <link rel="canonical" href="https://webkorisu.github.io/knitting-chart-highlighter/">
+  <meta name="robots" content="index, follow">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <!-- リンクのカード（OGP・Xカード）。画像は highlighter-ogp.jpg（1200×630）。同じファイル名で上書きすれば、差しかえられる -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://webkorisu.github.io/knitting-chart-highlighter/">
+  <meta property="og:site_name" content="✿ YUCCHI ✿">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:image" content="https://webkorisu.github.io/knitting-chart-highlighter/highlighter-ogp.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:title" content="編み図のための蛍光ペン｜Knitting Chart Highlighter">
+  <meta property="og:description" content="読み込んだ編み図に蛍光ペンを引いて、どこまで編んだかがひと目でわかるアプリ。編んだところを塗って消し込めます。段数カウンター付き。無料で使えて、データはお使いの端末の中だけに保存されます。">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="編み図のための蛍光ペン｜Knitting Chart Highlighter">
+  <meta name="twitter:description" content="読み込んだ編み図に蛍光ペンを引いて、どこまで編んだかがひと目でわかるアプリ。編んだところを塗って消し込めます。段数カウンター付き。無料で使えて、データはお使いの端末の中だけに保存されます。">
+  <meta name="twitter:image" content="https://webkorisu.github.io/knitting-chart-highlighter/highlighter-ogp.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
@@ -372,6 +389,21 @@
     }
     #menu-panel.collapsed { display: none; }
     #menu-body { padding: 8px 12px 12px; }
+    #menu-body.has-top { padding-bottom: 62px; }                      /* TOPボタンが出ている間だけ、いちばん下に余白（最終更新の文字に、重ならないように） */
+    /* TOPへ戻るボタン（メニューの右下に固定・丸46px。ルールのとおり。メニューの中がスクロールした時だけ、ふわっと出る） */
+    #menu-top-wrap { position: sticky; bottom: 0; height: 0; z-index: 3; }
+    #menu-top {
+      position: absolute; right: 12px; bottom: 12px; width: 46px; height: 46px; padding: 0; border-radius: 50%;
+      background: var(--band); color: var(--text); border: 1px solid var(--band-line); display: flex; align-items: center; justify-content: center;       /* 色は、ヘッダー（帯）と同じ */
+      font-family: inherit; font-size: 11px; font-weight: 700; letter-spacing: .02em; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(70, 105, 120, .20);
+      opacity: 0; visibility: hidden; transform: translateY(8px);
+      transition: opacity .2s, transform .2s, visibility .2s; -webkit-tap-highlight-color: transparent;
+    }
+    #menu-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
+    @media (hover: hover) { #menu-top:hover { filter: brightness(.92); } }
+    #menu-top:active { transform: scale(.94); }
+    @media (prefers-reduced-motion: reduce) { #menu-top { transition: opacity .2s, visibility .2s; } }
     .menu-sub { opacity: 0; max-height: 0; overflow: hidden; pointer-events: none; transition: opacity .6s ease, max-height .4s ease; }
     .menu-sub.show { opacity: 1; max-height: 64px; pointer-events: auto; }        /* パネルを開いて、3秒だけ見える */
     .acc-list { display: flex; flex-direction: column; gap: 5px; }
@@ -449,6 +481,16 @@
       .x-icon-btn:hover::after { opacity: .88; transform: translateY(0); }
     }
     .last-updated { font-size: 10px; color: var(--text-sub); letter-spacing: .04em; }
+    /* ここから：共有マーク（リンクだけをシェア） */
+    .x-icon-btn.share-icon-btn svg { fill: none; stroke: var(--text-sub); transform: translateX(-1px); }       /* 丸が右に2つあって右に寄って見えるので、1px左へ */
+    .share-icon-btn { cursor: pointer; padding: 0; font: inherit; }
+    #share-toast {                                  /* 押したボタンのそばに出る、短いお知らせ（1行・約2秒） */
+      position: fixed; z-index: 60; left: 0; top: 0; background: var(--text); color: #fff; font-size: 11px; letter-spacing: .04em;
+      padding: 6px 10px; border-radius: 8px; white-space: nowrap; opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity .2s, visibility .2s;
+    }
+    #share-toast.show { opacity: .92; visibility: visible; }
+    /* ここまで：共有マーク */
 
     /* ===== 確認ウィンドウ ===== */
     #modal {
@@ -872,7 +914,7 @@
         <p>記録は、編み図の最大40枚ぶんです（「かぞえる」の丸は最大30枚）。いっぱいになると、使っていない古いものから消えます。</p>
         <p>開き方（Safari・Chrome・ホーム画面）や、端末が違うと、記録は引き継がれません。</p>
         <p>履歴の消去などで、保存データが消えることがあります。大切な編み図は、「画像で保存」で残してください。</p>
-        <p>ホーム画面（PCはデスクトップ）に追加して使うと、更新が、すぐに反映されないことがあります。その時は、アプリを閉じて開き直すか、下のボタンで読み込み直してください。</p>
+        <p>ホーム画面（PCはデスクトップ）に追加して使うと、更新が、すぐに反映されないことがあります。その時は、アプリを閉じて開き直すか、下のボタンで読み込み直してください。読み込み直すと編み図は閉じるので、再度選んでください（塗った内容などの保存データは消えません）。</p>
         <button type="button" class="reload-latest-btn" id="reload-btn">🔄 最新版を読み込み直す</button>
       </div>
     </div>
@@ -893,12 +935,19 @@
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.254 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/>
         </svg>
       </a>
+      <!-- ここから：共有マーク（リンクだけをシェア）。外すときは SHARE_ICON_ENABLED を false -->
+      <button type="button" class="x-icon-btn share-icon-btn" id="shareIconBtn"
+              aria-label="リンクをシェア" data-tooltip="リンクをシェア">
+        <svg width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3" fill="none"/><circle cx="6" cy="12" r="3" fill="none"/><circle cx="18" cy="19" r="3" fill="none"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+      </button>
+      <!-- ここまで：共有マーク -->
     </div>
     <div class="last-updated">最終更新：2026.11.03</div>
   </div>
   </div>
   </div>
 </div>
+  <div id="menu-top-wrap"><button type="button" id="menu-top" aria-label="メニューの一番上に戻る">TOP</button></div>
 </div>
 
 
@@ -3496,8 +3545,57 @@
     if (on) subTimer = setTimeout(function () { subEl.classList.remove('show'); }, 3500);
   }
   $('tb-band').addEventListener('click', function (e) { if (e.target.closest('button')) return; showSub(!subEl.classList.contains('show')); });      // ヘッダーの、文字でも、背景でも、押すと、出す／消す（ボタンの上は、ボタンの動きだけ）
+  /* ===== ここから：共有マーク（リンクだけをシェア）。デザインルール「共有マーク」のとおり。外すときは SHARE_ICON_ENABLED を false ===== */
+  var SHARE_ICON_ENABLED = true;
+  var SHARE_APP_URL = 'https://webkorisu.github.io/knitting-chart-highlighter/';       // 固定（location は使わない）。公開URL（確認ずみ）
+  var SHARE_APP_TITLE = '編み図蛍光ペン';
+  function copyPlain(text) {                        // クリップボードにコピー（だめなら、予備の方法）。できたら true
+    function legacy() {
+      try {
+        var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+        document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+        var ok = document.execCommand('copy'); document.body.removeChild(ta); return ok;
+      } catch (e) { return false; }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+      return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return legacy(); });
+    }
+    return Promise.resolve(legacy());
+  }
+  var shareToast = null, shareToastTimer = null;
+  function showShareToast(msg, anchor) {            // 押したボタンのすぐ下に出す（下に入らなければ上）。1行・約2秒
+    if (!shareToast) { shareToast = document.createElement('div'); shareToast.id = 'share-toast'; shareToast.setAttribute('role', 'status'); document.body.appendChild(shareToast); }
+    clearTimeout(shareToastTimer); shareToast.classList.remove('show'); shareToast.textContent = msg;
+    var r = anchor.getBoundingClientRect(), w = shareToast.offsetWidth, h = shareToast.offsetHeight;
+    var left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)), top = r.bottom + 8;
+    if (top + h > window.innerHeight - 8) top = r.top - h - 8;
+    shareToast.style.left = left + 'px'; shareToast.style.top = top + 'px';
+    shareToast.classList.add('show'); shareToastTimer = setTimeout(function () { shareToast.classList.remove('show'); }, 2000);
+  }
+  async function shareAppLink() {
+    var btn = $('shareIconBtn');
+    if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {       // スマホ：標準のシェア画面
+      try { await navigator.share({ text: SHARE_APP_TITLE + '\n✿ YUCCHI ✿\n\n' + SHARE_APP_URL }); } catch (e) {}
+      return;
+    }
+    var ok = await copyPlain(SHARE_APP_URL);        // パソコン：URLだけをコピー
+    showShareToast(ok ? 'リンクをコピーしました' : 'コピーできませんでした', btn);
+  }
+  (function () { var b = $('shareIconBtn'); if (!SHARE_ICON_ENABLED) { b.hidden = true; return; } b.addEventListener('click', shareAppLink); })();
+  /* ===== ここまで：共有マーク ===== */
+  function syncMenuTop() {                          // TOPボタンの、出す・しまう：「使い方」のタイトルが、上に隠れて、見えなくなったら出す
+    var t = $('howNote').firstElementChild, show = false;
+    if (t && !menuPanel.classList.contains('collapsed') && menuPanel.scrollTop > 0) show = t.getBoundingClientRect().bottom <= menuPanel.getBoundingClientRect().top + 2;
+    $('menu-top').classList.toggle('show', show); $('menu-body').classList.toggle('has-top', show);
+  }
+  menuPanel.addEventListener('scroll', syncMenuTop, { passive: true });
+  menuPanel.addEventListener('click', function () { setTimeout(syncMenuTop, 0); setTimeout(syncMenuTop, 350); });       // 使い方などを、開閉して、長さが変わった時
+  $('menu-top').addEventListener('click', function () {
+    menuPanel.scrollTo({ top: 0, behavior: (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+  });
   function setMenu(open) {
     menuPanel.classList.toggle('collapsed', !open); document.body.classList.toggle('menu-open', open);
+    if (open) { menuPanel.scrollTop = 0; } syncMenuTop();
     menuHead.setAttribute('aria-expanded', open ? 'true' : 'false');
     showSub(open);                                   // メニューを開いた時に出して、閉じた時は、すぐ消す
     layoutPanel(); requestDraw();
