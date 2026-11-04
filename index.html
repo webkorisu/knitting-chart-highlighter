@@ -494,6 +494,37 @@
     /* ここまで：共有マーク */
 
     /* ===== 確認ウィンドウ ===== */
+    /* マス目の確認・選択の枠（画面の下から出る。点線を、見ながら、答えられるように、画面全体は、おおわない） */
+    #grid-sheet { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 44; width: max-content; max-width: 94vw; box-sizing: border-box; padding: 12px 14px 14px; background: var(--surface); border: 1.5px solid var(--edge); border-radius: 20px; box-shadow: 0 8px 26px rgba(70, 105, 120, .22); text-align: center; }
+    #grid-sheet[hidden] { display: none; }
+    #grid-sheet-msg { font-size: 12.5px; font-weight: 700; color: var(--text); letter-spacing: .04em; line-height: 1.6; margin-bottom: 10px; white-space: pre-line; }
+    #grid-sheet-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    #grid-sheet .fix-b { min-width: 0; padding: 9px 16px 11px; font-size: 12.5px; }
+    /* 歪み補正（台形補正）の画面：編み図を、画面いっぱいに出して、見出しとボタンは、その上に、重ねる（2本指の拡大・移動は、重なっている所でも、効く） */
+    #fix-overlay { position: fixed; inset: 0; z-index: 45; background: var(--bg); overflow: hidden; }
+    #fix-overlay[hidden] { display: none; }
+    #fix-stage { position: absolute; inset: 0; }
+    #fix-cv { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+    #fix-head { position: absolute; left: 0; right: 0; top: 0; z-index: 2; padding: calc(8px + env(safe-area-inset-top, 0px)) 14px 10px; text-align: center; pointer-events: none; background: linear-gradient(to bottom, #CBDDE3 70%, rgba(203, 221, 227, 0)); }
+    #fix-title { font-weight: 700; color: var(--text); font-size: 13px; letter-spacing: .06em; }
+    #fix-sub { margin-top: 2px; font-size: 11px; color: var(--text-sub); letter-spacing: .03em; min-height: 1.3em; line-height: 1.4; }
+    #fix-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 12px calc(10px + env(safe-area-inset-bottom, 0px)); pointer-events: none; background: linear-gradient(to top, #CBDDE3 72%, rgba(203, 221, 227, 0)); }
+    #fix-foot .fix-link, #fix-foot #fix-grid, #fix-foot #fix-btns { pointer-events: auto; }
+    .fix-link { border: none; background: none; padding: 2px 6px; font-family: inherit; font-size: 11.5px; color: var(--text-sub); letter-spacing: .04em; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    #fix-grid { padding: 8px 12px 9px; background: var(--surface); border: 1.5px solid var(--edge); border-radius: 16px; text-align: center; }
+    #fix-grid[hidden] { display: none; }
+    #fix-gridnote { font-size: 10.5px; color: var(--text-sub); letter-spacing: .03em; margin-top: 6px; }
+    #fix-gridrow { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+    #fix-gridrow label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: .04em; }
+    #fix-gridrow input { width: 78px; padding: 7px 8px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); font-family: inherit; font-size: 16px; text-align: center; }       /* 16px：iPadで、入力した時に、画面が拡大されないように */
+    #fix-gridrow input:focus { outline: none; border-color: var(--sel-line); }
+    .fix-x { color: var(--text-sub); }
+    #fix-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .fix-b { min-width: 96px; padding: 9px 16px 11px; border-radius: 999px; border: 1.5px solid var(--sel-line); background: var(--surface); color: var(--text); font-family: inherit; font-size: 13px; font-weight: 700; letter-spacing: .06em; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .fix-b.main { background: var(--seg-on); }
+    @media (hover: hover) { .fix-b:hover { filter: brightness(.96); } }
+    .fix-b:active { transform: scale(.97); }
+
     #modal {
       position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
       padding: 20px; background: rgba(70, 105, 120, .30);
@@ -625,12 +656,9 @@
     /* ===== 「もどす」「やりなおす」は、どの幅でも、マークだけ（文字は、読み上げ・マウスを乗せた時の説明に、のこす） ===== */
     .cb-pill:not(.cb-round) { width: var(--pill-h); padding: 0; }
     .cb-pill:not(.cb-round) .cb-txt { display: none; }
-    /* ===== マス目ボタン：道具の設定（太さ・濃さ・ペンの先）の並びに、直線・四角の時だけ出す ===== */
-    #mk-row-grid { display: flex; align-items: center; }
-    @media (max-width: 899px) { #mk-row-grid { order: 6; } }
-    @media (max-width: 559px) { #mk-row-grid { order: 7; flex: 0 0 auto; } #mk-row-cap { flex: 1 1 0; } }       /* 小さめの画面：ペンの先は、のこりの幅いっぱいに。そのとなりに、マス目 */
+    /* ===== マス目ボタン：上の段の、白黒モードの右（直線・四角の時だけ使える。ほかの道具では、白抜き） ===== */
+    @media (max-width: 559px) { #mk-row-cap { flex: 1 1 0; } }       /* 小さめの画面：ペンの先は、のこりの幅いっぱいに */
     @media (min-width: 560px) and (max-width: 699px) { .cb-ws .mk-seg-b { padding: 0 8px; } .cb-ws .mk-w { padding: 0 11px; } }       /* せまい幅：ボタンの左右のあきを、少しつめて、1行に */
-    @media (min-width: 340px) and (max-width: 559px) { #mk-row-grid { order: 7; } }
     /* ===== 帯の両脇の丸いボタン（≡・−）を、一回り小さく：指の画面 40px→34px／マウスの画面 30px。帯の高さ（46px）は、そのまま ===== */
     #topbar { --circle: 34px; --cy: 6px; }
     @media (pointer: fine) { #topbar { --circle: 30px; --cy: 8px; } }
@@ -651,7 +679,6 @@
       #mk-bar { gap: 5px 5px; }
       #mk-row-a .mk-a { font-size: 12px; letter-spacing: 0; padding: 0; }
       #mk-row-w .mk-seg, #mk-row-a .mk-seg, #mk-row-cap .mk-seg { padding: 2px; }
-      #mk-row-grid .cb-pill { width: 34px; height: 34px; }
     }
     /* ===== 太さ・濃さ・ペンの先を、1行にまとめる（中くらいの幅） ===== */
     @media (min-width: 560px) and (max-width: 899px) {        /* 縦向きのiPad miniなど：太さ・濃さ・ペンの先を、同じ行に（色は、そのしたの行） */
@@ -688,7 +715,7 @@
     .tl-btn:disabled { opacity: .4; cursor: default; transform: none; }
     @media (hover: hover) { .tl-btn:not(:disabled):not(.accent):hover { background: #EEF4F4; } }
     #mk-card { position: relative; }
-    #mk-card.tl-on #mk-row-w, #mk-card.tl-on #mk-row-a, #mk-card.tl-on #mk-row-cap, #mk-card.tl-on #mk-row-grid, #mk-card.tl-on #mk-colors { visibility: hidden; }       /* かぞえる中は、太さ・濃さ・ペンの先・マス目・色は、使わない：場所は、そのまま、見えなくするだけ（操作盤の高さが、変わらないように） */
+    #mk-card.tl-on #mk-row-w, #mk-card.tl-on #mk-row-a, #mk-card.tl-on #mk-row-cap, #mk-card.tl-on #mk-colors { visibility: hidden; }       /* かぞえる中は、太さ・濃さ・ペンの先・色は、使わない：場所は、そのまま、見えなくするだけ（操作盤の高さが、変わらないように） */
     @media (max-width: 480px) { #mk-tseg .mk-seg-b { padding: 0 3px; font-size: 12px; letter-spacing: 0; } }       /* 道具が1つ増えたぶん、小さめの画面では、文字を少し小さく */
     @media (max-width: 374px) { #mk-tseg .mk-seg-b { font-size: 11px; } }
     /* ===== ✿ かぞえるモード ▲ ここまで ===== */
@@ -756,6 +783,7 @@
           <button type="button" class="cb-pill cb-round" id="clear-btn" aria-label="すべて消す" data-tip="すべて消す" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="m6 7 1 13h10l1-13"/></svg></button>
           <button type="button" class="cb-pill cb-round" id="export-btn" aria-label="画像で保存" data-tip="画像で保存" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg></button>
           <button type="button" class="cb-pill cb-round" id="mono-btn" aria-pressed="false" aria-label="白黒モード（白黒にする）" data-tip="白黒モード（白黒にする）"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg></button>
+          <button type="button" class="cb-pill cb-round" id="grid-btn" aria-pressed="false" aria-label="マス目の目数・段数をかぞえる" data-tip="マス目の目数・段数をかぞえる"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="0"/><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"/></svg></button>
         </div>
       </div>
       <div class="cb-line2">
@@ -785,9 +813,6 @@
             <button type="button" class="mk-seg-b mk-cap mk-ring mk-memo" data-memo="pen" aria-label="メモペン（ペンで字を書く）" data-tip="メモペン（ペンで字を書く）"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 19.5l1-4L16.2 4.8a1.8 1.8 0 0 1 2.6 0l.4.4a1.8 1.8 0 0 1 0 2.6L8.5 18.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 7l3 3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
             <button type="button" class="mk-seg-b mk-cap mk-ring mk-memo" data-memo="text" aria-label="文字を置く" data-tip="文字を置く"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5V5h14v1.5M12 5v14M9 19h6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           </div></div>
-          <div class="mk-row" id="mk-row-grid">
-          <button type="button" class="cb-pill cb-round" id="grid-btn" aria-pressed="false" aria-label="マス目の目数・段数をかぞえる" data-tip="マス目の目数・段数をかぞえる"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="0"/><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"/></svg></button>
-          </div>
           <!-- かぞえる▼ -->
           <div id="tl-row" hidden>
             <div class="tl-info"><i class="tl-dot" id="tl-dot" title="数えている色" aria-hidden="true"></i><b id="tl-n">0</b><span class="tl-sub">／ 合計</span><b id="tl-all" class="tl-all">0</b></div>
@@ -878,7 +903,7 @@
           <li>指やペンでなぞって塗ります。道具・太さ・色は、上の操作エリアで選びます。</li>
           <li>選んでいる線は、上からドラッグすると動かせます。近くに新しい線を描くときは、先に、何もない所を1回タップします。</li>
           <li>「選択」で線を囲むと、まとめて選んで、動かす・回転・色の変更、ができます。</li>
-          <li>直線・四角では、マスのマークで、目数・段数をかぞえます。</li>
+          <li>直線・四角では、マスのマークで、マス目に合わせて、目数・段数をかぞえます。ずれていたら、そこから、合わせ直せます。</li>
           <li>「メモ」は、編み図の上に、ペンで字を書いたり、文字（テキスト）を置いたりできます。</li>
           <li>「かぞえる」は、編み目記号を数えたいときに便利です。色を選んで、タップすると、番号がつきます（色ごとに99まで）。</li>
           <li>白黒モード（半分塗ってある円）で、編み図を白黒やうすい色にでき、蛍光ペンが見やすくなります。</li>
@@ -955,6 +980,23 @@
 <button type="button" id="meas" hidden></button>
 
 
+<div id="grid-sheet" hidden role="dialog" aria-label="マス目">
+  <div id="grid-sheet-msg"></div>
+  <div id="grid-sheet-btns"></div>
+</div>
+<div id="fix-overlay" hidden role="dialog" aria-modal="true" aria-label="編み図の歪みを直す">
+  <div id="fix-stage"><canvas id="fix-cv"></canvas></div>
+  <div id="fix-head"><div id="fix-title">編み図の歪みを直す</div><div id="fix-sub">4つの丸を、編み図の角に合わせてください（2本指で、拡大・移動できます）</div></div>
+  <div id="fix-foot">
+    <button type="button" class="fix-link" id="fix-gridtoggle">マス目の数を入れる（わかる時だけ） ▾</button>
+    <div id="fix-grid" hidden>
+      <div id="fix-gridrow"><label>横の目数<input type="number" id="fix-cols" min="3" max="500" inputmode="numeric" placeholder="例 25"></label><span class="fix-x">×</span><label>縦の段数<input type="number" id="fix-rows" min="3" max="500" inputmode="numeric" placeholder="例 30"></label></div>
+      <div id="fix-gridnote">入れると、マス目が、ぴったり合います（空なら、自動で探します）</div>
+    </div>
+    <div id="fix-btns"><button type="button" class="fix-b" id="fix-fit" hidden>全体を見る</button><button type="button" class="fix-b" id="fix-cancel">やめる</button><button type="button" class="fix-b" id="fix-reset" hidden>もとにもどす</button><button type="button" class="fix-b main" id="fix-go">直す</button></div>
+  </div>
+</div>
+
 <div id="modal" hidden>
   <div class="modal-card" role="dialog" aria-modal="true">
     <p id="modal-msg"></p>
@@ -980,6 +1022,17 @@
   var lastW = window.innerWidth, lastH = window.innerHeight, lastT = 0;
 
   var $ = function (id) { return document.getElementById(id); };
+  /* ---------- 確認用の表示（アドレスの最後に #debug をつけて開いた時だけ出る。ふだんは、何も出ない・何もしない）：ペンが触れた・離した・無視した理由を、画面のすみに出す ---------- */
+  var DEBUG = /(^|[#&?])debug(\b|=)/.test(location.hash + location.search), dbgLines = [], dbgEl = null, dbgMv = 0, dbgT0 = Date.now();
+  function dbg(m) {
+    if (!DEBUG) return;
+    if (!dbgEl) {
+      dbgEl = document.createElement('pre'); dbgEl.id = 'dbg';
+      dbgEl.style.cssText = 'position:fixed;left:6px;bottom:6px;z-index:99;margin:0;padding:6px 8px;font:11px/1.35 ui-monospace,Menlo,monospace;color:#222;background:rgba(255,255,255,.9);border:1px solid #999;border-radius:6px;pointer-events:none;max-width:75vw;white-space:pre-wrap;';
+      document.body.appendChild(dbgEl);
+    }
+    dbgLines.push(((Date.now() - dbgT0) / 1000).toFixed(2) + ' ' + m); if (dbgLines.length > 18) dbgLines.shift(); dbgEl.textContent = dbgLines.join('\n');
+  }
   var viewer = $('viewer'), cv = $('chart-canvas'), ctx = cv.getContext('2d');
   var mkCv = $('marker-canvas'), mctx = mkCv.getContext('2d');
   var cache = document.createElement('canvas'), cctx = cache.getContext('2d');   // 塗った線の描き置き
@@ -1104,6 +1157,18 @@
       idx = idx.filter(function (j) { return Math.abs(xs[j] - (ic + sl * ks[j])) <= Math.max(1.2, 0.1 * sl); });
     }
     if (!fit || fit.period < 4 || idx.length < Math.max(4, ks.length * 0.5)) return null;     // 山の半分以上が、きれいに並んでいなければ、見つからなかったことにする
+    // 半分の間隔と、まちがえていないか：マスの線と線の間に、記号の棒線などが、同じ間隔で並ぶと、間隔が半分に見える。1つおきに、山の高さが、はっきり違う時は、高いほう（マスの線）だけで、間隔を決め直す
+    var he = 0, ho = 0, ne = 0, no = 0;
+    idx.forEach(function (j) { var hv = Q[xs[j]]; if (ks[j] % 2 === 0) { he += hv; ne++; } else { ho += hv; no++; } });
+    if (ne >= 4 && no >= 4) {
+      he /= ne; ho /= no;
+      if (Math.min(he, ho) < 0.6 * Math.max(he, ho)) {
+        var par = he >= ho ? 0 : 1, idx2 = idx.filter(function (j) { return ks[j] % 2 === par; }), n2 = idx2.length, sk2 = 0, sx2 = 0, skk2 = 0, skx2 = 0;
+        idx2.forEach(function (j) { var k2 = (ks[j] - par) / 2; sk2 += k2; sx2 += xs[j]; skk2 += k2 * k2; skx2 += k2 * xs[j]; });
+        var dn2 = n2 * skk2 - sk2 * sk2;
+        if (n2 >= 4 && dn2 !== 0) { var sl2 = (n2 * skx2 - sk2 * sx2) / dn2; fit = { period: sl2, offset: (sx2 - sl2 * sk2) / n2 }; idx = idx2; }
+      }
+    }
     var tot = 0; idx.forEach(function (j) { tot += Q[xs[j]]; });
     fit.score = (tot / idx.length) / Math.sqrt(vr); fit.count = idx.length;
     fit.offset = ((fit.offset % fit.period) + fit.period) % fit.period;
@@ -1120,30 +1185,155 @@
     if (run && (!best || run.b - run.a > best.b - best.a)) best = run;
     return best;
   }
-  function detectGrid() {                           // マス目を探す。見つかれば { px, ox, py, oy, i0, i1, j0, j1 }（画像の座標。縦の線は x = ox + i×px で、i0〜i1 の番号、横の線は y = oy + j×py で、j0〜j1）、なければ null
+  function gridFromProfiles(colP, rowP, k) {        // 縦の列・横の行の「山」から、マス目を決める。見つからなければ null
+    var gx = periodicPeaks(colP), gy = periodicPeaks(rowP);
+    if (!gx || !gy) return null;
+    var rx = lineRange(colP, gx), ry = lineRange(rowP, gy);
+    if (!rx || !ry || rx.b - rx.a < 3 || ry.b - ry.a < 3) return null;       // マスが、3つ以上並んでいなければ、見つからなかったことにする
+    return { px: gx.period / k, ox: (gx.offset + 0.5) / k, py: gy.period / k, oy: (gy.offset + 0.5) / k, i0: rx.a, i1: rx.b, j0: ry.a, j1: ry.b };
+  }
+  function gridProfiles() {                          // 縦の列・横の行ごとの「線らしさ」の山。新しい方法＝colR・rowR（細い線が続いている）／これまでの方法＝colP・rowP（黒っぽさ）。k：画像を縮めた倍率
     if (!img) return null;
     var iw = img.naturalWidth, ih = img.naturalHeight, k = Math.min(1, 1800 / Math.max(iw, ih)), W = Math.max(8, Math.round(iw * k)), H = Math.max(8, Math.round(ih * k));
     try {
       var cv3 = document.createElement('canvas'); cv3.width = W; cv3.height = H;
       var c3 = cv3.getContext('2d', { willReadFrequently: true }); c3.fillStyle = '#FFFFFF'; c3.fillRect(0, 0, W, H); c3.drawImage(img, 0, 0, W, H);
-      var d = c3.getImageData(0, 0, W, H).data, colP = new Float32Array(W), rowP = new Float32Array(H), x, y, i = 0, g, v;
-      for (y = 0; y < H; y++) for (x = 0; x < W; x++, i += 4) { g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; v = g < 245 ? (245 - g) / 245 : 0; colP[x] += v; rowP[y] += v; }
+      var d = c3.getImageData(0, 0, W, H).data, G = new Float32Array(W * H), colP = new Float32Array(W), rowP = new Float32Array(H), x, y, i = 0, g, v, o;
+      for (y = 0; y < H; y++) for (x = 0; x < W; x++, i += 4) { g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; G[y * W + x] = g; v = g < 245 ? (245 - g) / 245 : 0; colP[x] += v; rowP[y] += v; }
       for (x = 0; x < W; x++) colP[x] /= H;
       for (y = 0; y < H; y++) rowP[y] /= W;
-      var gx = periodicPeaks(colP), gy = periodicPeaks(rowP);
-      if (!gx || !gy) return null;
-      var rx = lineRange(colP, gx), ry = lineRange(rowP, gy);
-      if (!rx || !ry || rx.b - rx.a < 3 || ry.b - ry.a < 3) return null;       // マスが、3つ以上並んでいなければ、見つからなかったことにする
-      return { px: gx.period / k, ox: (gx.offset + 0.5) / k, py: gy.period / k, oy: (gy.offset + 0.5) / k, i0: rx.a, i1: rx.b, j0: ry.a, j1: ry.b };
+      // 新しい方法（先に試す）：「まわりより、少し暗い細い線が、端から端まで続いている」列・行を、数える。薄いマス目の線でも、見つかる。記号の棒線は、短くて途中で切れるので、強く出ない
+      var colR = new Float32Array(W), rowR = new Float32Array(H), T = 6, best, m, base;
+      var smp = [], stp = Math.max(1, Math.floor(Math.sqrt(W * H / 20000)));       // 「線」と見なす暗さの差の基準は、画像のざらざらの量から、決める（きれいな画像なら低く＝とても薄い線も拾う／ざらざらが多ければ高く）
+      for (y = 4; y < H - 4; y += stp) for (x = 4; x < W - 4; x += stp) { g = G[y * W + x]; best = 0; for (o = 2; o <= 4; o++) { m = (G[y * W + x - o] + G[y * W + x + o]) * 0.5 - g; if (m > best) best = m; } smp.push(best); }
+      smp.sort(function (a1, b1) { return a1 - b1; });
+      var med = smp[smp.length >> 1], dv = smp.map(function (v1) { return Math.abs(v1 - med); }).sort(function (a1, b1) { return a1 - b1; });
+      T = Math.max(2.5, Math.min(8, med + 4.5 * dv[dv.length >> 1]));
+      for (y = 0; y < H; y++) { base = y * W; for (x = 4; x < W - 4; x++) { g = G[base + x]; best = 0; for (o = 2; o <= 4; o++) { m = (G[base + x - o] + G[base + x + o]) * 0.5 - g; if (m > best) best = m; } if (best > T) colR[x]++; } }
+      for (y = 4; y < H - 4; y++) for (x = 0; x < W; x++) { g = G[y * W + x]; best = 0; for (o = 2; o <= 4; o++) { m = (G[(y - o) * W + x] + G[(y + o) * W + x]) * 0.5 - g; if (m > best) best = m; } if (best > T) rowR[y]++; }
+      for (x = 0; x < W; x++) colR[x] /= H;
+      for (y = 0; y < H; y++) rowR[y] /= W;
+      return { colR: colR, rowR: rowR, colP: colP, rowP: rowP, k: k };
     } catch (e) { return null; }
   }
+  function detectGrid() {                           // マス目を探す。見つかれば { px, ox, py, oy, i0, i1, j0, j1 }（画像の座標。縦の線は x = ox + i×px で、i0〜i1 の番号、横の線は y = oy + j×py で、j0〜j1）、なければ null。ここでは、同じ間隔のマス目
+    var pr = gridProfiles(); if (!pr) return null;
+    return gridFromProfiles(pr.colR, pr.rowR, pr.k) || gridFromProfiles(pr.colP, pr.rowP, pr.k);       // 見つからなければ、これまでの方法（黒っぽさの山）
+  }
+  function trackLines(P, P2, exp, pitch) {          // 線を1本ずつ、順に追う：いちばんはっきりした線から、左右（上下）へ、「前の線の位置＋いまの間隔」を予想して、その近く（前後0.35間隔）の、いちばん強い山を、次の線とする。間隔が、場所で少しずつ変わっても、追える。予想の場所に線がない時は、先へ探して、見つけ直す（①弱くて見えなかった線＝等間隔で補う ②省略で、白い隙間＝線を引かず、「隙間」として覚える）。P：線らしさの山／P2：黒っぽさの山（隙間が、空白かを、見るため）。うまく追えなければ null。結果：{ pos：線の位置（小さい順）、gap：線と線の間が、省略の隙間かどうか }
+    var n = exp.length, N = P.length, i, q;
+    function sm(t) { return (P[t - 1] + 2 * P[t] + P[t + 1]) / 4; }
+    function meanOf(A, a0, b0) { var s0 = 0, m = 0; for (var t = Math.max(0, Math.round(a0)); t <= Math.min(A.length - 1, Math.round(b0)); t++) { s0 += A[t]; m++; } return m ? s0 / m : 0; }
+    function peakAt(e, hw) {                        // e の前後 hw の中で、いちばん強い山（位置は、小数まで）
+      var a1 = Math.max(2, Math.floor(e - hw)), b1 = Math.min(N - 3, Math.ceil(e + hw));
+      if (b1 <= a1) return null;
+      var bi = a1, bv = -1, v;
+      for (q = a1; q <= b1; q++) { v = sm(q); if (v > bv) { bv = v; bi = q; } }
+      var l = (P[bi - 2] + 2 * P[bi - 1] + P[bi]) / 4, r = (P[bi] + 2 * P[bi + 1] + P[bi + 2]) / 4, d = l - 2 * bv + r, off = d < -1e-9 ? 0.5 * (l - r) / d : 0;
+      return { x: bi + Math.max(-1, Math.min(1, off)), s: bv };
+    }
+    var cand = [], best = -1, bs = -1;
+    for (i = 0; i < n; i++) { var f = peakAt(exp[i], pitch * 0.4); cand.push(f); if (f && f.s > bs) { bs = f.s; best = i; } }       // 同じ間隔の予想の位置の近くで、いちばん強い線（追い始める線）
+    if (best < 0) return null;
+    var ss = cand.filter(function (c) { return c; }).map(function (c) { return c.s; }).sort(function (a1, b1) { return a1 - b1; });
+    if (ss.length < Math.max(4, n * 0.3)) return null;
+    var thr = ss[Math.floor(ss.length * 0.75)] * 0.4;       // 強い山の4割に届かない山は、「線が見つからない」とする
+    var lo = exp[0] - pitch * 0.45, hi = exp[n - 1] + pitch * 0.45, dkAll = meanOf(P2, exp[0], exp[n - 1]);
+    function walk(dir) {
+      var items = [], last = cand[best].x, lp = pitch, hist = [];
+      for (var guard = 0; guard < 4000; guard++) {
+        var e = last + dir * lp;
+        if (dir > 0 ? e > hi + lp * 0.5 : e < lo - lp * 0.5) break;
+        var f2 = peakAt(e, lp * 0.35);
+        if (f2 && f2.s >= thr) {                    // 予想の場所に、線があった
+          items.push({ x: f2.x, gap: false, s: f2.s }); hist.push(Math.abs(f2.x - last)); if (hist.length > 3) hist.shift();
+          lp = hist.reduce(function (x, y) { return x + y; }, 0) / hist.length; last = f2.x; continue;
+        }
+        var limit = dir > 0 ? Math.min(last + 7 * pitch, hi + pitch * 0.45) : Math.max(last - 7 * pitch, lo - pitch * 0.45), found = null;
+        for (var t = Math.round(last + dir * lp * 1.3); dir > 0 ? t <= limit : t >= limit; t += dir) {       // 先へ探す：最初の、強い山
+          if (t < 3 || t > N - 4) break;
+          var sv = sm(t);
+          if (sv >= thr && sv >= sm(t - 1) && sv >= sm(t + 1)) { found = peakAt(t, 2); break; }
+        }
+        if (!found) break;                          // これ以上、線がない
+        var dist = Math.abs(found.x - last), k = Math.max(1, Math.round(dist / lp)), frac = Math.abs(dist - k * lp) / lp, a0 = Math.min(last, found.x), b0 = Math.max(last, found.x);
+        var blank = meanOf(P2, a0 + 3, b0 - 3) < dkAll * 0.25 && meanOf(P, a0 + 3, b0 - 3) < thr * 0.5;       // 間が、空白（省略の隙間）か
+        if (k >= 2 && frac <= 0.3 && k <= 3 && !blank) {       // 弱くて見えなかった線：等間隔で補う
+          for (var m = 1; m < k; m++) items.push({ x: last + dir * dist * m / k, gap: false, s: 0 });
+          items.push({ x: found.x, gap: false, s: found.s });
+        } else if (k >= 2) items.push({ x: found.x, gap: true, s: found.s });       // 省略の隙間：その間に、線は引かない
+        else items.push({ x: found.x, gap: false, s: found.s });
+        last = found.x;
+      }
+      return items;
+    }
+    var R = walk(1), Lf = walk(-1), pos = [], G = [], good = 1;
+    for (q = Lf.length - 1; q >= 0; q--) { pos.push(Lf[q].x); G.push(Lf[q].gap); if (Lf[q].s > 0) good++; }       // 小さい側から並べる。G[k]＝pos[k] と pos[k+1] の間が、隙間か
+    pos.push(cand[best].x);
+    for (q = 0; q < R.length; q++) { G.push(R[q].gap); pos.push(R[q].x); if (R[q].s > 0) good++; }
+    if (good < Math.max(4, n * 0.4)) return null;       // 見つかった線が、少なすぎる：追えていない
+    for (i = 1; i < pos.length; i++) { var dd = pos[i] - pos[i - 1]; if (!(dd >= pitch * 0.4) || (!G[i - 1] && dd > pitch * 1.8)) return null; }       // 順番が入れかわる・近すぎる・（隙間でないのに）遠すぎる
+    return { pos: pos, gap: G };
+  }
+  function refineGridObj(g) {                        // 同じ間隔のマス目を、実際の線の位置を、1本ずつ追ったものに、直す（遠近やレンズの歪みで、間隔が場所によって違っても、点線が、本物の線に乗る。省略の隙間には、線を引かない）。うまく追えなければ、そのまま
+    try {
+      if (!img || !g || g.xs) return g;
+      var pr = gridProfiles(); if (!pr) return g;
+      var k = pr.k, nx = g.i1 - g.i0, ny = g.j1 - g.j0, ex = [], ey = [], i, j;
+      for (i = 0; i <= nx; i++) ex.push((g.ox + (g.i0 + i) * g.px) * k);
+      for (j = 0; j <= ny; j++) ey.push((g.oy + (g.j0 + j) * g.py) * k);
+      var meanAt = function (P, a) { var sm = 0, m = 0; a.forEach(function (v) { var ii = Math.round(v); if (ii >= 0 && ii < P.length) { sm += P[ii]; m++; } }); return m ? sm / m : 0; };
+      var tryWith = function (PX, PY) {
+        var tx = trackLines(PX, pr.colP, ex, g.px * k), ty = trackLines(PY, pr.rowP, ey, g.py * k);
+        if (!tx || !ty) return null;
+        if (meanAt(PX, tx.pos) < meanAt(PX, ex) * 0.98 || meanAt(PY, ty.pos) < meanAt(PY, ey) * 0.98) return null;       // 追った位置のほうが、線らしくなければ、使わない
+        return { tx: tx, ty: ty };
+      };
+      var r = tryWith(pr.colR, pr.rowR) || tryWith(pr.colP, pr.rowP);
+      if (!r) return g;
+      var xs = r.tx.pos.map(function (v) { return v / k; }), ys = r.ty.pos.map(function (v) { return v / k; });
+      var mp = function (arr, gp) { var sm = 0, m = 0; for (var q = 1; q < arr.length; q++) if (!gp[q - 1]) { sm += arr[q] - arr[q - 1]; m++; } return m ? sm / m : (arr[arr.length - 1] - arr[0]) / Math.max(1, arr.length - 1); };       // 隙間をのぞいた、ふつうのマスの大きさ
+      var pxm = mp(xs, r.tx.gap), pym = mp(ys, r.ty.gap), gi = [], gj = [];
+      r.tx.gap.forEach(function (v, q) { if (v) gi.push(q); }); r.ty.gap.forEach(function (v, q) { if (v) gj.push(q); });
+      var out = { px: pxm, ox: xs[0] - g.i0 * pxm, py: pym, oy: ys[0] - g.j0 * pym, i0: g.i0, i1: g.i0 + xs.length - 1, j0: g.j0, j1: g.j0 + ys.length - 1, xs: xs, ys: ys };
+      if (gi.length) out.gapI = gi;
+      if (gj.length) out.gapJ = gj;
+      return out;
+    } catch (e) { return g; }
+  }
   function gClamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-  function gX(i) { return grid.ox + i * grid.px; }
-  function gY(j) { return grid.oy + j * grid.py; }
-  function gLineI(x) { return gClamp(Math.round((x - grid.ox) / grid.px), grid.i0, grid.i1); }        // いちばん近い、縦の線の番号
-  function gLineJ(y) { return gClamp(Math.round((y - grid.oy) / grid.py), grid.j0, grid.j1); }
-  function gCellI(x) { return gClamp(Math.floor((x - grid.ox) / grid.px), grid.i0, grid.i1 - 1); }    // その位置の、マスの番号（マス目の中に、収める）
-  function gCellJ(y) { return gClamp(Math.floor((y - grid.oy) / grid.py), grid.j0, grid.j1 - 1); }
+  function nearIdx(a, v) { var lo = 0, hi = a.length - 1; while (hi - lo > 1) { var m = (lo + hi) >> 1; if (a[m] <= v) lo = m; else hi = m; } return (v - a[lo] <= a[hi] - v) ? lo : hi; }       // 並んだ線の位置 a の中で、v にいちばん近い線の番号
+  function floorIdx(a, v) { var lo = 0, hi = a.length - 1; if (v < a[0]) return -1; while (hi - lo > 1) { var m = (lo + hi) >> 1; if (a[m] <= v) lo = m; else hi = m; } return v >= a[hi] ? hi : lo; }       // v より左（上）にある、いちばん近い線の番号（なければ −1）
+  /* マス目の線の位置。grid.xs・grid.ys があれば、1本ずつ追った実際の位置（間隔は、場所で違ってよい）。なければ、同じ間隔（ox + i×px）。i は、小数（マスの真ん中＝i+0.5）も、受けつける */
+  function gX(i) {
+    if (!grid.xs) return grid.ox + i * grid.px;
+    var xs = grid.xs, n = xs.length - 1, k = i - grid.i0;
+    if (k <= 0) return xs[0] + k * (xs[1] - xs[0]);
+    if (k >= n) return xs[n] + (k - n) * (xs[n] - xs[n - 1]);
+    var kf = Math.floor(k), fr = k - kf; return fr === 0 ? xs[kf] : xs[kf] + fr * (xs[kf + 1] - xs[kf]);
+  }
+  function gY(j) {
+    if (!grid.ys) return grid.oy + j * grid.py;
+    var ys = grid.ys, n = ys.length - 1, k = j - grid.j0;
+    if (k <= 0) return ys[0] + k * (ys[1] - ys[0]);
+    if (k >= n) return ys[n] + (k - n) * (ys[n] - ys[n - 1]);
+    var kf = Math.floor(k), fr = k - kf; return fr === 0 ? ys[kf] : ys[kf] + fr * (ys[kf + 1] - ys[kf]);
+  }
+  function gLineI(x) { return grid.xs ? grid.i0 + nearIdx(grid.xs, x) : gClamp(Math.round((x - grid.ox) / grid.px), grid.i0, grid.i1); }        // いちばん近い、縦の線の番号
+  function gLineJ(y) { return grid.ys ? grid.j0 + nearIdx(grid.ys, y) : gClamp(Math.round((y - grid.oy) / grid.py), grid.j0, grid.j1); }
+  function gCellI(x) { return grid.xs ? grid.i0 + gClamp(floorIdx(grid.xs, x), 0, grid.xs.length - 2) : gClamp(Math.floor((x - grid.ox) / grid.px), grid.i0, grid.i1 - 1); }    // その位置の、マスの番号（マス目の中に、収める）
+  function gCellJ(y) { return grid.ys ? grid.j0 + gClamp(floorIdx(grid.ys, y), 0, grid.ys.length - 2) : gClamp(Math.floor((y - grid.oy) / grid.py), grid.j0, grid.j1 - 1); }
+  function gapN(isX, a, b) {                         // マスの番号 a〜b（含む）のうち、省略の隙間（線のない所）の数。isX：横（左右）か、縦（上下）か
+    var arr = isX ? grid.gapI : grid.gapJ; if (!arr || !arr.length) return 0;
+    var o = isX ? grid.i0 : grid.j0, c = 0;
+    for (var q = 0; q < arr.length; q++) { var idx = o + arr[q]; if (idx >= a && idx <= b) c++; }
+    return c;
+  }
+  function isGapCell(isX, idx) { return gapN(isX, idx, idx) > 0; }
+  function skipGapCell(isX, idx, start) {            // 隙間のマスなら、始めのマスのほうへ、1つずつもどして、ふつうのマスにする
+    var guard = 0; while (isGapCell(isX, idx) && idx !== start && guard++ < 1000) idx += idx < start ? 1 : -1;
+    return idx;
+  }
   function gridSnapPt(q) { return [gX(gLineI(q[0])), gY(gLineJ(q[1]))]; }                                  // マスの線の、交わる所
   function gridCenterPt(q) { return [gX(gCellI(q[0]) + 0.5), gY(gCellJ(q[1]) + 0.5)]; }                    // マスの真ん中
   function gridSize() { return { nx: grid.i1 - grid.i0, ny: grid.j1 - grid.j0 }; }
@@ -1151,10 +1341,15 @@
   function syncGridBtn() {
     var gb = $('grid-btn'), act = !!(gridOn && grid), inert = !gridToolOk() || !img; gb.classList.toggle('on', act); gb.classList.toggle('noguide', act && !gridShow); gb.classList.toggle('inert', inert); gb.classList.toggle('notip', !img);       // 画像を開く前は、ほかの白抜きのボタンと同じく、説明を出さない
     gb.setAttribute('aria-pressed', act ? 'true' : 'false');
-    var tip = inert ? 'マス目の目数・段数をかぞえる（直線・四角で使えます）' : (act ? 'マス目の目数・段数をかぞえる（もう一度押すと、やめる）' : 'マス目の目数・段数をかぞえる'); gb.setAttribute('aria-disabled', inert ? 'true' : 'false');
+    var tip = inert ? 'マス目モード（直線・四角で使えます）' : (act ? 'マス目モード：入（押すと、切にする・合わせ直す）' : 'マス目モード（押すと、マス目を探します）'); gb.setAttribute('aria-disabled', inert ? 'true' : 'false');
      gb.setAttribute('data-tip', tip); gb.setAttribute('aria-label', tip);
   }
   var gridHideTimer = null, gridHideNoted = false;
+  function upgradeGrid() {                          // 前の版で保存した、同じ間隔のマス目を、線を1本ずつ追ったものに、直す（直せなければ、そのまま。何度も試さない）
+    if (!img || !grid || grid.xs || grid.rf) return;
+    var g2 = refineGridObj(grid);
+    if (g2 !== grid) { grid = g2; scheduleSave(); dirtyChart = true; requestDraw(); syncGridBtn(); } else grid.rf = true;
+  }
   function autoHideGrid() {                          // マス目の点線は「合っているか確かめる」ためのもの。数秒みせたら、自動で消す（吸着は、そのまま）。画面が重くなるのを、防ぐため
     clearTimeout(gridHideTimer);
     if (!(gridOn && grid && gridShow)) return;
@@ -1163,31 +1358,70 @@
       gridShow = false; scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw();
     }, 5000);
   }
+  function gridPartial(g) {                         // 見つけたマス目が、画像（歪みを直した時は、四隅で囲んだ範囲）の半分も、ない（一部だけ）か
+    var fr = img.fixRect, bw = fr ? fr.w : img.naturalWidth, bh = fr ? fr.h : img.naturalHeight;
+    return (g.i1 - g.i0) * g.px < bw * 0.5 || (g.j1 - g.j0) * g.py < bh * 0.5;
+  }
+  function guideNoGrid() {                          // マス目が、自動で見つからなかった：手動（四隅を合わせて、数を入れる）を、案内
+    showModal('マス目が見つかりませんでした。\n四隅を合わせて、横の目数・縦の段数を入れると、マス目を合わせられます', 'マス目を合わせる', startFix, true, 'やめる');
+  }
+  function showGridSheet(msg, btns) {                // 画面の下に、小さな選択の枠を出す。btns：[{ label, main, fn }]
+    $('grid-sheet-msg').textContent = msg;
+    var box = $('grid-sheet-btns'); box.innerHTML = '';
+    btns.forEach(function (b) {
+      var el = document.createElement('button'); el.type = 'button'; el.className = 'fix-b' + (b.main ? ' main' : ''); el.textContent = b.label;
+      el.addEventListener('click', function () { hideGridSheet(); if (b.fn) b.fn(); });
+      box.appendChild(el);
+    });
+    $('grid-sheet').hidden = false;
+  }
+  function hideGridSheet() { $('grid-sheet').hidden = true; }
+  function gridOffNow() { gridOn = false; gridShow = true; scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw(); }
+  function confirmGrid(partial) {                    // 点線を出したまま、「合っていますか？」と聞く。合っていれば、そのまま使う／ずれていれば、四隅を合わせ直す。（自動で見つけたマス目を、ずれたまま使わないため）
+    clearTimeout(gridHideTimer); gridShow = true; dirtyChart = true; requestDraw();
+    showGridSheet((partial ? 'マス目の一部だけが、見つかりました。\n' : '') + '点線は、実際のマス目と合っていますか？', [
+      { label: '合っている', main: true, fn: function () { autoHideGrid(); } },
+      { label: 'ずれている', fn: function () { grid = null; gridOffNow(); startFix(); } },
+      { label: 'やめる', fn: gridOffNow }
+    ]);
+  }
   function findGrid() {                             // マス目を探して、見つかれば、使い始める（1目の幅・1段の高さも、自動で入る）
     var g = detectGrid();
-    if (!g) { grid = null; gridOn = false; syncGridBtn(); requestDraw(); showNote('マス目が見つかりませんでした。直線で、目の大きさを合わせてください'); return false; }
-    grid = g; gridOn = true; gridShow = true; scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw(); autoHideGrid();
+    if (!g) { grid = null; gridOn = false; syncGridBtn(); requestDraw(); guideNoGrid(); return false; }
+    grid = refineGridObj(g); gridOn = true; gridShow = true; scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw();       // 線を、1本ずつ追って、実際の位置に合わせる
+    confirmGrid(gridPartial(g));
     return true;
   }
-  function autoGridFirst() {                        // 編み図を、初めて開いた時だけ：マス目を探して、見つかれば、自動で「入」にする（見つからなければ、何も言わず「切」）。2回目からは、その編み図の、入／切の記録のとおり
-    if (!img || grid || strokes.length || count) return;       // すでに記録がある編み図は、そのまま（呼ばれる間に、塗り始めた時も、やめる）
+  function autoGridFirst(force) {                        // （いまは、「歪みを直した直後」だけ、force=true で呼ぶ。編み図を開いた時は、呼ばない＝マス目モードは、最初は「切」。入れる時は、マスのマークを押す）：マス目を探して、見つかれば「入」にする
+    if (!img || grid) return;
+    if (!force && (strokes.length || count)) return;       // すでに記録がある編み図は、そのまま（呼ばれる間に、塗り始めた時も、やめる）
     var tl = (typeof tallyAll === 'object' && tallyAll) ? tallyAll[chartId] : null;
-    if (tl && (tl.length || Object.keys(tl).length)) return;
+    if (!force && tl && (tl.length || Object.keys(tl).length)) return;
     var id = chartId, g = detectGrid();
-    if (!g || id !== chartId) return;
-    grid = g; gridOn = true; gridShow = true; scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw(); autoHideGrid();
-    showNote('マス目を見つけたので、マス目モードを入にしました（直線・四角のとき、マスのマークで、入・切できます）');
+    if (id !== chartId) return;
+    if (!g) { if (force) guideNoGrid(); return; }       // 初めて開いた時は、見つからなくても、何も言わない（かぎ針の記号図など、マス目のない編み図が多いため）。歪みを直した直後は、案内する
+    if (img.fixRect) {                               // 歪みを直した後：マス目の範囲は、四隅で囲んだ範囲（線の位置は、探した結果のまま）。外側の番号・タイトルは、含めない
+      var fr = img.fixRect, a0 = Math.round((fr.x - g.ox) / g.px), a1 = Math.round((fr.x + fr.w - g.ox) / g.px), b0 = Math.round((fr.y - g.oy) / g.py), b1 = Math.round((fr.y + fr.h - g.oy) / g.py);
+      if (a1 - a0 >= 3 && b1 - b0 >= 3) { g.i0 = a0; g.i1 = a1; g.j0 = b0; g.j1 = b1; }
+    }
+    grid = refineGridObj(g); gridOn = true; gridShow = true; scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw();       // 線を、1本ずつ追って、実際の位置に合わせる
+    confirmGrid(gridPartial(g));
   }
   $('grid-btn').addEventListener('click', function () {      // マス目に合わせる：編み図ごとの「入／切」（かぎ針の記号図などは、切のままで使う）
     if (!img) return;
     if (!gridToolOk()) return;       // なぞる・円・選択・消しゴム・かぞえるでは、押せない
-    clearTimeout(gridHideTimer);
-    if (gridOn && grid) {                           // 入 → 切（見つけたマス目は、覚えている）
-      gridOn = false; gridShow = true;
-      scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw(); return;
+    clearTimeout(gridHideTimer); hideGridSheet(); upgradeGrid();
+    if (gridOn && grid) {                           // 入：切にする／合わせ直す、を選ぶ（点線を、出して、見ながら選べる）
+      gridShow = true; dirtyChart = true; requestDraw();
+      showGridSheet('マス目モードは「入」です', [
+        { label: '閉じる', main: true, fn: function () { autoHideGrid(); } },
+        { label: '合わせ直す', fn: function () { startFix(); } },
+        { label: '切にする', fn: gridOffNow }
+      ]);
+      return;
     }
-    if (grid) { gridOn = true; gridShow = true; scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw(); autoHideGrid(); return; }       // 切 → 入：点線が、数秒出て、自動で消える
-    findGrid();
+    if (grid) { gridOn = true; gridShow = true; scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw(); autoHideGrid(); return; }       // 切 → 入：前に、合っていると確かめたマス目。点線が、数秒出て、自動で消える
+    findGrid();                                     // 初めて：探して、点線を出したまま、「合っていますか？」と聞く
   });
   syncGridBtn();
   /* ---------- 直線の目数・段数：まっすぐ横（目）か縦（段）に引いた直線のそばに出す。最初に、自分で、1目の大きさを合わせる ---------- */
@@ -1200,7 +1434,7 @@
     return null;
   }
   function measTarget() {                           // マス目に合わせている時の、数を出す対象：直線・四角（描いている途中、または、選んでいる形）
-    var ok = function (st) { return st && (st.k === 'l' || st.k === 'r') && st.p.length >= 2; };
+    var ok = function (st) { return st && !st.free && (st.k === 'l' || st.k === 'r') && st.p.length >= 2; };
     if (cur && ok(cur)) return { st: cur, live: true };
     if (selStroke && !grp && ok(selStroke) && selStroke.p.length === 2) return { st: selStroke, live: false };
     return null;
@@ -1249,7 +1483,12 @@
       var info = straightInfo(st); if (!info) { measBtn.hidden = true; return; }
       var hz = info.axis === 'h', o = hz ? grid.ox : grid.oy, pz = hz ? grid.px : grid.py, lo = hz ? Math.min(a[0], b[0]) : Math.min(a[1], b[1]), hi = hz ? Math.max(a[0], b[0]) : Math.max(a[1], b[1]);
       var n, approx;
-      if (st.cap === 'f') { var wn = (hi - lo) / pz; n = Math.round(wn); approx = Math.abs(wn - n) > 0.2; }       // ぴったり：はしが、マスのふち
+      if (grid.xs) {                                // 線を1本ずつ追ったマス目：マスの大きさが、場所で違うので、線の番号で、数える
+        var Fp = hz ? gX : gY, LI = hz ? gLineI : gLineJ, CI = hz ? gCellI : gCellJ;
+        if (st.cap === 'f') { var il = LI(lo), ih = LI(hi); n = ih - il - gapN(hz, il, ih - 1); approx = Math.abs(lo - Fp(il)) > 0.2 * Math.max(1, Fp(il + 1) - Fp(il)) || Math.abs(hi - Fp(ih)) > 0.2 * Math.max(1, Fp(ih) - Fp(ih - 1)); }
+        else { var cl = CI(lo), ch = CI(hi); n = ch - cl + 1 - gapN(hz, cl, ch); approx = Math.abs((lo - Fp(cl)) / Math.max(1, Fp(cl + 1) - Fp(cl)) - 0.5) > 0.3 || Math.abs((hi - Fp(ch)) / Math.max(1, Fp(ch + 1) - Fp(ch)) - 0.5) > 0.3; }
+      }
+      else if (st.cap === 'f') { var wn = (hi - lo) / pz; n = Math.round(wn); approx = Math.abs(wn - n) > 0.2; }       // ぴったり：はしが、マスのふち
       else {
         n = Math.floor(u(hi, o, pz)) - Math.floor(u(lo, o, pz)) + 1; var f1 = u(lo, o, pz) % 1, f2 = u(hi, o, pz) % 1;
         f1 = f1 < 0 ? f1 + 1 : f1; f2 = f2 < 0 ? f2 + 1 : f2;
@@ -1257,8 +1496,16 @@
       }
       txt = (approx ? '約' : '') + Math.max(1, n) + (hz ? '目' : '段'); mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; below = hz;
     } else {
-      var wx = Math.abs(b[0] - a[0]) / grid.px, wy = Math.abs(b[1] - a[1]) / grid.py, nx = Math.max(1, Math.round(wx)), ny = Math.max(1, Math.round(wy));
-      txt = (Math.abs(wx - nx) > 0.2 || Math.abs(wy - ny) > 0.2 ? '約' : '') + nx + '目×' + ny + '段';
+      var nx, ny, apx;
+      if (grid.xs) {                                // 線を1本ずつ追ったマス目：線の番号で、数える
+        var xl = Math.min(a[0], b[0]), xh = Math.max(a[0], b[0]), yl = Math.min(a[1], b[1]), yh = Math.max(a[1], b[1]), ixl = gLineI(xl), ixh = gLineI(xh), iyl = gLineJ(yl), iyh = gLineJ(yh);
+        nx = Math.max(1, ixh - ixl - gapN(true, ixl, ixh - 1)); ny = Math.max(1, iyh - iyl - gapN(false, iyl, iyh - 1));
+        apx = Math.abs(xl - gX(ixl)) > 0.2 * Math.max(1, gX(ixl + 1) - gX(ixl)) || Math.abs(xh - gX(ixh)) > 0.2 * Math.max(1, gX(ixh) - gX(ixh - 1)) || Math.abs(yl - gY(iyl)) > 0.2 * Math.max(1, gY(iyl + 1) - gY(iyl)) || Math.abs(yh - gY(iyh)) > 0.2 * Math.max(1, gY(iyh) - gY(iyh - 1));
+      } else {
+        var wx = Math.abs(b[0] - a[0]) / grid.px, wy = Math.abs(b[1] - a[1]) / grid.py; nx = Math.max(1, Math.round(wx)); ny = Math.max(1, Math.round(wy));
+        apx = Math.abs(wx - nx) > 0.2 || Math.abs(wy - ny) > 0.2;
+      }
+      txt = (apx ? '約' : '') + nx + '目×' + ny + '段';
       mid = [(a[0] + b[0]) / 2, Math.max(a[1], b[1])]; below = true;
     }
     measBtn.textContent = txt; measBtn.className = 'live'; measBtn.title = '';
@@ -1432,6 +1679,7 @@
       var gxa = gX(grid.i0), gxb = gX(grid.i1), gya = gY(grid.j0), gyb = gY(grid.j1), gq, xs = Math.max(gxa, vx0 - 2), xe = Math.min(gxb, vx1 + 2), ys = Math.max(gya, vy0 - 2), ye = Math.min(gyb, vy1 + 2);
       var qa = Math.max(grid.i0, Math.ceil((vx0 - 2 - grid.ox) / grid.px)), qb = Math.min(grid.i1, Math.floor((vx1 + 2 - grid.ox) / grid.px));
       var ra = Math.max(grid.j0, Math.ceil((vy0 - 2 - grid.oy) / grid.py)), rb = Math.min(grid.j1, Math.floor((vy1 + 2 - grid.oy) / grid.py));
+      if (grid.xs) { qa = grid.i0; qb = grid.i1; ra = grid.j0; rb = grid.j1; }       // 線を1本ずつ追ったマス目：全部の線を、実際の位置に（画面の外は、描かれない）
       ctx.save(); ctx.strokeStyle = 'rgba(74, 120, 136, .75)'; ctx.lineWidth = 1.4 / scale; ctx.setLineDash([5 / scale, 4 / scale]);
       if (ye > ys) { ctx.beginPath(); ctx.lineDashOffset = ys - gya; for (gq = qa; gq <= qb; gq++) { ctx.moveTo(gX(gq), ys); ctx.lineTo(gX(gq), ye); } ctx.stroke(); }
       if (xe > xs) { ctx.beginPath(); ctx.lineDashOffset = xs - gxa; for (gq = ra; gq <= rb; gq++) { ctx.moveTo(xs, gY(gq)); ctx.lineTo(xe, gY(gq)); } ctx.stroke(); }
@@ -1651,18 +1899,288 @@
     };
     reader.readAsDataURL(file);
   }
+  /* ---------- 歪み補正（台形補正）：編み図の4つの角を合わせて、まっすぐな四角に直す。直した画像で、マス目を探す・塗る。処理は、すべてこの端末の中だけ ---------- */
+  var imgOrig = null, fixQ = null, fixC = null;       // fixC：手で入れた、マス目の数（横の目数・縦の段数）。自動で見つけた数は、入れない                 // imgOrig：開いたままの画像／fixQ：直した時の4つの角（もとの画像の座標。左上・右上・右下・左下の、x,y の8つの数字）。編み図ごとに記録して、次に開いた時も、自動で直す
+  function solve8(A, b) {                          // 連立方程式（8つ）を解く
+    var n = 8, i, j, k, M = A.map(function (r, idx) { return r.concat([b[idx]]); });
+    for (i = 0; i < n; i++) {
+      var pv = i; for (j = i + 1; j < n; j++) if (Math.abs(M[j][i]) > Math.abs(M[pv][i])) pv = j;
+      if (Math.abs(M[pv][i]) < 1e-12) return null;
+      var tmp = M[i]; M[i] = M[pv]; M[pv] = tmp;
+      for (j = i + 1; j < n; j++) { var f = M[j][i] / M[i][i]; for (k = i; k <= n; k++) M[j][k] -= f * M[i][k]; }
+    }
+    var h = new Array(n);
+    for (i = n - 1; i >= 0; i--) { var sm = M[i][n]; for (j = i + 1; j < n; j++) sm -= M[i][j] * h[j]; h[i] = sm / M[i][i]; }
+    return h;
+  }
+  function homog4(from, to) {                      // 4つの点 from（x,y ×4）を、4つの点 to に移す変換（h0〜h7）
+    var A = [], bb = [], i;
+    for (i = 0; i < 4; i++) {
+      var u = from[i * 2], v = from[i * 2 + 1], x = to[i * 2], y = to[i * 2 + 1];
+      A.push([u, v, 1, 0, 0, 0, -u * x, -v * x]); bb.push(x);
+      A.push([0, 0, 0, u, v, 1, -u * y, -v * y]); bb.push(y);
+    }
+    return solve8(A, bb);
+  }
+  function warpImage(im, q) {                      // 4つの角を、まっすぐな四角に直した画像（canvas）を作る。写真全体を、そのまま、まっすぐに直す（マス目の外の、番号やメモも残る）。作れなければ null。oc.fixRect＝直した画像の中の、マス目の四角（x, y, w, h）
+    var iw = im.naturalWidth, ih = im.naturalHeight;
+    var dist = function (a, b) { return Math.hypot(q[a * 2] - q[b * 2], q[a * 2 + 1] - q[b * 2 + 1]); };
+    var Wr = (dist(0, 1) + dist(3, 2)) / 2, Hr = (dist(0, 3) + dist(1, 2)) / 2;
+    if (!(Wr > 8 && Hr > 8)) return null;
+    var kk = Math.min(1, 4096 / Math.max(Wr, Hr)), tries = 0, Wc, Hc, h, hi, padL, padT, CW, CH;
+    for (;;) {
+      Wc = Math.max(16, Math.round(Wr * kk)); Hc = Math.max(16, Math.round(Hr * kk));
+      var rect = [0, 0, Wc, 0, Wc, Hc, 0, Hc];
+      h = homog4(rect, q); hi = homog4(q, rect);                       // h：直した画像→写真／hi：写真→直した画像
+      if (!h || !hi) return null;
+      var minU = 0, maxU = Wc, minV = 0, maxV = Hc, cs = [0, 0, iw, 0, iw, ih, 0, ih], ok = true, i;
+      for (i = 0; i < 4; i++) {                                         // 写真の4つの角が、直した画像の、どこに来るか（これで、写真全体が入る大きさが決まる）
+        var den = hi[6] * cs[i * 2] + hi[7] * cs[i * 2 + 1] + 1;
+        if (!(den > 1e-6)) { ok = false; break; }
+        var cu = (hi[0] * cs[i * 2] + hi[1] * cs[i * 2 + 1] + hi[2]) / den, cv = (hi[3] * cs[i * 2] + hi[4] * cs[i * 2 + 1] + hi[5]) / den;
+        minU = Math.min(minU, cu); maxU = Math.max(maxU, cu); minV = Math.min(minV, cv); maxV = Math.max(maxV, cv);
+      }
+      if (!ok) { minU = 0; maxU = Wc; minV = 0; maxV = Hc; }           // 角が、うまく移らない（強い斜め）時は、マス目の四角だけ
+      minU = Math.max(minU, -Wc); maxU = Math.min(maxU, 2 * Wc); minV = Math.max(minV, -Hc); maxV = Math.min(maxV, 2 * Hc);
+      padL = Math.ceil(-minU); padT = Math.ceil(-minV); CW = padL + Math.ceil(maxU); CH = padT + Math.ceil(maxV);
+      if (CW * CH <= 9e6 || tries++ > 4) break;
+      kk *= Math.sqrt(9e6 / (CW * CH)) * 0.98;                          // 大きすぎる時は、縮める（900万画素まで）
+    }
+    var sc = document.createElement('canvas'); sc.width = iw; sc.height = ih;
+    var sx = sc.getContext('2d', { willReadFrequently: true }); sx.drawImage(im, 0, 0);
+    var sd = sx.getImageData(0, 0, iw, ih).data;
+    var oc = document.createElement('canvas'); oc.width = CW; oc.height = CH;
+    var ox = oc.getContext('2d'), od = ox.createImageData(CW, CH), o = od.data, x, y, p = 0;
+    for (y = 0; y < CH; y++) {
+      var v = y + 0.5 - padT;
+      for (x = 0; x < CW; x++, p += 4) {
+        var u = x + 0.5 - padL, w = h[6] * u + h[7] * v + 1, fx = (h[0] * u + h[1] * v + h[2]) / w - 0.5, fy = (h[3] * u + h[4] * v + h[5]) / w - 0.5;
+        var x0 = Math.floor(fx), y0 = Math.floor(fy);
+        if (!(w > 1e-6) || x0 < 0 || y0 < 0 || x0 >= iw - 1 || y0 >= ih - 1) { o[p] = 255; o[p + 1] = 255; o[p + 2] = 255; o[p + 3] = 255; continue; }       // 写真の外側：白
+        var ax = fx - x0, ay = fy - y0, i00 = (y0 * iw + x0) * 4, i10 = i00 + 4, i01 = i00 + iw * 4, i11 = i01 + 4;
+        var w00 = (1 - ax) * (1 - ay), w10 = ax * (1 - ay), w01 = (1 - ax) * ay, w11 = ax * ay;
+        o[p] = sd[i00] * w00 + sd[i10] * w10 + sd[i01] * w01 + sd[i11] * w11;
+        o[p + 1] = sd[i00 + 1] * w00 + sd[i10 + 1] * w10 + sd[i01 + 1] * w01 + sd[i11 + 1] * w11;
+        o[p + 2] = sd[i00 + 2] * w00 + sd[i10 + 2] * w10 + sd[i01 + 2] * w01 + sd[i11 + 2] * w11;
+        o[p + 3] = 255;
+      }
+    }
+    ox.putImageData(od, 0, 0); oc.naturalWidth = CW; oc.naturalHeight = CH;       // img は、naturalWidth / naturalHeight だけを使うので、canvas を、そのまま画像として使う
+    oc.fixRect = { x: padL, y: padT, w: Wc, h: Hc };
+    return oc;
+  }
+  var fixOv = $('fix-overlay'), fixCv = $('fix-cv'), fixCtx = fixCv.getContext('2d'), fixPts = null, fixDrag = -1, fixOff = [0, 0], fixV = { s: 1, ox: 0, oy: 0, w: 1, h: 1, d: 1 };
+  var FIX_HINT = '4つの丸を、編み図の角に合わせてください（2本指で、拡大・移動できます）';
+  var fixView = { zoom: 1, cx: 0, cy: 0 }, fixBase = 1, fixPad = { t: 0, b: 0 };       // 拡大の倍率／見ている中心（画像の点）／ぴったり全体が入る倍率／見出し・ボタンの、重なっている高さ
+  function fixApplyView(w, h, d) {
+    var sc = fixBase * fixView.zoom, scx = w / 2, scy = fixPad.t + (h - fixPad.t - fixPad.b) / 2;       // 画面の中心＝見出しとボタンの間の、真ん中
+    fixV = { s: sc, ox: scx - fixView.cx * sc, oy: scy - fixView.cy * sc, w: w, h: h, d: d, scx: scx, scy: scy };
+    $('fix-fit').hidden = fixView.zoom <= 1.02;
+  }
+  function fixLayout(keepView) {
+    if (!imgOrig) return;
+    var r = $('fix-stage').getBoundingClientRect(), d = window.devicePixelRatio || 1, iw = imgOrig.naturalWidth, ih = imgOrig.naturalHeight;
+    fixPad = { t: $('fix-head').offsetHeight, b: $('fix-foot').offsetHeight };
+    fixCv.width = Math.max(1, Math.round(r.width * d)); fixCv.height = Math.max(1, Math.round(r.height * d));
+    fixBase = Math.min(r.width / iw, Math.max(80, r.height - fixPad.t - fixPad.b) / ih) * 0.98;
+    if (!keepView) fixView = { zoom: 1, cx: iw / 2, cy: ih / 2 };
+    fixApplyView(r.width, r.height, d); fixDraw();
+  }
+  function fixZoomAt(px, py, factor) {              // 画面の点（px, py）を動かさずに、拡大・縮小
+    var p = fixToImg(px, py), z = Math.max(1, Math.min(16, fixView.zoom * factor)), sc = fixBase * z;
+    fixView.zoom = z; fixView.cx = (fixV.scx - px) / sc + p[0]; fixView.cy = (fixV.scy - py) / sc + p[1];
+    fixClampView(); fixApplyView(fixV.w, fixV.h, fixV.d);
+  }
+  function fixClampView() { fixView.cx = Math.max(0, Math.min(imgOrig.naturalWidth, fixView.cx)); fixView.cy = Math.max(0, Math.min(imgOrig.naturalHeight, fixView.cy)); }
+  function fixToScr(x, y) { return [fixV.ox + x * fixV.s, fixV.oy + y * fixV.s]; }
+  function fixToImg(px, py) { return [(px - fixV.ox) / fixV.s, (py - fixV.oy) / fixV.s]; }
+  function fixDraw() {
+    if (!imgOrig || !fixPts) return;
+    var c = fixCtx, V = fixV, iw = imgOrig.naturalWidth, ih = imgOrig.naturalHeight, i, q;
+    c.setTransform(V.d, 0, 0, V.d, 0, 0); c.clearRect(0, 0, V.w, V.h);
+    c.drawImage(imgOrig, V.ox, V.oy, iw * V.s, ih * V.s);
+    c.beginPath();
+    for (i = 0; i < 4; i++) { q = fixToScr(fixPts[i * 2], fixPts[i * 2 + 1]); if (i) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); }
+    c.closePath(); c.lineJoin = 'round'; c.lineWidth = 4; c.strokeStyle = 'rgba(255,255,255,.9)'; c.stroke(); c.lineWidth = 2; c.strokeStyle = '#6F9AAA'; c.stroke();
+    for (i = 0; i < 4; i++) {
+      q = fixToScr(fixPts[i * 2], fixPts[i * 2 + 1]);
+      c.beginPath(); c.arc(q[0], q[1], i === fixDrag ? 15 : 13, 0, Math.PI * 2); c.fillStyle = 'rgba(255,255,255,.8)'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = '#6F9AAA'; c.stroke();
+      c.beginPath(); c.moveTo(q[0] - 5, q[1]); c.lineTo(q[0] + 5, q[1]); c.moveTo(q[0], q[1] - 5); c.lineTo(q[0], q[1] + 5); c.lineWidth = 1.5; c.stroke();
+    }
+    if (fixDrag >= 0) {                              // 拡大鏡：指でかくれる丸の位置を、すぐ上に、拡大して見せる
+      var fx = fixPts[fixDrag * 2], fy = fixPts[fixDrag * 2 + 1], p = fixToScr(fx, fy), R = 58, Z = 3.2;
+      var cx = Math.max(R + 8, Math.min(V.w - R - 8, p[0])), cy = p[1] - R - 50, topY = fixPad.t + R + 6, botY = V.h - fixPad.b - R - 6;       // 見出し・ボタンの下に、かくれない所に、出す
+      if (cy < topY) cy = p[1] + R + 50;
+      if (cy > botY) cy = Math.max(topY, Math.min(botY, p[1] - R - 50));
+      var hs = R / (Z * V.s);
+      c.save(); c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.clip(); c.fillStyle = '#FFFFFF'; c.fill();
+      c.drawImage(imgOrig, fx - hs, fy - hs, hs * 2, hs * 2, cx - R, cy - R, R * 2, R * 2);
+      c.restore();
+      c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.lineWidth = 3; c.strokeStyle = '#6F9AAA'; c.stroke();
+      c.beginPath(); c.moveTo(cx - 10, cy); c.lineTo(cx + 10, cy); c.moveTo(cx, cy - 10); c.lineTo(cx, cy + 10); c.lineWidth = 1.5; c.strokeStyle = '#FF4F7B'; c.stroke();
+    }
+  }
+  function fixValid(p) {                           // 四角になっているか（順番どおり・へこんでいない・小さすぎない）
+    var i, ok = true;
+    for (i = 0; i < 4; i++) {
+      var a = i * 2, b = ((i + 1) % 4) * 2, c2 = ((i + 2) % 4) * 2;
+      if ((p[b] - p[a]) * (p[c2 + 1] - p[b + 1]) - (p[b + 1] - p[a + 1]) * (p[c2] - p[b]) <= 0) ok = false;
+      if (Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1]) < 40) ok = false;
+    }
+    return ok;
+  }
+  function fixInitialQuad() {                      // 最初の丸の位置：マス目が見つかっていれば、その四隅／なければ、画像のふちから、少し内側
+    var iw = imgOrig.naturalWidth, ih = imgOrig.naturalHeight;
+    if (grid && img === imgOrig) return [gX(grid.i0), gY(grid.j0), gX(grid.i1), gY(grid.j0), gX(grid.i1), gY(grid.j1), gX(grid.i0), gY(grid.j1)];
+    var mx = iw * 0.06, my = ih * 0.06;
+    return [mx, my, iw - mx, my, iw - mx, ih - my, mx, ih - my];
+  }
+  function openFixDialog() {
+    if (!imgOrig) return;
+    fixPts = fixQ ? fixQ.slice() : fixInitialQuad(); fixDrag = -1;
+    $('fix-reset').hidden = !fixQ; $('fix-sub').textContent = FIX_HINT;
+    $('fix-cols').value = fixC ? fixC[0] : ''; $('fix-rows').value = fixC ? fixC[1] : '';       // 手で入れた数だけ、入れておく（自動で見つけた数は、入れない。引き継いで、まちがえないため）
+    $('fix-cols').placeholder = (grid && !fixC) ? ('いま ' + (grid.i1 - grid.i0)) : '例 25'; $('fix-rows').placeholder = (grid && !fixC) ? ('いま ' + (grid.j1 - grid.j0)) : '例 30';
+    setFixGrid(!!($('fix-cols').value || $('fix-rows').value));       // 数が入っている時だけ、入力欄を、開いておく
+    closeMenu(); fixOv.hidden = false; fixLayout();
+  }
+  function setFixGrid(open) {                      // マス目の数の入力欄を、開く・閉じる
+    $('fix-grid').hidden = !open; $('fix-gridtoggle').textContent = open ? '入力欄を閉じる ▴' : 'マス目の数を入れる（わかる時だけ） ▾';
+  }
+  $('fix-gridtoggle').addEventListener('click', function () { setFixGrid($('fix-grid').hidden); if (!fixOv.hidden) fixLayout(true); });
+  function closeFixDialog() { fixOv.hidden = true; fixDrag = -1; fixPtrs = {}; fixMode = ''; fixPinch = null; fixLast = null; }
+  function checkManualCounts(cols, rows) {          // 手で入れた数が、実際の線の間隔と合わない時は、「横○×縦○ではありませんか？」と、提案する（数の入れまちがいに、気づけるように）
+    if (!img || !grid || !img.fixRect) return;
+    var fr = img.fixRect, g2 = detectGrid(); if (!g2) return;
+    var cw = fr.w / cols, ch = fr.h / rows;
+    if (Math.abs(g2.px - cw) / cw < 0.06 && Math.abs(g2.py - ch) / ch < 0.06) return;       // 合っている
+    var c2 = Math.round(fr.w / g2.px), r2 = Math.round(fr.h / g2.py);
+    if (c2 < 3 || r2 < 3 || c2 > 500 || r2 > 500 || (c2 === cols && r2 === rows)) return;
+    showGridSheet('入れた数（横' + cols + '×縦' + rows + '）と、線の間隔が、合わないようです。\n横' + c2 + '×縦' + r2 + 'ではありませんか？', [
+      { label: '横' + c2 + '×縦' + r2 + 'にする', main: true, fn: function () {
+        var f2 = img.fixRect; if (!f2) return;
+        grid = refineGridObj({ px: f2.w / c2, ox: f2.x, py: f2.h / r2, oy: f2.y, i0: 0, i1: c2, j0: 0, j1: r2 }); gridOn = true; gridShow = true; fixC = [c2, r2];
+        scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw(); autoHideGrid();
+      } },
+      { label: 'このまま' }
+    ]);
+  }
+  function applyShownImage(nimg, cols, rows) {     // 直した画像（またはもとの画像）に入れかえる。座標が変わるので、塗り・かぞえた印・マス目は、消す（段数カウンターは、そのまま）。cols・rows（横の目数・縦の段数）が入っていれば、マス目は、探さずに、ぴったり決める
+    cancelPaint(); mode = 'idle'; pts.clear(); editing = null; selStroke = null; grp = null; cancelLasso();
+    img = nimg; monoSrc = null; fadeSrc = null; if (mono) buildMono(); if (fade) buildFade();
+    strokes = []; hist = []; redoH = []; cur = null; grid = null; gridOn = false; gridShow = true; ver++; cacheKey = '';
+    if (typeof tallyAll === 'object' && tallyAll[chartId]) { delete tallyAll[chartId]; tallySave(); tallySync(); }
+    var manual = !!(cols && rows);
+    if (manual) { var fr = nimg.fixRect || { x: 0, y: 0, w: nimg.naturalWidth, h: nimg.naturalHeight }; grid = refineGridObj({ px: fr.w / cols, ox: fr.x, py: fr.h / rows, oy: fr.y, i0: 0, i1: cols, j0: 0, j1: rows }); gridOn = true; gridShow = true; }       // 4つの角で囲んだ四角が、マス目ちょうど：1マス＝その四角の幅（高さ）÷数。外側の番号やメモは、そのまま残る
+    scheduleSave(); syncGridBtn(); syncBtns(); fitImage(); dirtyChart = true; requestDraw();
+    fixC = manual ? [cols, rows] : null;
+    if (manual) { autoHideGrid(); setTimeout(function () { checkManualCounts(cols, rows); }, 150); } else setTimeout(function () { autoGridFirst(true); }, 80);       // 数が入っていなければ、直した画像で、マス目を、探す
+  }
+  function startFix() {                            // 歪み補正の画面を開く（塗りや印があれば、消えることを、先に確認）
+    if (!imgOrig) return;
+    var tl = (typeof tallyAll === 'object') ? tallyAll[chartId] : null, hasTl = !!(tl && tl.m && tl.m.length);
+    if (strokes.length || hasTl) showModal('歪みを直すと、塗った内容と、かぞえた印は、消えます。\n※画面を閉じた場合は、もどせません', '続ける', openFixDialog);
+    else openFixDialog();
+  }
+  $('fix-cancel').addEventListener('click', closeFixDialog);
+  ['fix-cols', 'fix-rows'].forEach(function (id) { $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('fix-go').click(); } }); });
+  $('fix-go').addEventListener('click', function () {
+    if (!fixValid(fixPts)) { $('fix-sub').textContent = '四角になっていません。丸の位置を、直してください'; return; }
+    var cs = $('fix-cols').value.trim(), rs = $('fix-rows').value.trim(), cols = 0, rows = 0;
+    if (cs || rs) {                                  // マス目の数：どちらかを入れたら、両方必要
+      if (!(cs && rs)) { $('fix-sub').textContent = '横の目数と、縦の段数を、両方入れてください（わからなければ、両方、空に）'; return; }
+      cols = parseInt(cs, 10); rows = parseInt(rs, 10);
+      if (!(cols >= 3 && cols <= 500 && rows >= 3 && rows <= 500)) { $('fix-sub').textContent = '目数・段数は、3〜500の数で入れてください'; return; }
+    }
+    var w = null; try { w = warpImage(imgOrig, fixPts); } catch (e) { w = null; }
+    if (!w) { $('fix-sub').textContent = '直せませんでした。丸の位置を変えて、もう一度お試しください'; return; }
+    if (cols && (w.fixRect.w / cols <= 2 || w.fixRect.h / rows <= 2)) { $('fix-sub').textContent = '目数・段数が多すぎて、1マスが小さくなりすぎます。数を確かめてください'; return; }
+    fixQ = fixPts.slice(); closeFixDialog(); applyShownImage(w, cols, rows);
+  });
+  $('fix-reset').addEventListener('click', function () { fixQ = null; closeFixDialog(); applyShownImage(imgOrig); });
+  var fixPtrs = {}, fixMode = '', fixPinch = null, fixLast = null;       // 触れている指／いまの動き（''・handle＝丸を動かす・pan＝画面を動かす・pinch＝2本指）
+  function fixPos(e) { var r = fixCv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  fixCv.addEventListener('pointerdown', function (e) {
+    var pt = fixPos(e), ids, best = -1, bd = 46, i;
+    fixPtrs[e.pointerId] = pt; try { fixCv.setPointerCapture(e.pointerId); } catch (err) {}
+    e.preventDefault(); ids = Object.keys(fixPtrs);
+    if (ids.length >= 2) {                           // 2本指：拡大・移動
+      var a = fixPtrs[ids[0]], b = fixPtrs[ids[1]]; fixDrag = -1; fixMode = 'pinch';
+      fixPinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: fixView.zoom, zooming: false, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 }; fixDraw(); return;
+    }
+    for (i = 0; i < 4; i++) { var q = fixToScr(fixPts[i * 2], fixPts[i * 2 + 1]), dd = Math.hypot(q[0] - pt.x, q[1] - pt.y); if (dd < bd) { bd = dd; best = i; } }
+    if (best >= 0) {                                 // 丸に触れた：丸を動かす
+      var hp = fixToScr(fixPts[best * 2], fixPts[best * 2 + 1]); fixOff = [hp[0] - pt.x, hp[1] - pt.y];       // 指と丸の、ずれ：触れた時に、丸が、ぱっと動かないように
+      fixDrag = best; fixMode = 'handle'; $('fix-sub').textContent = FIX_HINT;
+    } else { fixMode = 'pan'; fixLast = pt; }        // 丸のない所：画面を動かす
+    fixDraw();
+  });
+  fixCv.addEventListener('pointermove', function (e) {
+    if (!fixPtrs[e.pointerId]) return;
+    var pt = fixPos(e), ids = Object.keys(fixPtrs);
+    fixPtrs[e.pointerId] = pt;
+    if (fixMode === 'pinch' && ids.length >= 2) {
+      var a = fixPtrs[ids[0]], b = fixPtrs[ids[1]], nd = Math.hypot(a.x - b.x, a.y - b.y) || 1, nm = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      var ratio = nd / fixPinch.d0;
+      if (!fixPinch.zooming && Math.abs(ratio - 1) > 0.08) fixPinch.zooming = true;       // 指の間隔が、はっきり変わるまでは、拡大・縮小しない（2本指で、動かすだけの時に、勝手に拡大されないように）
+      var p = fixToImg(fixPinch.mx, fixPinch.my);   // 前に、2本指の真ん中にあった、画像の点を、いまの真ん中へ（動かしながら、拡大もできる）
+      var z = fixPinch.zooming ? Math.max(1, Math.min(16, fixPinch.z0 * ratio)) : fixView.zoom, sc = fixBase * z;
+      fixView.zoom = z; fixView.cx = (fixV.scx - nm.x) / sc + p[0]; fixView.cy = (fixV.scy - nm.y) / sc + p[1];
+      fixClampView(); fixApplyView(fixV.w, fixV.h, fixV.d); fixPinch.mx = nm.x; fixPinch.my = nm.y; fixDraw(); return;
+    }
+    if (fixMode === 'handle' && fixDrag >= 0) {
+      var f = fixToImg(pt.x + fixOff[0], pt.y + fixOff[1]);
+      fixPts[fixDrag * 2] = Math.max(0, Math.min(imgOrig.naturalWidth, f[0])); fixPts[fixDrag * 2 + 1] = Math.max(0, Math.min(imgOrig.naturalHeight, f[1])); fixDraw(); return;
+    }
+    if (fixMode === 'pan' && fixLast) {
+      fixView.cx -= (pt.x - fixLast.x) / fixV.s; fixView.cy -= (pt.y - fixLast.y) / fixV.s; fixLast = pt;
+      fixClampView(); fixApplyView(fixV.w, fixV.h, fixV.d); fixDraw();
+    }
+  });
+  function fixPointerEnd(e) {
+    delete fixPtrs[e.pointerId];
+    var n = Object.keys(fixPtrs).length;
+    if (n === 0) { fixMode = ''; fixDrag = -1; fixPinch = null; fixLast = null; }
+    else if (fixMode === 'pinch' && n === 1) { fixMode = 'none'; fixDrag = -1; }       // 2本指のあと、残った1本では、何も動かさない
+    fixDraw();
+  }
+  fixCv.addEventListener('pointerup', fixPointerEnd); fixCv.addEventListener('pointercancel', fixPointerEnd);
+  fixCv.addEventListener('wheel', function (e) {     // パソコン：ホイール（トラックパッドの、2本指の広げ縮めも）で、拡大・縮小
+    e.preventDefault(); var pt = fixPos(e);
+    fixZoomAt(pt.x, pt.y, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015))); fixDraw();
+  }, { passive: false });
+  $('fix-fit').addEventListener('click', function () { fixLayout(false); });
+  window.addEventListener('resize', function () { if (!fixOv.hidden) fixLayout(true); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !fixOv.hidden && $('modal').hidden) closeFixDialog(); });
+  function loadFixC(id) {                          // 保存してあった、手で入れた、マス目の数
+    if (!storageOk) return null;
+    try { var it = readAll().items[id], c = it && it.fixc; if (Array.isArray(c) && c.length === 2 && c[0] >= 3 && c[1] >= 3) return c; } catch (e) {}
+    return null;
+  }
+  function loadFix(id) {                           // 保存してあった、直した時の4つの角
+    if (!storageOk) return null;
+    try {
+      var it = readAll().items[id], f = it && it.fixv === 2 && it.fix;
+      if (Array.isArray(f) && f.length === 8 && f.every(function (v) { return typeof v === 'number' && isFinite(v); })) return f;
+    } catch (e) {}
+    return null;
+  }
   function setImage(im, file) {
     cancelPaint(); mode = 'idle'; pts.clear(); editing = null; selStroke = null; grp = null; cancelLasso();
-    flush();                                       // 開いていた画像の塗りを、先に保存する
-    img = im; monoSrc = null; fadeSrc = null; if (mono) buildMono(); if (fade) buildFade();
+    flush(); hideGridSheet();                       // 開いていた画像の塗りを、先に保存する
+    var cid = [file.name, file.size, file.lastModified, im.naturalWidth + 'x' + im.naturalHeight].join('|');
+    imgOrig = im; fixQ = loadFix(cid); fixC = fixQ ? loadFixC(cid) : null;                 // 以前、歪みを直した編み図なら、同じ角で、自動で直す
+    var shown = im;
+    if (fixQ) { try { shown = warpImage(im, fixQ) || im; } catch (e) { shown = im; } if (shown === im) fixQ = null; }
+    img = shown; monoSrc = null; fadeSrc = null; if (mono) buildMono(); if (fade) buildFade();
     PEN.tool = PEN.last || 'pen'; syncUI();           // 編み図を開いた時は、最後に使った塗る道具から始める（選択や消しゴムのままだと、塗れなくて戸惑うため）
     // 画像の見分け方：名前・大きさ・更新日時・縦横サイズ（編み図ルーラーと同じ）
-    chartId = [file.name, file.size, file.lastModified, im.naturalWidth + 'x' + im.naturalHeight].join('|');
+    chartId = cid;
     chartName = file.name; tallyNoted = false;       // かぞえるのヒントは、編み図を開くたびに、また1回
     strokes = loadFor(chartId); count = loadCount(chartId); grid = loadGrid(chartId); gridOn = !!(grid && grid.on); gridShow = !grid || grid.show !== false; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
     if (strokes.length || count || grid) scheduleSave();       // 「最近使った画像」として、保存の日時を更新しておく
     syncGridBtn(); syncBtns(); autoHideGrid();
-    if (!grid && !strokes.length && !count) setTimeout(autoGridFirst, 80);       // 初めて開いた編み図：画像が出てから、マス目を探す
+    if (grid && !grid.xs) setTimeout(upgradeGrid, 300);       // 前の版で保存した、同じ間隔のマス目は、開いた直後に、線を追い直す
     placeholder.hidden = true;                       // 画像を開いたら、案内の枠（HTMLの文字）は隠す。画像のうしろの案内は、下の drawAreaHint で、キャンバスに直接描く
     viewer.classList.remove('empty', 'dragging');
     $('mk-panel').hidden = false; $('mk-toggle').hidden = false;
@@ -1675,8 +2193,8 @@
   // 画像を閉じる。画面はそのままで、編み図だけ閉じる。塗った内容は、自動で保存されている
   function closeImage() {
     cancelPaint(); mode = 'idle'; pts.clear(); pinchLast = 0; midLast = null; editing = null; selStroke = null; grp = null; cancelLasso();
-    flush();
-    img = null; monoSrc = null; fadeSrc = null; chartId = null; grid = null; gridOn = false; gridShow = true; strokes = []; count = 0; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
+    flush(); hideGridSheet();
+    img = null; imgOrig = null; fixQ = null; fixC = null; monoSrc = null; fadeSrc = null; chartId = null; grid = null; gridOn = false; gridShow = true; strokes = []; count = 0; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
     syncBtns();
     placeholder.hidden = false;
     viewer.classList.add('empty'); viewer.classList.remove('dragging');
@@ -1793,22 +2311,24 @@
   // 直線・四角：始点を固定して、終点だけ動かす（直線は、ほぼ水平・垂直なら、まっすぐに補正）
   function setEnd(e) {
     if (!cur) return;
-    var q = toImg(e), a = cur.p[0], gs = gridOn && grid && cur.k !== 'e';       // 円は、マス目に合わせない
+    var q = toImg(e), a = cur.p[0], gs = gridOn && grid && cur.k !== 'e' && !cur.free;       // 円は、マス目に合わせない／マス目の外から始めた線は、合わせない
     if (gs) {                                       // マス目に合わせる時：中途半端な位置に、ならない
       if (cur.k === 'l') {                          // 直線：同じ行（列）なら、まっすぐに。はしは、マスの真ん中（またいだマスも、かかる）。「ぴったり」は、マスのふちからふちまで、太さもマスに合わせる
         var sc0 = cur.sc || [gCellI(a[0]), gCellJ(a[1])], ci1 = gCellI(q[0]), cj1 = gCellJ(q[1]), flat = cur.cap === 'f';
+        if (grid.gapI || grid.gapJ) { ci1 = skipGapCell(true, ci1, sc0[0]); cj1 = skipGapCell(false, cj1, sc0[1]); }       // 隙間の中で終わったら、ふつうのマスまで、もどす
         var ax = gX(sc0[0] + 0.5), ay = gY(sc0[1] + 0.5);
         cur.w = cur.w0 || cur.w;
         if (cj1 === sc0[1] || Math.abs(q[1] - ay) < Math.abs(q[0] - ax) * 0.0875) {                       // 横
-          if (flat) { cur.p[0] = [gX(Math.min(sc0[0], ci1)), ay]; cur.p[1] = [gX(Math.max(sc0[0], ci1) + 1), ay]; cur.w = grid.py; }
+          if (flat) { cur.p[0] = [gX(Math.min(sc0[0], ci1)), ay]; cur.p[1] = [gX(Math.max(sc0[0], ci1) + 1), ay]; cur.w = gY(sc0[1] + 1) - gY(sc0[1]); }
           else { cur.p[0] = [ax, ay]; cur.p[1] = [gX(ci1 + 0.5), ay]; }
         } else if (ci1 === sc0[0] || Math.abs(q[0] - ax) < Math.abs(q[1] - ay) * 0.0875) {                // 縦
-          if (flat) { cur.p[0] = [ax, gY(Math.min(sc0[1], cj1))]; cur.p[1] = [ax, gY(Math.max(sc0[1], cj1) + 1)]; cur.w = grid.px; }
+          if (flat) { cur.p[0] = [ax, gY(Math.min(sc0[1], cj1))]; cur.p[1] = [ax, gY(Math.max(sc0[1], cj1) + 1)]; cur.w = gX(sc0[0] + 1) - gX(sc0[0]); }
           else { cur.p[0] = [ax, ay]; cur.p[1] = [ax, gY(cj1 + 0.5)]; }
         } else { cur.p[0] = [ax, ay]; cur.p[1] = gridCenterPt(q); }
         return;
       }
       var sc = cur.sc || [gCellI(a[0]), gCellJ(a[1])], ec = [gCellI(q[0]), gCellJ(q[1])];       // 四角・円：始まりのマスと、終わりのマスを、両方ふくむ形に
+    if (grid.gapI || grid.gapJ) ec = [skipGapCell(true, ec[0], sc[0]), skipGapCell(false, ec[1], sc[1])];
       cur.p[0] = [gX(Math.min(sc[0], ec[0])), gY(Math.min(sc[1], ec[1]))]; cur.p[1] = [gX(Math.max(sc[0], ec[0]) + 1), gY(Math.max(sc[1], ec[1]) + 1)];
       return;
     }
@@ -1824,8 +2344,11 @@
     }
     cur.p[1] = q;
   }
+  function gridInside(q) {                         // その点が、見つけたマス目の中（まわり半マスまで）か。外なら、マス目に合わせずに、ふつうに描く（見つけられなかった部分も、塗れるように）
+    return !!grid && q[0] >= gX(grid.i0) - grid.px * 0.5 && q[0] <= gX(grid.i1) + grid.px * 0.5 && q[1] >= gY(grid.j0) - grid.py * 0.5 && q[1] <= gY(grid.j1) + grid.py * 0.5 && !(grid.gapI && isGapCell(true, gCellI(q[0]))) && !(grid.gapJ && isGapCell(false, gCellJ(q[1])));       // 省略の隙間の中は、マス目の外とする
+  }
   function penFitCells(st) {                       // 「ぴったり」でなぞった線（マス目がある時）：始まりと終わりを、マスのふちにそろえる（始まり＝最初のマスの手前のふち／終わり＝最後のマスの向こうのふち）
-    if (!st || st.k !== 'p' || st.cap !== 'f' || !gridOn || !grid || st.p.length < 2) return st;
+    if (!st || st.k !== 'p' || st.cap !== 'f' || !gridOn || !grid || st.free || st.p.length < 2) return st;
     var p = st.p, a = p[0], z = p[p.length - 1], dx = z[0] - a[0], dy = z[1] - a[1], ax = Math.abs(dx), ay = Math.abs(dy), np;
     if (ax >= ay * 2 && ax * scale >= 3) {           // 横にすすんだ線
       var d = dx > 0 ? 1 : -1, i0 = gCellI(a[0]), i1 = gCellI(z[0]);
@@ -2445,7 +2968,7 @@
     return { i0: gCellI(minX + 1e-3), i1: gCellI(maxX - 1e-3), j0: gCellJ(minY + 1e-3), j1: gCellJ(maxY - 1e-3) };
   }
   function gridDupShift(items, F) {                  // マス目の時：複製を、左隣りのマスに、ぴったり置くための、横のずらし量（画像のpx。左へ＝＋）。左に入らなければ、右（−）。どちらも入らなければ、null
-    var c = cellsOf(items), sh = (c.i1 - c.i0 + 1) * grid.px;
+    var c = cellsOf(items), sh = gX(c.i1 + 1) - gX(c.i0);
     if (F.minX - sh >= 0) return sh;
     if (F.maxX + sh <= img.naturalWidth) return -sh;
     return null;
@@ -2502,7 +3025,7 @@
     if ((!selStroke && !grp) || !img) return;
     var items = grp ? grp.items : [selStroke], F = grp ? groupFrame() : frameOf(selStroke), horiz = dir === 'l' || dir === 'r', sgn = (dir === 'l' || dir === 't') ? -1 : 1, dx = 0, dy = 0;
     var gridDup = !!(grid && grid.px && grid.py) && !items.some(function (o) { return o.k === 'e'; }) && ((gridOn) || items.every(function (o) { return o.k === 'l'; }));       // 直線は、マス目が「切」でも、「入」と同じ並べ方（その編み図に、マス目の大きさの記録があれば）       // 円は、マス目に合わせて描かないので、マスの数では並べず、円そのものの幅で、すきまなく並べる
-    if (gridDup) { var cc = cellsOf(items); if (horiz) dx = sgn * (cc.i1 - cc.i0 + 1) * grid.px; else dy = sgn * (cc.j1 - cc.j0 + 1) * grid.py; }
+    if (gridDup) { var cc = cellsOf(items); if (horiz) dx = sgn * (gX(cc.i1 + 1) - gX(cc.i0)); else dy = sgn * (gY(cc.j1 + 1) - gY(cc.j0)); }
     else {
       var av = (!grp && horiz && !(gridOn && grid)) ? arcDupVec(selStroke, sgn) : null;
       if (av) { dx = av[0]; dy = av[1]; }
@@ -2892,7 +3415,8 @@
     if ((k === 'l' || k === 'p') && PEN.tool !== 'memo' && (PEN.cap === 'c' || PEN.cap === 'f')) cur.cap = PEN.cap; cur.w0 = cur.w;
     if (k === 'e' && PEN.ring) { cur.ring = true; cur.w = PEN.width * 3 / scale; cur.w0 = cur.w; }       // 円の「ふち（輪）」：太さは、段の高さに合わせやすいよう、普通の線の3倍       // 直線のはしの形（w0：ペンの太さ。「ぴったり」で、マスの高さにした時に、もどせるように）
     addPoint(e);
-    if (k !== 'p' && k !== 'e' && gridOn && grid) {               // マス目に合わせる時：直線は、はしを「マスの真ん中」へ。四角・円は、始まりのマスを、ふくむ形へ
+    if (gridOn && grid && !gridInside(cur.p[0])) cur.free = true;       // 見つけたマス目の外から描き始めた：この線は、マス目に合わせない
+    if (k !== 'p' && k !== 'e' && gridOn && grid && !cur.free) {               // マス目に合わせる時：直線は、はしを「マスの真ん中」へ。四角・円は、始まりのマスを、ふくむ形へ
       if (k === 'l') { cur.sc = [gCellI(cur.p[0][0]), gCellJ(cur.p[0][1])]; cur.p[0] = gridCenterPt(cur.p[0]); }
       else { cur.sc = [gCellI(cur.p[0][0]), gCellJ(cur.p[0][1])]; cur.p[0] = [gX(cur.sc[0]), gY(cur.sc[1])]; cur.p.push([gX(cur.sc[0] + 1), gY(cur.sc[1] + 1)]); requestDraw(false); return; }
     }
@@ -2940,7 +3464,7 @@
         cur = cloneStroke(cur, [[ccx - crr, ccy - crr], [ccx + crr, ccy + crr]]);
         if (cur.ring) cur.w = Math.min(cur.w, crr * 0.45);          // 輪：太すぎて、穴がなくならないように
       }
-      if (cur.k === 'r' && maxMove < 6 && !(gridOn && grid)) {       // 四角の道具で、ちょんと触れた：50px（画面で見える大きさ）の正方形を置く（マス目の時は、マス目1つぶんが、塗られる。ドラッグした時は、ドラッグした大きさ）
+      if (cur.k === 'r' && maxMove < 6 && !(gridOn && grid && !cur.free)) {       // 四角の道具で、ちょんと触れた：50px（画面で見える大きさ）の正方形を置く（マス目の時は、マス目1つぶんが、塗られる。ドラッグした時は、ドラッグした大きさ）
         var scx = cur.p[0][0], scy = cur.p[0][1], srr = 25 / scale;
         cur = cloneStroke(cur, [[scx - srr, scy - srr], [scx + srr, scy + srr]]);
       }
@@ -2959,30 +3483,31 @@
   var EDGE_GUARD = 24;                              // 画面のふち（下・左右）からこの幅の中で、指が触れ始めた時は、塗り始めとして受け取らない：スマホの、システムの操作（アプリを閉じる・もどる・アプリの切りかえ）は、ふちから始まるため
   function inEdgeGuard(e) { return e.pointerType === 'touch' && (e.clientX < EDGE_GUARD || e.clientX > window.innerWidth - EDGE_GUARD || e.clientY > window.innerHeight - EDGE_GUARD); }
   viewer.addEventListener('pointerdown', function (e) {
+    dbg('D ' + e.pointerType.charAt(0) + e.pointerId + ' pnt=' + (painting ? 1 : 0) + ' m=' + mode + ' n=' + pts.size);
     if (!img) return;
-    if (inEdgeGuard(e)) return;                      // 画面のふちから：何もしない（動かしても、離しても、無視される）
+    if (inEdgeGuard(e)) { dbg('  x edge'); return; }                      // 画面のふちから：何もしない（動かしても、離しても、無視される）
     if (e.pointerType === 'mouse' && e.button > 2) return;
     closeMenu(); hideFillPop();
     try { viewer.setPointerCapture(e.pointerId); } catch (err) {}
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     e.preventDefault();
     var isPen = e.pointerType === 'pen';
-    if (painting && penStroke && !isPen) return;     // ペンで塗っている間は、ほかの指・マウスの動きを無視（手のひらが触れても、動かない）
+    if (painting && penStroke && !isPen) { dbg('  x pen-busy'); return; }     // ペンで塗っている間は、ほかの指・マウスの動きを無視（手のひらが触れても、動かない）
     if (isPen) {                                     // ペンは、いつでも塗る・選ぶ（指のパン・ピンチの途中でも、ペンを優先）
-      if (painting && penStroke && e.pointerId === pid) return;       // 同じペンの、二重の知らせは、無視
+      if (painting && penStroke && e.pointerId === pid) { dbg('  x same-id'); return; }       // 同じペンの、二重の知らせは、無視
       if (painting) finishPaint();                                     // 前の線の「離した」を、見落としていた時も、ここで確定して、新しい線を始める（これがないと、次の線が、書けなくなる）
       if (mode === 'edit') cancelEdit();
       if (mode === 'lasso') cancelLasso();
       pinchLast = 0; midLast = null; viewer.classList.remove('dragging');
-      if (tallyDown(e)) return;                      // かぞえる
-      if (beginAction(e)) return;
-      mode = 'paint'; startPaint(e); return;
+      if (tallyDown(e)) { dbg('  x tally'); return; }                      // かぞえる
+      if (beginAction(e)) { dbg('  x action(move/handle)'); return; }
+      mode = 'paint'; dbgMv = 0; startPaint(e); dbg('  paint start'); return;
     }
     if (pts.size >= 2) {                             // 2本目：ピンチ（拡大縮小＋移動）
       if (mode === 'paint') endForPinch();
       if (mode === 'edit') cancelEdit();
       if (mode === 'lasso') cancelLasso();
-      mode = 'pinch'; var p = pinchInfo(); pinchLast = p.d; midLast = [p.mx, p.my];
+      mode = 'pinch'; var p = pinchInfo(); pinchLast = p.d; midLast = [p.mx, p.my]; dbg('  pinch');
       viewer.classList.add('dragging'); return;
     }
     if (e.pointerType === 'mouse' && (e.button !== 0 || spaceDown)) {
@@ -3001,7 +3526,7 @@
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (mode === 'paint') {
       if (e.pointerId !== pid) return;
-      lastPt = e;
+      lastPt = e; dbgMv++;
       var list = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
       if (!list.length) list = [e];
       maxMove = Math.max(maxMove, Math.hypot(e.clientX - startPt[0], e.clientY - startPt[1]));
@@ -3038,6 +3563,7 @@
     }
   });
   function pointerEnd(e) {
+    dbg((e.type === 'pointercancel' ? 'C ' : 'U ') + e.pointerType.charAt(0) + e.pointerId + (pts.has(e.pointerId) ? '' : ' (no-pts)') + ' pnt=' + (painting ? 1 : 0) + ' m=' + mode + ' moves=' + dbgMv + ' pts=' + (cur ? cur.p.length : '-'));
     if (!pts.has(e.pointerId)) return;
     pts.delete(e.pointerId);
     var cancelled = e.type === 'pointercancel';      // スマホの、システムの操作（アプリを閉じる・もどる）に、タッチをとられた：塗りかけの線・動かしかけの変更は、残さない
@@ -3055,6 +3581,7 @@
     else if (mode === 'edit' && !editing) { mode = 'ignore'; }
     else if (mode === 'lasso' && !lasso) { mode = 'ignore'; }                                      // ペンで塗り終わったあと、まだ触れている指では、塗らない
   }
+  viewer.addEventListener('lostpointercapture', function (e) { dbg('LPC ' + e.pointerType.charAt(0) + e.pointerId); });
   viewer.addEventListener('pointerup', pointerEnd);
   viewer.addEventListener('pointercancel', pointerEnd);
   viewer.addEventListener('contextmenu', function (e) { if (img) e.preventDefault(); });
@@ -3270,7 +3797,7 @@
   function tallyPlace() {                           // かぞえる行を、見えなくなった設定の行（太さ・濃さ・ペンの先・マス目・色）の、ちょうど上に重ねる（操作盤の高さは、ほかのモードと同じ）
     var row = $('tl-row'); if (!row || row.hidden) return;
     var card = $('mk-card').getBoundingClientRect(), l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
-    ['mk-row-w', 'mk-row-a', 'mk-row-cap', 'mk-row-grid', 'mk-colors'].forEach(function (id) {
+    ['mk-row-w', 'mk-row-a', 'mk-row-cap', 'mk-colors'].forEach(function (id) {
       var q = $(id).getBoundingClientRect(); if (!q.width || !q.height) return;
       l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); b = Math.max(b, q.bottom);
     });
@@ -3473,7 +4000,7 @@
   function keysBlocked(e) {                         // 入力中・ダイアログが出ている間・塗っている途中などは、キー操作を受けつけない
     var t = e.target, tag = t && t.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return true;
-    if (!$('modal').hidden || !$('text-dlg').hidden) return true;
+    if (!$('modal').hidden || !$('text-dlg').hidden || !$('fix-overlay').hidden) return true;
     return !img || painting || !!editing || !!lasso;
   }
   function toSelectTool() { var b = document.querySelector('.mk-t[data-t="select"]'); if (PEN.tool !== 'select' && b) b.click(); }
@@ -3752,7 +4279,17 @@
     if (!storageOk) return null;
     try {
       var it = readAll().items[id], g = it && it.grid;
-      if (Array.isArray(g) && (g.length === 9 || g.length === 10) && g.every(function (v) { return typeof v === 'number' && isFinite(v); }) && g[0] > 2 && g[2] > 2 && g[5] - g[4] >= 3 && g[7] - g[6] >= 3) return { px: g[0], ox: g[1], py: g[2], oy: g[3], i0: g[4], i1: g[5], j0: g[6], j1: g[7], on: g[8] === 1, show: g.length === 10 ? g[9] === 1 : true };
+      if (Array.isArray(g) && (g.length === 9 || g.length === 10) && g.every(function (v) { return typeof v === 'number' && isFinite(v); }) && g[0] > 2 && g[2] > 2 && g[5] - g[4] >= 3 && g[7] - g[6] >= 3) {
+        var gr = { px: g[0], ox: g[1], py: g[2], oy: g[3], i0: g[4], i1: g[5], j0: g[6], j1: g[7], on: g[8] === 1, show: g.length === 10 ? g[9] === 1 : true };
+        var okArr = function (a, n) { if (!Array.isArray(a) || a.length !== n + 1) return false; for (var q = 0; q < a.length; q++) { if (typeof a[q] !== 'number' || !isFinite(a[q]) || (q && !(a[q] > a[q - 1]))) return false; } return true; };
+        if (okArr(it.gxs, gr.i1 - gr.i0) && okArr(it.gys, gr.j1 - gr.j0)) {       // 線を1本ずつ追った位置（形が合っている時だけ）
+          gr.xs = it.gxs; gr.ys = it.gys;
+          var okGap = function (a, n) { return Array.isArray(a) && a.length && a.every(function (v) { return Number.isInteger(v) && v >= 0 && v < n; }); };
+          if (okGap(it.ggi, gr.i1 - gr.i0)) gr.gapI = it.ggi;
+          if (okGap(it.ggj, gr.j1 - gr.j0)) gr.gapJ = it.ggj;
+        }
+        return gr;
+      }
     } catch (e) {}
     return null;
   }
@@ -3773,11 +4310,15 @@
     var all = readAll(), it = all.items[chartId] || {};
     if (strokes.length) it.s = strokes.map(pack); else delete it.s;
     if (count > 0) it.n = count; else delete it.n;                                  // カウンターの数も、同じ記録に入れる
-    if (grid) it.grid = [Math.round(grid.px * 100) / 100, Math.round(grid.ox * 100) / 100, Math.round(grid.py * 100) / 100, Math.round(grid.oy * 100) / 100, grid.i0, grid.i1, grid.j0, grid.j1, gridOn ? 1 : 0, gridShow ? 1 : 0]; else delete it.grid;       // 見つけたマス目と、使っているかどうかも
+    if (grid) it.grid = [Math.round(grid.px * 10000) / 10000, Math.round(grid.ox * 100) / 100, Math.round(grid.py * 10000) / 10000, Math.round(grid.oy * 100) / 100, grid.i0, grid.i1, grid.j0, grid.j1, gridOn ? 1 : 0, gridShow ? 1 : 0]; else delete it.grid;       // 見つけたマス目と、使っているかどうかも
+    if (grid && grid.xs && grid.ys) { var r1 = function (v) { return Math.round(v * 100) / 100; }; it.gxs = grid.xs.map(r1); it.gys = grid.ys.map(r1); } else { delete it.gxs; delete it.gys; }       // 線を1本ずつ追った、実際の位置
+    if (grid && grid.xs && grid.gapI && grid.gapI.length) it.ggi = grid.gapI; else delete it.ggi;       // 省略の隙間（線のない所）
+    if (grid && grid.ys && grid.gapJ && grid.gapJ.length) it.ggj = grid.gapJ; else delete it.ggj;
+    if (fixQ) { it.fix = fixQ.map(function (v) { return Math.round(v * 10) / 10; }); it.fixv = 2; if (fixC) it.fixc = fixC; else delete it.fixc; } else { delete it.fix; delete it.fixv; delete it.fixc; }       // 歪みを直した時の、4つの角（fixv：2＝写真全体を直す形。前の、マス目だけ切り出す形は、読み込まない）
     delete it.cal;                                                                  // （前の版の、合わせた目の大きさは、もう使わないので、消す）
     delete it.cnt;                                                                  // （前の版の、「記号を数える」の記録は、もう使わないので、消す）
     it.t = Date.now();
-    if (it.s || it.n || it.grid) all.items[chartId] = it; else delete all.items[chartId];      // 塗りもカウンターも空なら、記録ごと消す
+    if (it.s || it.n || it.grid || it.fix) all.items[chartId] = it; else delete all.items[chartId];      // 塗りもカウンターも空なら、記録ごと消す
     var keys = Object.keys(all.items);
     if (keys.length > MAX_ITEMS) {                  // 編み図が増えすぎたら、古いものから整理
       keys.filter(function (k) { return k !== chartId; }).sort(function (a, b) { return (all.items[a].t || 0) - (all.items[b].t || 0); })
