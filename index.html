@@ -206,8 +206,11 @@
     .tb-now:active { transform: scale(.96); }
     @media (hover: hover) { .tb-now:hover { background: #EEF4F4; } }
     body.has-cp .tb-now { display: flex; }                                         /* 画像を開いている間は、いつも出す（開いていても、たたんでいても） */
+    .tb-now .mk-label { position: relative; top: -1px; }                                 /* 道具の名前の文字：1px 上げる（なぞる・直線・四角…どの道具も、同じ） */
     .tb-now.nomark { justify-content: center; padding: 0 8px; }                           /* 色を使わない道具（選択・消しゴム・かぞえる）：色の点は出さず、文字だけを、中央に */
     .mk-now { display: block; flex: none; --sz: 14px; width: var(--sz); height: var(--sz); margin: calc((24px - var(--sz)) / 2); border-radius: 50%; box-shadow: 0 0 0 1px rgba(107, 82, 88, .28); transition: width .15s, height .15s, margin .15s; }       /* いまのペンの見本：丸い点。色・濃さ・太さが、そのまま見える（点の大きさが変わっても、まわりの余白で、ボタンの大きさは変わらない） */
+        .mk-now.sq { border-radius: 22%; }                                                      /* 四角：いまの道具が「四角」の時の、色の見本（角は、少しだけ丸く） */
+    .mk-now.ring { background: transparent !important; box-sizing: border-box; border: var(--bw, 3.5px) solid var(--nc, #888); }       /* 輪：いまの道具が「輪」の時の、色の見本（ふちだけの丸） */
     @media (max-width: 819px) { .tb-now { display: none !important; } }
 
 
@@ -1213,9 +1216,12 @@
       for (y = 4; y < H - 4; y++) for (x = 0; x < W; x++) { g = G[y * W + x]; best = 0; for (o = 2; o <= 4; o++) { m = (G[(y - o) * W + x] + G[(y + o) * W + x]) * 0.5 - g; if (m > best) best = m; } if (best > T) rowR[y]++; }
       for (x = 0; x < W; x++) colR[x] /= H;
       for (y = 0; y < H; y++) rowR[y] /= W;
+      ggCache = { img: img, G: G, W: W, H: H, T: T, k: k };       // 灰色の画像と、「線」と見なす暗さの差（帯ごとに線を測る時に、使いまわす）
       return { colR: colR, rowR: rowR, colP: colP, rowP: rowP, k: k };
     } catch (e) { return null; }
   }
+  var ggCache = null;
+  function gridGray() { if (!img) return null; if (!ggCache || ggCache.img !== img) gridProfiles(); return (ggCache && ggCache.img === img) ? ggCache : null; }
   function detectGrid() {                           // マス目を探す。見つかれば { px, ox, py, oy, i0, i1, j0, j1 }（画像の座標。縦の線は x = ox + i×px で、i0〜i1 の番号、横の線は y = oy + j×py で、j0〜j1）、なければ null。ここでは、同じ間隔のマス目
     var pr = gridProfiles(); if (!pr) return null;
     return gridFromProfiles(pr.colR, pr.rowR, pr.k) || gridFromProfiles(pr.colP, pr.rowP, pr.k);       // 見つからなければ、これまでの方法（黒っぽさの山）
@@ -1239,21 +1245,45 @@
     if (ss.length < Math.max(4, n * 0.3)) return null;
     var thr = ss[Math.floor(ss.length * 0.75)] * 0.4;       // 強い山の4割に届かない山は、「線が見つからない」とする
     var lo = exp[0] - pitch * 0.45, hi = exp[n - 1] + pitch * 0.45, dkAll = meanOf(P2, exp[0], exp[n - 1]);
+    var pit = pitch;                                // ふだんの間隔：四隅と数から作った間隔は、ずれていることがある。画像の、強い山どうしの間隔の、中央値を、目安にする
+    (function () {
+      var thrPk = ss[Math.floor(ss.length * 0.75)] * 0.6, pks = [], t1, v1;
+      for (t1 = Math.max(3, Math.floor(lo)); t1 <= Math.min(N - 4, Math.ceil(hi)); t1++) {
+        v1 = sm(t1);
+        if (v1 >= thrPk && v1 >= sm(t1 - 1) && v1 >= sm(t1 + 1)) { if (pks.length && t1 - pks[pks.length - 1].x <= 3) { if (v1 > pks[pks.length - 1].v) pks[pks.length - 1] = { x: t1, v: v1 }; } else pks.push({ x: t1, v: v1 }); }
+      }
+      var ds = [];
+      for (t1 = 1; t1 < pks.length; t1++) { var d1 = pks[t1].x - pks[t1 - 1].x; if (d1 >= pitch * 0.7 && d1 <= pitch * 1.35) ds.push(d1); }       // 半分の間隔（縦棒の記号など）は、のぞく
+      if (ds.length >= 3) { ds.sort(function (a1, b1) { return a1 - b1; }); pit = ds[ds.length >> 1]; }
+    })();
     function walk(dir) {
-      var items = [], last = cand[best].x, lp = pitch, hist = [];
+      var items = [], last = cand[best].x, lp = pit, hist = [], miss = 0;
+      var sA = last + dir * pit * 0.55, sB = last + dir * pit * 1.5, bt = -1, bv2 = -1;       // 追い始め：いちばん近い、強い線を探して、そこから、本当の間隔を決める（四隅と数から作った、同じ間隔のマス目の間隔が、ずれていても、まちがえないため）
+      for (var t0 = Math.round(sA); dir > 0 ? t0 <= sB : t0 >= sB; t0 += dir) { if (t0 < 3 || t0 > N - 4) break; var sv0 = sm(t0); if (sv0 > bv2) { bv2 = sv0; bt = t0; } }
+      if (bt >= 0 && bv2 >= thr) { var f0 = peakAt(bt, 2); if (f0) { items.push({ x: f0.x, gap: false, s: f0.s }); lp = Math.abs(f0.x - last); hist.push(lp); last = f0.x; } }
       for (var guard = 0; guard < 4000; guard++) {
-        var e = last + dir * lp;
+        var e = last + dir * lp * (miss + 1);
         if (dir > 0 ? e > hi + lp * 0.5 : e < lo - lp * 0.5) break;
         var f2 = peakAt(e, lp * 0.35);
         if (f2 && f2.s >= thr) {                    // 予想の場所に、線があった
-          items.push({ x: f2.x, gap: false, s: f2.s }); hist.push(Math.abs(f2.x - last)); if (hist.length > 3) hist.shift();
-          lp = hist.reduce(function (x, y) { return x + y; }, 0) / hist.length; last = f2.x; continue;
+          var gapHere = false;
+          if (miss >= 1) {                          // 間に、見つからなかった予想の場所がある：間が、空白なら、省略の隙間。空白でなければ、弱くて見えなかった線
+            var a2 = Math.min(last, f2.x), b2 = Math.max(last, f2.x);
+            gapHere = meanOf(P2, a2 + 3, b2 - 3) < dkAll * 0.25 && meanOf(P, a2 + 3, b2 - 3) < thr * 0.5;
+          }
+          if (gapHere) { items.push({ x: f2.x, gap: true, s: f2.s }); last = f2.x; miss = 0; continue; }       // 省略の隙間：その間に、線は引かない（間隔の記録は、更新しない）
+          for (var m0 = 1; m0 <= miss; m0++) items.push({ x: last + dir * (Math.abs(f2.x - last)) * m0 / (miss + 1), gap: false, s: 0 });       // 途中で、弱くて見えなかった線（1〜2本）は、等間隔で補う
+          items.push({ x: f2.x, gap: false, s: f2.s }); hist.push(Math.abs(f2.x - last) / (miss + 1)); if (hist.length > 3) hist.shift();
+          lp = hist.reduce(function (x, y) { return x + y; }, 0) / hist.length; last = f2.x; miss = 0; continue;
         }
-        var limit = dir > 0 ? Math.min(last + 7 * pitch, hi + pitch * 0.45) : Math.max(last - 7 * pitch, lo - pitch * 0.45), found = null;
-        for (var t = Math.round(last + dir * lp * 1.3); dir > 0 ? t <= limit : t >= limit; t += dir) {       // 先へ探す：最初の、強い山
+        miss++;
+        if (miss < 2) continue;                     // 1本見つからないだけなら、弱くて見えない線かもしれない：先の予想の場所を、見る
+        // 2本続けて見つからない：先へ探す（省略の隙間かもしれない）。強い山だけを、線と見なす（縦棒の記号などを、拾わないため）
+        var limit = dir > 0 ? Math.min(last + 7 * pit, hi + pit * 0.45) : Math.max(last - 7 * pit, lo - pit * 0.45), found = null, thrS = thr * 1.5;
+        for (var t = Math.round(last + dir * lp * 1.3); dir > 0 ? t <= limit : t >= limit; t += dir) {
           if (t < 3 || t > N - 4) break;
           var sv = sm(t);
-          if (sv >= thr && sv >= sm(t - 1) && sv >= sm(t + 1)) { found = peakAt(t, 2); break; }
+          if (sv >= thrS && sv >= sm(t - 1) && sv >= sm(t + 1)) { found = peakAt(t, 2); break; }
         }
         if (!found) break;                          // これ以上、線がない
         var dist = Math.abs(found.x - last), k = Math.max(1, Math.round(dist / lp)), frac = Math.abs(dist - k * lp) / lp, a0 = Math.min(last, found.x), b0 = Math.max(last, found.x);
@@ -1262,8 +1292,8 @@
           for (var m = 1; m < k; m++) items.push({ x: last + dir * dist * m / k, gap: false, s: 0 });
           items.push({ x: found.x, gap: false, s: found.s });
         } else if (k >= 2) items.push({ x: found.x, gap: true, s: found.s });       // 省略の隙間：その間に、線は引かない
-        else items.push({ x: found.x, gap: false, s: found.s });
-        last = found.x;
+        else break;                                  // 間隔が、ふつうのマスより、ずっと狭い：線ではない（記号など）：ここで追うのを、やめる
+        last = found.x; miss = 0;
       }
       return items;
     }
@@ -1275,6 +1305,150 @@
     for (i = 1; i < pos.length; i++) { var dd = pos[i] - pos[i - 1]; if (!(dd >= pitch * 0.4) || (!G[i - 1] && dd > pitch * 1.8)) return null; }       // 順番が入れかわる・近すぎる・（隙間でないのに）遠すぎる
     return { pos: pos, gap: G };
   }
+  /* ---------- 編み図の、斜め・曲がりに、点線を合わせる：縦線も横線も、画像を帯に分けて、帯ごとに、線の位置を測り、「傾き」と「曲がり」を割り出す。画像は、動かさない ---------- */
+  function findPeak(P, e, hw) {                     // 山 P の、位置 e の前後 hw で、いちばん強い山（位置は、小数まで）
+    var N = P.length, a1 = Math.max(2, Math.floor(e - hw)), b1 = Math.min(N - 3, Math.ceil(e + hw));
+    if (b1 <= a1) return null;
+    var bi = a1, bv = -1, v, q;
+    for (q = a1; q <= b1; q++) { v = (P[q - 1] + 2 * P[q] + P[q + 1]) / 4; if (v > bv) { bv = v; bi = q; } }
+    var l = (P[bi - 2] + 2 * P[bi - 1] + P[bi]) / 4, r = (P[bi] + 2 * P[bi + 1] + P[bi + 2]) / 4, d = l - 2 * bv + r, off = d < -1e-9 ? 0.5 * (l - r) / d : 0;
+    return { x: bi + Math.max(-1, Math.min(1, off)), s: bv };
+  }
+  function bandCol(gg, y0, y1) {                    // 縦線用：画像の y0〜y1 の行だけで、列ごとの「細い線らしさ」
+    var G = gg.G, W = gg.W, H = gg.H, T = gg.T, k = gg.k, P = new Float32Array(W), r0 = Math.max(0, Math.round(y0 * k)), r1 = Math.min(H - 1, Math.round(y1 * k)), x, y, o, g, best, m, base;
+    for (y = r0; y <= r1; y++) { base = y * W; for (x = 4; x < W - 4; x++) { g = G[base + x]; best = 0; for (o = 2; o <= 4; o++) { m = (G[base + x - o] + G[base + x + o]) * 0.5 - g; if (m > best) best = m; } if (best > T) P[x]++; } }
+    var n = Math.max(1, r1 - r0 + 1); for (x = 0; x < W; x++) P[x] /= n;
+    return P;
+  }
+  function bandRow(gg, x0, x1) {                    // 横線用：画像の x0〜x1 の列だけで、行ごとの「細い線らしさ」
+    var G = gg.G, W = gg.W, H = gg.H, T = gg.T, k = gg.k, P = new Float32Array(H), c0 = Math.max(0, Math.round(x0 * k)), c1 = Math.min(W - 1, Math.round(x1 * k)), x, y, o, g, best, m;
+    for (y = 4; y < H - 4; y++) for (x = c0; x <= c1; x++) { g = G[y * W + x]; best = 0; for (o = 2; o <= 4; o++) { m = (G[(y - o) * W + x] + G[(y + o) * W + x]) * 0.5 - g; if (m > best) best = m; } if (best > T) P[y]++; }
+    var n = Math.max(1, c1 - c0 + 1); for (y = 0; y < H; y++) P[y] /= n;
+    return P;
+  }
+  function deskewProfile(gg, isCol, lines, ext, pitch, pitchPerp) {       // 傾き・曲がりがあっても、線が、くっきり出る山を作る：帯ごとの山を、隣の帯と、位置がそろうように、ずらしてから、足す。lines：線の予想の位置（画像の座標）／ext：帯に分ける範囲（画像の座標）。線も、縦棒の記号も、同じように、ずれるので、ずれをそろえると、端から端まで続く「線」だけが、強く残る
+    var a0 = ext[0], L = ext[1] - ext[0], k = gg.k;
+    if (!(L > pitchPerp * 6)) return null;
+    var nb = Math.max(4, Math.min(10, Math.floor(L / (2 * pitchPerp)))), Pbs = [], b, x, d;
+    for (b = 0; b < nb; b++) Pbs.push(isCol ? bandCol(gg, a0 + L * b / nb, a0 + L * (b + 1) / nb) : bandRow(gg, a0 + L * b / nb, a0 + L * (b + 1) / nb));
+    var N = Pbs[0].length, xa = Math.max(3, Math.floor((lines[0] - pitch) * k)), xb = Math.min(N - 4, Math.ceil((lines[lines.length - 1] + pitch) * k)), maxd = Math.max(2, Math.round(pitch * k * 0.3));
+    var energy = Pbs.map(function (P) { var e = 0; for (x = xa; x <= xb; x++) e += P[x]; return e; }), es = energy.slice().sort(function (p1, p2) { return p1 - p2; }), emed = es[es.length >> 1];
+    var use = energy.map(function (e) { return e >= emed * 0.4; });       // 空白の帯（省略の隙間など）は、使わない
+    var cb = 0, bdist = Infinity;
+    for (b = 0; b < nb; b++) { var dd = Math.abs((b + 0.5) / nb - 0.5); if (use[b] && dd < bdist) { bdist = dd; cb = b; } }
+    function shiftBetween(Pa, Pc) {                 // Pa の山が、Pc では、何画素、ずれているか（Pc[x + d] が、Pa[x] に、いちばん合う d）
+      var bestD = 0, bestS = -1, ss = [];
+      for (d = -maxd; d <= maxd; d++) { var sc = 0; for (x = xa; x <= xb; x++) sc += Pa[x] * Pc[x + d]; ss.push(sc); if (sc > bestS) { bestS = sc; bestD = d; } }
+      var i = bestD + maxd, l = i > 0 ? ss[i - 1] : ss[i], r = i < ss.length - 1 ? ss[i + 1] : ss[i], dn = l - 2 * ss[i] + r, off = dn < -1e-9 ? 0.5 * (l - r) / dn : 0;
+      return bestD + Math.max(-1, Math.min(1, off));
+    }
+    var sh = new Array(nb).fill(0), prev;
+    prev = cb; for (b = cb + 1; b < nb; b++) { if (!use[b]) continue; sh[b] = sh[prev] + shiftBetween(Pbs[prev], Pbs[b]); prev = b; }
+    prev = cb; for (b = cb - 1; b >= 0; b--) { if (!use[b]) continue; sh[b] = sh[prev] - shiftBetween(Pbs[b], Pbs[prev]); prev = b; }
+    var D = new Float32Array(N), cnt = 0;
+    for (b = 0; b < nb; b++) {
+      if (!use[b]) continue; cnt++;
+      for (x = 0; x < N; x++) { var xx = x + sh[b], i0 = Math.floor(xx), fr = xx - i0, v0 = (i0 >= 0 && i0 < N) ? Pbs[b][i0] : 0, v1 = (i0 + 1 >= 0 && i0 + 1 < N) ? Pbs[b][i0 + 1] : 0; D[x] += v0 * (1 - fr) + v1 * fr; }
+    }
+    if (!cnt) return null;
+    for (x = 0; x < N; x++) D[x] /= cnt;
+    return D;
+  }
+  function lsqFit(pts, v2, quad) {                  // 点（t, 位置）に、 m + s×t （＋ c×(t²−v2)）を、最小二乗法で、あてはめる。{ m, s, c, rss }。解けなければ null
+    var nb = quad ? 3 : 2, A = [], B = [], i, j, k2, rss = 0;
+    for (i = 0; i < nb; i++) { A.push(new Array(nb).fill(0)); B.push(0); }
+    pts.forEach(function (q) { var f = quad ? [1, q[0], q[0] * q[0] - v2] : [1, q[0]]; for (i = 0; i < nb; i++) { B[i] += f[i] * q[1]; for (j = 0; j < nb; j++) A[i][j] += f[i] * f[j]; } });
+    for (i = 0; i < nb; i++) {                      // ガウスの消去法
+      var pv = i; for (j = i + 1; j < nb; j++) if (Math.abs(A[j][i]) > Math.abs(A[pv][i])) pv = j;
+      if (Math.abs(A[pv][i]) < 1e-9) return null;
+      var tA = A[i]; A[i] = A[pv]; A[pv] = tA; var tB = B[i]; B[i] = B[pv]; B[pv] = tB;
+      for (j = i + 1; j < nb; j++) { var f2 = A[j][i] / A[i][i]; for (k2 = i; k2 < nb; k2++) A[j][k2] -= f2 * A[i][k2]; B[j] -= f2 * B[i]; }
+    }
+    var x = new Array(nb);
+    for (i = nb - 1; i >= 0; i--) { var sm = B[i]; for (j = i + 1; j < nb; j++) sm -= A[i][j] * x[j]; x[i] = sm / A[i][i]; }
+    pts.forEach(function (q) { var e = q[1] - (x[0] + x[1] * q[0] + (quad ? x[2] * (q[0] * q[0] - v2) : 0)); rss += e * e; });
+    return { m: x[0], s: x[1], c: quad ? x[2] : 0, rss: rss };
+  }
+  function bandRanges(pos, gaps, pitchPerp) {       // 線の並び pos の全体を、帯に分ける（隙間の帯は、のぞく）。{ ranges, ext }。帯が、3本より少なければ null
+    var a = pos[0], b = pos[pos.length - 1], L = b - a;
+    if (!(L > 0)) return null;
+    var nb = Math.max(4, Math.min(9, Math.floor(L / (2 * pitchPerp)))), ranges = [], i, gp = [];
+    (gaps || []).forEach(function (q) { gp.push([pos[q], pos[q + 1]]); });
+    for (i = 0; i < nb; i++) {
+      var r0 = a + L * i / nb, r1 = a + L * (i + 1) / nb, inGap = 0;
+      gp.forEach(function (g2) { var o0 = Math.max(r0, g2[0]), o1 = Math.min(r1, g2[1]); if (o1 > o0) inGap += o1 - o0; });
+      if (inGap < (r1 - r0) * 0.4) ranges.push([r0, r1]);
+    }
+    return ranges.length >= 3 ? { ranges: ranges, ext: [a, b] } : null;
+  }
+  function fitAxis(gg, isCol, pos, pitch, ranges, ext) {   // 線ごとに、帯ごとの位置を測って、傾き（s）と曲がり（c）を割り出す。isCol：縦線か。pos：いまの位置（画像の座標）。{ m, s, c, rmsFlat }。使えなければ null
+    var k = gg.k, nb = ranges.length, nl = pos.length, i, b;
+    var Ps = ranges.map(function (r) { return isCol ? bandCol(gg, r[0], r[1]) : bandRow(gg, r[0], r[1]); });
+    var tcs = ranges.map(function (r) { return (r[0] + r[1]) / 2; }), hw0 = pitch * k * 0.45;
+    var thr = Ps.map(function (P) {                 // 帯ごとの、「線」と見なす強さ：予想の位置の近くの山の、強いほう（上位4分の1）の、4割
+      var ss = []; for (i = 0; i < nl; i++) { var f = findPeak(P, pos[i] * k, hw0); if (f) ss.push(f.s); }
+      ss.sort(function (a1, b1) { return a1 - b1; }); return ss.length ? ss[Math.floor(ss.length * 0.75)] * 0.4 : Infinity;
+    });
+    var mid = (ext[0] + ext[1]) / 2, cb = 0, bd = Infinity;
+    for (b = 0; b < nb; b++) { var dd = Math.abs(tcs[b] - mid); if (dd < bd) { bd = dd; cb = b; } }
+    var obs = [];
+    for (i = 0; i < nl; i++) {                      // まん中の帯から、左右（上下）の帯へ、前の帯の位置を、予想にして、追う
+      var row = new Array(nb).fill(NaN), last = pos[i] * k, f0 = findPeak(Ps[cb], last, hw0);
+      if (f0 && f0.s >= thr[cb]) { row[cb] = f0.x / k; last = f0.x; }
+      var up = last, dn = last;
+      for (b = cb + 1; b < nb; b++) { var fu = findPeak(Ps[b], up, pitch * k * 0.3); if (fu && fu.s >= thr[b]) { row[b] = fu.x / k; up = fu.x; } }
+      for (b = cb - 1; b >= 0; b--) { var fd = findPeak(Ps[b], dn, pitch * k * 0.3); if (fd && fd.s >= thr[b]) { row[b] = fd.x / k; dn = fd.x; } }
+      obs.push(row);
+    }
+    var L = ext[1] - ext[0], v2 = L * L / 12, fm = new Array(nl).fill(null), fs = new Array(nl).fill(null), fc = new Array(nl).fill(null), flatSS = 0, fitSS = 0, nObs = 0, okLines = 0;
+    for (i = 0; i < nl; i++) {
+      var pts = []; for (b = 0; b < nb; b++) if (isFinite(obs[i][b])) pts.push([tcs[b] - mid, obs[i][b]]);
+      if (pts.length < 4) continue;
+      var f1 = lsqFit(pts, v2, false), f2 = pts.length >= 5 ? lsqFit(pts, v2, true) : null, ch = (f2 && f1 && f2.rss < f1.rss * 0.6) ? f2 : f1;       // 曲がりは、はっきり良くなる時だけ
+      if (!ch) continue;
+      var mean = 0; pts.forEach(function (q) { mean += q[1]; }); mean /= pts.length;
+      var flat = 0; pts.forEach(function (q) { flat += (q[1] - mean) * (q[1] - mean); });
+      fm[i] = ch.m; fs[i] = ch.s; fc[i] = ch.c; flatSS += flat; fitSS += ch.rss; nObs += pts.length; okLines++;
+    }
+    if (okLines < Math.max(3, nl * 0.5) || nObs < 1) return null;
+    var rmsFlat = Math.sqrt(flatSS / nObs);
+    if (rmsFlat < 1.0 || fitSS > flatSS * 0.6) return null;       // もともと、まっすぐ（測ったずれが小さい）／あてはめても、良くならない：使わない
+    for (i = 0; i < nl; i++) {                      // 測れなかった線は、いちばん近い、測れた線の、傾き・曲がりを、借りる（位置は、そのまま）
+      if (fs[i] !== null) continue;
+      var bi = -1, bdist = Infinity; for (b = 0; b < nl; b++) if (fs[b] !== null && Math.abs(b - i) < bdist) { bdist = Math.abs(b - i); bi = b; }
+      fm[i] = pos[i]; fs[i] = fs[bi]; fc[i] = fc[bi];
+    }
+    return { m: fm, s: fs, c: fc, rmsFlat: rmsFlat };
+  }
+  function fitGridField(g) {                        // 線を追ったマス目 g に、傾き・曲がりを、足す。{ fld, xs, ys }。まっすぐで、必要なければ null
+    var gg = gridGray(); if (!gg || !g.xs || !g.ys) return null;
+    var ry = bandRanges(g.ys, g.gapJ, g.py), rx = bandRanges(g.xs, g.gapI, g.px);
+    var fx = ry ? fitAxis(gg, true, g.xs, g.px, ry.ranges, ry.ext) : null, fy = rx ? fitAxis(gg, false, g.ys, g.py, rx.ranges, rx.ext) : null;
+    if (!fx && !fy) return null;
+    var xs = fx ? fx.m : g.xs, ys = fy ? fy.m : g.ys, i;
+    for (i = 1; i < xs.length; i++) if (!(xs[i] > xs[i - 1])) return null;       // 線の順番が、入れかわったら、使わない
+    for (i = 1; i < ys.length; i++) if (!(ys[i] > ys[i - 1])) return null;
+    var z = function (n) { return new Array(n).fill(0); };
+    return { xs: xs, ys: ys, fld: { vy0: ry ? ry.ext[0] : 0, vy1: ry ? ry.ext[1] : 1, vs: fx ? fx.s : z(xs.length), vc: fx ? fx.c : z(xs.length), hx0: rx ? rx.ext[0] : 0, hx1: rx ? rx.ext[1] : 1, hs: fy ? fy.s : z(ys.length), hc: fy ? fy.c : z(ys.length) } };
+  }
+  function fldD(gr, u, v) {                          // 「線の通りの空間」の点（u, v）での、画像の位置との、ずれ（Dx, Dy）：縦線は、上下で、傾き・曲がりぶん／横線は、左右で
+    var f = gr.fld, xs = gr.xs, ys = gr.ys, dx = 0, dy = 0, k, t, a, b, vq, vv;
+    if (f.vs) {
+      vq = Math.max(f.vy0, Math.min(f.vy1, v)) - (f.vy0 + f.vy1) / 2; vv = (f.vy1 - f.vy0) * (f.vy1 - f.vy0) / 12;
+      k = Math.max(0, Math.min(xs.length - 2, floorIdx(xs, u))); t = Math.max(0, Math.min(1, (u - xs[k]) / (xs[k + 1] - xs[k])));
+      a = f.vs[k] * vq + f.vc[k] * (vq * vq - vv); b = f.vs[k + 1] * vq + f.vc[k + 1] * (vq * vq - vv); dx = (1 - t) * a + t * b;
+    }
+    if (f.hs) {
+      vq = Math.max(f.hx0, Math.min(f.hx1, u)) - (f.hx0 + f.hx1) / 2; vv = (f.hx1 - f.hx0) * (f.hx1 - f.hx0) / 12;
+      k = Math.max(0, Math.min(ys.length - 2, floorIdx(ys, v))); t = Math.max(0, Math.min(1, (v - ys[k]) / (ys[k + 1] - ys[k])));
+      a = f.hs[k] * vq + f.hc[k] * (vq * vq - vv); b = f.hs[k + 1] * vq + f.hc[k + 1] * (vq * vq - vv); dy = (1 - t) * a + t * b;
+    }
+    return [dx, dy];
+  }
+  function gFromXY(gr, u, v) { var d = fldD(gr, u, v); return [u + d[0], v + d[1]]; }       // 線の通りの空間 → 画像の位置
+  function gToXY(gr, x, y) { var u = x, v = y, i, d; for (i = 0; i < 4; i++) { d = fldD(gr, u, v); u = x - d[0]; v = y - d[1]; } return [u, v]; }       // 画像の位置 → 線の通りの空間
+  function gTo(q) { return (grid && grid.fld) ? gToXY(grid, q[0], q[1]) : q; }       // いまのマス目で、画像の位置を、線の通りの空間へ（傾き・曲がりがなければ、そのまま）
+  function gFrom(q) { return (grid && grid.fld) ? gFromXY(grid, q[0], q[1]) : q; }
   function refineGridObj(g) {                        // 同じ間隔のマス目を、実際の線の位置を、1本ずつ追ったものに、直す（遠近やレンズの歪みで、間隔が場所によって違っても、点線が、本物の線に乗る。省略の隙間には、線を引かない）。うまく追えなければ、そのまま
     try {
       if (!img || !g || g.xs) return g;
@@ -1283,13 +1457,18 @@
       for (i = 0; i <= nx; i++) ex.push((g.ox + (g.i0 + i) * g.px) * k);
       for (j = 0; j <= ny; j++) ey.push((g.oy + (g.j0 + j) * g.py) * k);
       var meanAt = function (P, a) { var sm = 0, m = 0; a.forEach(function (v) { var ii = Math.round(v); if (ii >= 0 && ii < P.length) { sm += P[ii]; m++; } }); return m ? sm / m : 0; };
+      var lx = [], ly = [];                          // 同じ間隔のマス目の、線の位置（画像の座標）
+      for (i = 0; i <= nx; i++) lx.push(g.ox + (g.i0 + i) * g.px);
+      for (j = 0; j <= ny; j++) ly.push(g.oy + (g.j0 + j) * g.py);
+      var gg = gridGray();
+      var cBand = gg ? deskewProfile(gg, true, lx, [ly[0], ly[ly.length - 1]], g.px, g.py) : null, rBand = gg ? deskewProfile(gg, false, ly, [lx[0], lx[lx.length - 1]], g.py, g.px) : null;       // 縦線用・横線用の、ずれをそろえた山
       var tryWith = function (PX, PY) {
         var tx = trackLines(PX, pr.colP, ex, g.px * k), ty = trackLines(PY, pr.rowP, ey, g.py * k);
         if (!tx || !ty) return null;
         if (meanAt(PX, tx.pos) < meanAt(PX, ex) * 0.98 || meanAt(PY, ty.pos) < meanAt(PY, ey) * 0.98) return null;       // 追った位置のほうが、線らしくなければ、使わない
         return { tx: tx, ty: ty };
       };
-      var r = tryWith(pr.colR, pr.rowR) || tryWith(pr.colP, pr.rowP);
+      var r = (cBand && rBand && tryWith(cBand, rBand)) || tryWith(pr.colR, pr.rowR) || tryWith(pr.colP, pr.rowP);       // 帯で追う（傾きに強い）→ 画像全体で追う → これまでの方法
       if (!r) return g;
       var xs = r.tx.pos.map(function (v) { return v / k; }), ys = r.ty.pos.map(function (v) { return v / k; });
       var mp = function (arr, gp) { var sm = 0, m = 0; for (var q = 1; q < arr.length; q++) if (!gp[q - 1]) { sm += arr[q] - arr[q - 1]; m++; } return m ? sm / m : (arr[arr.length - 1] - arr[0]) / Math.max(1, arr.length - 1); };       // 隙間をのぞいた、ふつうのマスの大きさ
@@ -1298,6 +1477,8 @@
       var out = { px: pxm, ox: xs[0] - g.i0 * pxm, py: pym, oy: ys[0] - g.j0 * pym, i0: g.i0, i1: g.i0 + xs.length - 1, j0: g.j0, j1: g.j0 + ys.length - 1, xs: xs, ys: ys };
       if (gi.length) out.gapI = gi;
       if (gj.length) out.gapJ = gj;
+      var ff = fitGridField(out);                   // 線が、斜め・曲がっている時は、その傾き・曲がりを、足す（まっすぐなら、足さない）
+      if (ff) { out.xs = ff.xs; out.ys = ff.ys; out.fld = ff.fld; out.ox = ff.xs[0] - out.i0 * out.px; out.oy = ff.ys[0] - out.j0 * out.py; }
       return out;
     } catch (e) { return g; }
   }
@@ -1477,11 +1658,11 @@
   }
   function updateGridMeasure() {                    // 直線：かかっているマスの数（目／段）。四角・円：目×段。はしが、マスの真ん中・線から外れていたら、「約」
     var t = measTarget(), st = t && t.st; if (!st) { if (!measBtn.hidden) measBtn.hidden = true; return; }
-    var a = st.p[0], b = st.p[st.p.length - 1], txt = null, mid, below;
+    var a = st.p[0], b = st.p[st.p.length - 1], txt = null, mid, below, ga = gTo(a), gb = gTo(b);       // バッジの位置は、画像の位置（a, b）／マスを数えるのは、線の通りの空間（ga, gb）
     var u = function (x, o, pxv) { return (x - o) / pxv; };
     if (st.k === 'l') {
       var info = straightInfo(st); if (!info) { measBtn.hidden = true; return; }
-      var hz = info.axis === 'h', o = hz ? grid.ox : grid.oy, pz = hz ? grid.px : grid.py, lo = hz ? Math.min(a[0], b[0]) : Math.min(a[1], b[1]), hi = hz ? Math.max(a[0], b[0]) : Math.max(a[1], b[1]);
+      var hz = info.axis === 'h', o = hz ? grid.ox : grid.oy, pz = hz ? grid.px : grid.py, lo = hz ? Math.min(ga[0], gb[0]) : Math.min(ga[1], gb[1]), hi = hz ? Math.max(ga[0], gb[0]) : Math.max(ga[1], gb[1]);
       var n, approx;
       if (grid.xs) {                                // 線を1本ずつ追ったマス目：マスの大きさが、場所で違うので、線の番号で、数える
         var Fp = hz ? gX : gY, LI = hz ? gLineI : gLineJ, CI = hz ? gCellI : gCellJ;
@@ -1498,11 +1679,11 @@
     } else {
       var nx, ny, apx;
       if (grid.xs) {                                // 線を1本ずつ追ったマス目：線の番号で、数える
-        var xl = Math.min(a[0], b[0]), xh = Math.max(a[0], b[0]), yl = Math.min(a[1], b[1]), yh = Math.max(a[1], b[1]), ixl = gLineI(xl), ixh = gLineI(xh), iyl = gLineJ(yl), iyh = gLineJ(yh);
+        var xl = Math.min(ga[0], gb[0]), xh = Math.max(ga[0], gb[0]), yl = Math.min(ga[1], gb[1]), yh = Math.max(ga[1], gb[1]), ixl = gLineI(xl), ixh = gLineI(xh), iyl = gLineJ(yl), iyh = gLineJ(yh);
         nx = Math.max(1, ixh - ixl - gapN(true, ixl, ixh - 1)); ny = Math.max(1, iyh - iyl - gapN(false, iyl, iyh - 1));
         apx = Math.abs(xl - gX(ixl)) > 0.2 * Math.max(1, gX(ixl + 1) - gX(ixl)) || Math.abs(xh - gX(ixh)) > 0.2 * Math.max(1, gX(ixh) - gX(ixh - 1)) || Math.abs(yl - gY(iyl)) > 0.2 * Math.max(1, gY(iyl + 1) - gY(iyl)) || Math.abs(yh - gY(iyh)) > 0.2 * Math.max(1, gY(iyh) - gY(iyh - 1));
       } else {
-        var wx = Math.abs(b[0] - a[0]) / grid.px, wy = Math.abs(b[1] - a[1]) / grid.py; nx = Math.max(1, Math.round(wx)); ny = Math.max(1, Math.round(wy));
+        var wx = Math.abs(gb[0] - ga[0]) / grid.px, wy = Math.abs(gb[1] - ga[1]) / grid.py; nx = Math.max(1, Math.round(wx)); ny = Math.max(1, Math.round(wy));
         apx = Math.abs(wx - nx) > 0.2 || Math.abs(wy - ny) > 0.2;
       }
       txt = (apx ? '約' : '') + nx + '目×' + ny + '段';
@@ -1579,7 +1760,7 @@
     var b = e.target.closest('.mk-cap'); if (!b || b.disabled) return;
     var v = b.getAttribute('data-ring') === '1'; PEN.ring = v; saveSt();
     if (ringTarget()) applyToSel({ ring: v }, true);
-    updateCapSeg(); requestDraw(false);
+    updateCapSeg(); syncUI(); requestDraw(false);       // 色の見本の形（円・輪）も、切りかえる
   });
   function updateMeasure() {                        // 目数・段数は、マス目に合わせている時だけ出す（マス目が切の時は、計測しない）
     if (img && gridOn && grid) { updateGridMeasure(); return; }
@@ -1681,8 +1862,32 @@
       var ra = Math.max(grid.j0, Math.ceil((vy0 - 2 - grid.oy) / grid.py)), rb = Math.min(grid.j1, Math.floor((vy1 + 2 - grid.oy) / grid.py));
       if (grid.xs) { qa = grid.i0; qb = grid.i1; ra = grid.j0; rb = grid.j1; }       // 線を1本ずつ追ったマス目：全部の線を、実際の位置に（画面の外は、描かれない）
       ctx.save(); ctx.strokeStyle = 'rgba(74, 120, 136, .75)'; ctx.lineWidth = 1.4 / scale; ctx.setLineDash([5 / scale, 4 / scale]);
+      if (grid.xs) {                                // 線を1本ずつ追ったマス目：マス（線と線の間）ごとに、つなぐ。傾き・曲がりも、なぞる。省略の隙間には、線を引かない
+        var padV = 40 / scale, jj, ii, p0, pm, p1, xg, yg;
+        ctx.beginPath();
+        for (gq = grid.i0; gq <= grid.i1; gq++) {   // 縦線
+          xg = gX(gq);
+          for (jj = grid.j0; jj < grid.j1; jj++) {
+            if (grid.gapJ && isGapCell(false, jj)) continue;
+            p0 = gFrom([xg, gY(jj)]); pm = gFrom([xg, gY(jj + 0.5)]); p1 = gFrom([xg, gY(jj + 1)]);
+            if (Math.max(p0[1], p1[1]) < vy0 - padV || Math.min(p0[1], p1[1]) > vy1 + padV || Math.max(p0[0], p1[0]) < vx0 - padV || Math.min(p0[0], p1[0]) > vx1 + padV) continue;
+            ctx.moveTo(p0[0], p0[1]); ctx.lineTo(pm[0], pm[1]); ctx.lineTo(p1[0], p1[1]);
+          }
+        }
+        for (gq = grid.j0; gq <= grid.j1; gq++) {   // 横線
+          yg = gY(gq);
+          for (ii = grid.i0; ii < grid.i1; ii++) {
+            if (grid.gapI && isGapCell(true, ii)) continue;
+            p0 = gFrom([gX(ii), yg]); pm = gFrom([gX(ii + 0.5), yg]); p1 = gFrom([gX(ii + 1), yg]);
+            if (Math.max(p0[1], p1[1]) < vy0 - padV || Math.min(p0[1], p1[1]) > vy1 + padV || Math.max(p0[0], p1[0]) < vx0 - padV || Math.min(p0[0], p1[0]) > vx1 + padV) continue;
+            ctx.moveTo(p0[0], p0[1]); ctx.lineTo(pm[0], pm[1]); ctx.lineTo(p1[0], p1[1]);
+          }
+        }
+        ctx.stroke();
+      } else {
       if (ye > ys) { ctx.beginPath(); ctx.lineDashOffset = ys - gya; for (gq = qa; gq <= qb; gq++) { ctx.moveTo(gX(gq), ys); ctx.lineTo(gX(gq), ye); } ctx.stroke(); }
       if (xe > xs) { ctx.beginPath(); ctx.lineDashOffset = xs - gxa; for (gq = ra; gq <= rb; gq++) { ctx.moveTo(xs, gY(gq)); ctx.lineTo(xe, gY(gq)); } ctx.stroke(); }
+      }
       ctx.restore();
     }
     ctx.strokeStyle = 'rgba(107, 82, 88, .22)'; ctx.lineWidth = 1 / scale; ctx.strokeRect(0, 0, iw, ih);       // 白い背景の上でも、画像のふち（塗れる範囲）が分かるように
@@ -2031,7 +2236,7 @@
   }
   function fixInitialQuad() {                      // 最初の丸の位置：マス目が見つかっていれば、その四隅／なければ、画像のふちから、少し内側
     var iw = imgOrig.naturalWidth, ih = imgOrig.naturalHeight;
-    if (grid && img === imgOrig) return [gX(grid.i0), gY(grid.j0), gX(grid.i1), gY(grid.j0), gX(grid.i1), gY(grid.j1), gX(grid.i0), gY(grid.j1)];
+    if (grid && img === imgOrig) { var c0 = gFrom([gX(grid.i0), gY(grid.j0)]), c1 = gFrom([gX(grid.i1), gY(grid.j0)]), c2 = gFrom([gX(grid.i1), gY(grid.j1)]), c3 = gFrom([gX(grid.i0), gY(grid.j1)]); return [c0[0], c0[1], c1[0], c1[1], c2[0], c2[1], c3[0], c3[1]]; }
     var mx = iw * 0.06, my = ih * 0.06;
     return [mx, my, iw - mx, my, iw - mx, ih - my, mx, ih - my];
   }
@@ -2177,7 +2382,8 @@
     // 画像の見分け方：名前・大きさ・更新日時・縦横サイズ（編み図ルーラーと同じ）
     chartId = cid;
     chartName = file.name; tallyNoted = false;       // かぞえるのヒントは、編み図を開くたびに、また1回
-    strokes = loadFor(chartId); count = loadCount(chartId); grid = loadGrid(chartId); gridOn = !!(grid && grid.on); gridShow = !grid || grid.show !== false; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
+    strokes = loadFor(chartId).filter(function (o) { var Fo = frameOf(o); return Fo.maxX >= 0 && Fo.minX <= img.naturalWidth && Fo.maxY >= 0 && Fo.minY <= img.naturalHeight; });       // 画像の外にある線（見えないのに、選べてしまう）は、取り除く
+    count = loadCount(chartId); grid = loadGrid(chartId); gridOn = !!(grid && grid.on); gridShow = !grid || grid.show !== false; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
     if (strokes.length || count || grid) scheduleSave();       // 「最近使った画像」として、保存の日時を更新しておく
     syncGridBtn(); syncBtns(); autoHideGrid();
     if (grid && !grid.xs) setTimeout(upgradeGrid, 300);       // 前の版で保存した、同じ間隔のマス目は、開いた直後に、線を追い直す
@@ -2302,6 +2508,7 @@
     return { d: Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y), mx: (a[0].x + a[1].x) / 2, my: (a[0].y + a[1].y) / 2 };
   }
   function toImg(e) { return [(e.clientX - offsetX) / scale, (e.clientY - offsetY) / scale]; }
+  function outsideImg(e) { var q = toImg(e); return !img || q[0] < 0 || q[1] < 0 || q[0] > img.naturalWidth || q[1] > img.naturalHeight; }       // 画像の外か（外に描いた線は、画像のふちで切り取られて、見えないのに、選べてしまうため、外から描き始めない）
   function addPoint(e) {
     if (!cur) return;
     var q = toImg(e), p = cur.p, l = p[p.length - 1];
@@ -2312,24 +2519,25 @@
   function setEnd(e) {
     if (!cur) return;
     var q = toImg(e), a = cur.p[0], gs = gridOn && grid && cur.k !== 'e' && !cur.free;       // 円は、マス目に合わせない／マス目の外から始めた線は、合わせない
-    if (gs) {                                       // マス目に合わせる時：中途半端な位置に、ならない
+    if (gs) {                                       // マス目に合わせる時：中途半端な位置に、ならない（傾き・曲がりのあるマス目は、線の通りの空間で、マスを決めて、画像の位置にもどす）
+      var qg = gTo(q), ag = gTo(a);
       if (cur.k === 'l') {                          // 直線：同じ行（列）なら、まっすぐに。はしは、マスの真ん中（またいだマスも、かかる）。「ぴったり」は、マスのふちからふちまで、太さもマスに合わせる
-        var sc0 = cur.sc || [gCellI(a[0]), gCellJ(a[1])], ci1 = gCellI(q[0]), cj1 = gCellJ(q[1]), flat = cur.cap === 'f';
+        var sc0 = cur.sc || [gCellI(ag[0]), gCellJ(ag[1])], ci1 = gCellI(qg[0]), cj1 = gCellJ(qg[1]), flat = cur.cap === 'f';
         if (grid.gapI || grid.gapJ) { ci1 = skipGapCell(true, ci1, sc0[0]); cj1 = skipGapCell(false, cj1, sc0[1]); }       // 隙間の中で終わったら、ふつうのマスまで、もどす
         var ax = gX(sc0[0] + 0.5), ay = gY(sc0[1] + 0.5);
         cur.w = cur.w0 || cur.w;
-        if (cj1 === sc0[1] || Math.abs(q[1] - ay) < Math.abs(q[0] - ax) * 0.0875) {                       // 横
-          if (flat) { cur.p[0] = [gX(Math.min(sc0[0], ci1)), ay]; cur.p[1] = [gX(Math.max(sc0[0], ci1) + 1), ay]; cur.w = gY(sc0[1] + 1) - gY(sc0[1]); }
-          else { cur.p[0] = [ax, ay]; cur.p[1] = [gX(ci1 + 0.5), ay]; }
-        } else if (ci1 === sc0[0] || Math.abs(q[0] - ax) < Math.abs(q[1] - ay) * 0.0875) {                // 縦
-          if (flat) { cur.p[0] = [ax, gY(Math.min(sc0[1], cj1))]; cur.p[1] = [ax, gY(Math.max(sc0[1], cj1) + 1)]; cur.w = gX(sc0[0] + 1) - gX(sc0[0]); }
-          else { cur.p[0] = [ax, ay]; cur.p[1] = [ax, gY(cj1 + 0.5)]; }
-        } else { cur.p[0] = [ax, ay]; cur.p[1] = gridCenterPt(q); }
+        if (cj1 === sc0[1] || Math.abs(qg[1] - ay) < Math.abs(qg[0] - ax) * 0.0875) {                       // 横
+          if (flat) { cur.p[0] = gFrom([gX(Math.min(sc0[0], ci1)), ay]); cur.p[1] = gFrom([gX(Math.max(sc0[0], ci1) + 1), ay]); cur.w = gY(sc0[1] + 1) - gY(sc0[1]); }
+          else { cur.p[0] = gFrom([ax, ay]); cur.p[1] = gFrom([gX(ci1 + 0.5), ay]); }
+        } else if (ci1 === sc0[0] || Math.abs(qg[0] - ax) < Math.abs(qg[1] - ay) * 0.0875) {                // 縦
+          if (flat) { cur.p[0] = gFrom([ax, gY(Math.min(sc0[1], cj1))]); cur.p[1] = gFrom([ax, gY(Math.max(sc0[1], cj1) + 1)]); cur.w = gX(sc0[0] + 1) - gX(sc0[0]); }
+          else { cur.p[0] = gFrom([ax, ay]); cur.p[1] = gFrom([ax, gY(cj1 + 0.5)]); }
+        } else { cur.p[0] = gFrom([ax, ay]); cur.p[1] = gFrom(gridCenterPt(qg)); }
         return;
       }
-      var sc = cur.sc || [gCellI(a[0]), gCellJ(a[1])], ec = [gCellI(q[0]), gCellJ(q[1])];       // 四角・円：始まりのマスと、終わりのマスを、両方ふくむ形に
-    if (grid.gapI || grid.gapJ) ec = [skipGapCell(true, ec[0], sc[0]), skipGapCell(false, ec[1], sc[1])];
-      cur.p[0] = [gX(Math.min(sc[0], ec[0])), gY(Math.min(sc[1], ec[1]))]; cur.p[1] = [gX(Math.max(sc[0], ec[0]) + 1), gY(Math.max(sc[1], ec[1]) + 1)];
+      var sc = cur.sc || [gCellI(ag[0]), gCellJ(ag[1])], ec = [gCellI(qg[0]), gCellJ(qg[1])];       // 四角・円：始まりのマスと、終わりのマスを、両方ふくむ形に
+      if (grid.gapI || grid.gapJ) ec = [skipGapCell(true, ec[0], sc[0]), skipGapCell(false, ec[1], sc[1])];
+      cur.p[0] = gFrom([gX(Math.min(sc[0], ec[0])), gY(Math.min(sc[1], ec[1]))]); cur.p[1] = gFrom([gX(Math.max(sc[0], ec[0]) + 1), gY(Math.max(sc[1], ec[1]) + 1)]);
       return;
     }
     if (cur.k === 'l') {
@@ -2344,18 +2552,20 @@
     }
     cur.p[1] = q;
   }
-  function gridInside(q) {                         // その点が、見つけたマス目の中（まわり半マスまで）か。外なら、マス目に合わせずに、ふつうに描く（見つけられなかった部分も、塗れるように）
+  function gridInside(q0) {                        // その点が、見つけたマス目の中（まわり半マスまで）か。外なら、マス目に合わせずに、ふつうに描く（見つけられなかった部分も、塗れるように）
+    if (!grid) return false;
+    var q = gTo(q0);                                 // 傾き・曲がりのあるマス目は、線の通りの空間で、見る
     return !!grid && q[0] >= gX(grid.i0) - grid.px * 0.5 && q[0] <= gX(grid.i1) + grid.px * 0.5 && q[1] >= gY(grid.j0) - grid.py * 0.5 && q[1] <= gY(grid.j1) + grid.py * 0.5 && !(grid.gapI && isGapCell(true, gCellI(q[0]))) && !(grid.gapJ && isGapCell(false, gCellJ(q[1])));       // 省略の隙間の中は、マス目の外とする
   }
   function penFitCells(st) {                       // 「ぴったり」でなぞった線（マス目がある時）：始まりと終わりを、マスのふちにそろえる（始まり＝最初のマスの手前のふち／終わり＝最後のマスの向こうのふち）
     if (!st || st.k !== 'p' || st.cap !== 'f' || !gridOn || !grid || st.free || st.p.length < 2) return st;
-    var p = st.p, a = p[0], z = p[p.length - 1], dx = z[0] - a[0], dy = z[1] - a[1], ax = Math.abs(dx), ay = Math.abs(dy), np;
+    var p = st.p, a = p[0], z = p[p.length - 1], dx = z[0] - a[0], dy = z[1] - a[1], ax = Math.abs(dx), ay = Math.abs(dy), np, ag = gTo(a), zg = gTo(z);       // マスは、線の通りの空間で決める（傾き・曲がりのあるマス目）
     if (ax >= ay * 2 && ax * scale >= 3) {           // 横にすすんだ線
-      var d = dx > 0 ? 1 : -1, i0 = gCellI(a[0]), i1 = gCellI(z[0]);
-      np = [[d > 0 ? gX(i0) : gX(i0 + 1), a[1]]].concat(p, [[d > 0 ? gX(i1 + 1) : gX(i1), z[1]]]);
+      var d = dx > 0 ? 1 : -1, i0 = gCellI(ag[0]), i1 = gCellI(zg[0]);
+      np = [gFrom([d > 0 ? gX(i0) : gX(i0 + 1), ag[1]])].concat(p, [gFrom([d > 0 ? gX(i1 + 1) : gX(i1), zg[1]])]);
     } else if (ay >= ax * 2 && ay * scale >= 3) {    // 縦にすすんだ線
-      var e = dy > 0 ? 1 : -1, j0 = gCellJ(a[1]), j1 = gCellJ(z[1]);
-      np = [[a[0], e > 0 ? gY(j0) : gY(j0 + 1)]].concat(p, [[z[0], e > 0 ? gY(j1 + 1) : gY(j1)]]);
+      var e = dy > 0 ? 1 : -1, j0 = gCellJ(ag[1]), j1 = gCellJ(zg[1]);
+      np = [gFrom([ag[0], e > 0 ? gY(j0) : gY(j0 + 1)])].concat(p, [gFrom([zg[0], e > 0 ? gY(j1 + 1) : gY(j1)])]);
     } else return st;                                // ななめ・まがった線は、そのまま
     var o = cloneStroke(st, np); o.cap = st.cap; if (st.w0) o.w0 = st.w0; return o;
   }
@@ -2740,6 +2950,13 @@
     mode = 'edit'; viewer.classList.add('dragging'); requestDraw(false);
     return true;
   }
+  function clampMoveXY(F, dx, dy) {                  // 動かす量を、動かす線の枠（F）が、画像の中に、収まるように、おさえる（大きすぎて入らない時は、真ん中）
+    var W = img.naturalWidth, H = img.naturalHeight, lo = -F.minX, hi = W - F.maxX;
+    dx = lo <= hi ? Math.max(lo, Math.min(hi, dx)) : (lo + hi) / 2;
+    lo = -F.minY; hi = H - F.maxY;
+    dy = lo <= hi ? Math.max(lo, Math.min(hi, dy)) : (lo + hi) / 2;
+    return [dx, dy];
+  }
   function applyEdit(e) {
     var ed = editing, o = ed.orig, h = ed.h, dx = (e.clientX - ed.x0) / scale, dy = (e.clientY - ed.y0) / scale, pts, ns;
     if (!ed.moved && Math.hypot(e.clientX - ed.x0, e.clientY - ed.y0) < 3) return;       // ちょっと触れただけでは、動かさない
@@ -2771,8 +2988,9 @@
       grp.poly = ed.changed ? rotatePts(ed.poly0, ed.c, aG) : ed.poly0;
       ver++; requestDraw(false); return;
     }
-    if (ed.group) {                                 // 囲んで選んだ線のまとまり：全部を、同じだけ動かす
+    if (ed.group) {                                 // 囲んで選んだ線のまとまり：全部を、同じだけ動かす（画像の中に収まるように）
       ed.changed = true;
+      if (ed.F0) { var cmg = clampMoveXY(ed.F0, dx, dy); dx = cmg[0]; dy = cmg[1]; }
       grp.items = ed.items.map(function (o2, k) { var n2 = cloneStroke(o2, o2.p.map(function (q) { return [q[0] + dx, q[1] + dy]; })); strokes[ed.idxs[k]] = n2; return n2; });
       grp.poly = ed.poly0.map(function (q) { return [q[0] + dx, q[1] + dy]; });
       ver++; requestDraw(false); return;
@@ -2790,7 +3008,8 @@
     } else {
       ed.changed = true;
       if (h.type === 'move') {
-        pts = o.p.map(function (q) { return [q[0] + dx, q[1] + dy]; });
+        var cm1 = clampMoveXY(frameOf(o), dx, dy);       // 画像の中に収まるように
+        pts = o.p.map(function (q) { return [q[0] + cm1[0], q[1] + cm1[1]]; });
       } else if (h.type === 'end') {                // 直線の端：もう一方の端を中心に、長さ・向きを変える（水平・垂直に近ければ、そろえる）
         pts = o.p.map(function (q) { return [q[0], q[1]]; });
         pts[h.i] = axisFix(o.p[1 - h.i], [o.p[h.i][0] + dx, o.p[h.i][1] + dy]);
@@ -2845,7 +3064,7 @@
   function startGrpEdit(e, type, cn) {              // まとまりを、動かす（'move'）／回す（'rotate'）／拡大縮小（'scale'：四隅のつまみ cn）
     endAttrSession();
     var items = grp.items.slice(), idxs = items.map(function (o) { return strokes.indexOf(o); });
-    editing = { id: e.pointerId, h: { type: type }, x0: e.clientX, y0: e.clientY, group: true, poly0: grp.poly.map(function (q) { return [q[0], q[1]]; }), items: items, idxs: idxs, before: strokes.slice(), moved: false, changed: false, angle: 0 };
+    editing = { id: e.pointerId, h: { type: type }, x0: e.clientX, y0: e.clientY, group: true, F0: groupFrame(), poly0: grp.poly.map(function (q) { return [q[0], q[1]]; }), items: items, idxs: idxs, before: strokes.slice(), moved: false, changed: false, angle: 0 };
     if (type === 'rotate') {                        // 回転：まとまり全体の中心と、つかんだ時の向きを覚える
       var F = groupFrame(), c = [(F.minX + F.maxX) / 2, (F.minY + F.maxY) / 2], cs = toScr(c[0], c[1]);
       editing.c = c; editing.cs = cs; editing.a0 = Math.atan2(e.clientY - cs[1], e.clientX - cs[0]); editing.ocs = items.map(centerOf);
@@ -2964,7 +3183,7 @@
   });
   function cellsOf(items) {                         // 選んだ線（のまとまり）が、使っているマスの範囲（左・右・上・下の、マスの番号）。端が、マスの真ん中でも、ふちでも、同じ数になる
     var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    items.forEach(function (o) { o.p.forEach(function (q) { minX = Math.min(minX, q[0]); maxX = Math.max(maxX, q[0]); minY = Math.min(minY, q[1]); maxY = Math.max(maxY, q[1]); }); });
+    items.forEach(function (o) { o.p.forEach(function (q0) { var q = gTo(q0); minX = Math.min(minX, q[0]); maxX = Math.max(maxX, q[0]); minY = Math.min(minY, q[1]); maxY = Math.max(maxY, q[1]); }); });       // 線の通りの空間で、数える
     return { i0: gCellI(minX + 1e-3), i1: gCellI(maxX - 1e-3), j0: gCellJ(minY + 1e-3), j1: gCellJ(maxY - 1e-3) };
   }
   function gridDupShift(items, F) {                  // マス目の時：複製を、左隣りのマスに、ぴったり置くための、横のずらし量（画像のpx。左へ＝＋）。左に入らなければ、右（−）。どちらも入らなければ、null
@@ -2999,18 +3218,20 @@
   }
   function dupLeft() {                              // すぐ左に複製（Ctrl＋D）。マス目の時は左隣のマス、半円は足が重なる位置
     if (grp) {                                       // まとまり：全部を、左側に、少しずらして複製
-      var offG = 20 / scale, gsh = (gridOn && grid && !grp.items.some(function (o) { return o.k === 'e'; })) ? gridDupShift(grp.items, groupFrame()) : frameDupShift(groupFrame()); if (gsh !== null) offG = gsh;       // マス目の時は、左隣りのマスに、ぴったり
+      var useG = !!(gridOn && grid && !grp.items.some(function (o) { return o.k === 'e'; })), offG = 20 / scale, gsh = useG ? gridDupShift(grp.items, groupFrame()) : frameDupShift(groupFrame()); if (gsh !== null) offG = gsh;       // マス目の時は、左隣りのマスに、ぴったり
+      var viaG = useG && gsh !== null && !!grid.fld, mvG = function (q) { if (viaG) { var u = gTo(q); return gFrom([u[0] - offG, u[1]]); } return [q[0] - offG, q[1]]; };       // 傾き・曲がりのあるマス目は、マスの並びに沿って、ずらす
       var beforeG = strokes.slice(), gmap = {}, cps = grp.items.map(function (o) {
-        var c = cloneStroke(o, o.p.map(function (q) { return [q[0] - offG, q[1]]; }));
+        var c = cloneStroke(o, o.p.map(mvG));
         if (o.gid) { gmap[o.gid] = gmap[o.gid] || newGid(); c.gid = gmap[o.gid]; }                 // グループを複製すると、複製も、別のグループになる
         return c;
       });
-      cps.forEach(function (c) { strokes.push(c); }); commit(beforeG); grp.items = cps; grp.gid = cps[0].gid || null; grp.poly = grp.poly.map(function (q) { return [q[0] - offG, q[1]]; }); requestDraw(false); return;
+      cps.forEach(function (c) { strokes.push(c); }); commit(beforeG); grp.items = cps; grp.gid = cps[0].gid || null; grp.poly = grp.poly.map(mvG); requestDraw(false); return;
     }
     if (!selStroke) return;
-    var o = selStroke, off = 20 / scale, gsh1 = (grid && grid.px && grid.py && ((gridOn && o.k !== 'e') || o.k === 'l')) ? gridDupShift([o], frameOf(o)) : frameDupShift(dupFrame(o)); if (gsh1 !== null) off = gsh1;       // 左側に、少しずらして置く（マス目の時は、左隣りのマスに、ぴったり）
+    var o = selStroke, off = 20 / scale, useG1 = !!(grid && grid.px && grid.py && ((gridOn && o.k !== 'e') || o.k === 'l')), gsh1 = useG1 ? gridDupShift([o], frameOf(o)) : frameDupShift(dupFrame(o)); if (gsh1 !== null) off = gsh1;       // 左側に、少しずらして置く（マス目の時は、左隣りのマスに、ぴったり）
     var av = (gridOn && grid) ? null : arcDupVec(o), sx = av ? av[0] : -off, sy = av ? av[1] : 0;       // 半円：両はしがつながる位置（少しだけ重なる）。マス目の時は、これまでどおり
-    var cp = cloneStroke(o, o.p.map(function (q) { return [q[0] + sx, q[1] + sy]; })); delete cp.gid;
+    var viaG1 = useG1 && gsh1 !== null && !!grid.fld;       // 傾き・曲がりのあるマス目は、マスの並びに沿って、ずらす
+    var cp = cloneStroke(o, o.p.map(function (q) { if (viaG1) { var u = gTo(q); return gFrom([u[0] - off, u[1]]); } return [q[0] + sx, q[1] + sy]; })); delete cp.gid;
     var before = strokes.slice(); strokes.push(cp); commit(before); selStroke = cp; requestDraw(false);
   }
   function dupFrame(st) {                           // 複製の間隔を決める枠。「ぴったり」「斜め」の線は、はしを切った形で、はしに出っぱりがないので、余白（太さの半分）を、つけない（つけると、太さぶん、すきまが開く）。横の線は、つなぎ目なく並ぶ
@@ -3032,13 +3253,14 @@
       else { var FD = grp ? F : dupFrame(selStroke); if (horiz) dx = sgn * (FD.maxX - FD.minX); else dy = sgn * (FD.maxY - FD.minY); }
     }
     if (F.minX + dx < 0 || F.maxX + dx > img.naturalWidth || F.minY + dy < 0 || F.maxY + dy > img.naturalHeight) { showNote('編み図の外になるので、置けません'); return; }
+    var viaGs = gridDup && !!grid.fld, mvS = function (q) { if (viaGs) { var u = gTo(q); return gFrom([u[0] + dx, u[1] + dy]); } return [q[0] + dx, q[1] + dy]; };       // 傾き・曲がりのあるマス目は、マスの並びに沿って、ずらす
     var before = strokes.slice(), gm = {}, cps = items.map(function (o) {
-      var c = cloneStroke(o, o.p.map(function (q) { return [q[0] + dx, q[1] + dy]; }));
+      var c = cloneStroke(o, o.p.map(mvS));
       if (grp) { if (o.gid) { gm[o.gid] = gm[o.gid] || newGid(); c.gid = gm[o.gid]; } } else delete c.gid;       // グループを複製すると、複製も、別のグループになる
       return c;
     });
     cps.forEach(function (c) { strokes.push(c); }); commit(before);
-    if (grp) { grp.items = cps; grp.gid = cps[0].gid || null; grp.poly = grp.poly.map(function (q) { return [q[0] + dx, q[1] + dy]; }); } else selStroke = cps[0];
+    if (grp) { grp.items = cps; grp.gid = cps[0].gid || null; grp.poly = grp.poly.map(mvS); } else selStroke = cps[0];
     requestDraw(false);
   }
   $('sel-dup').addEventListener('click', function () {       // 「複製」：矢印を出す／しまう（押した側に、複製を置く）
@@ -3053,7 +3275,7 @@
     var out = dir === 'l' ? F.minX <= 0 : dir === 'r' ? F.maxX >= img.naturalWidth : dir === 't' ? F.minY <= 0 : F.maxY >= img.naturalHeight;
     if (out) { showNote('編み図の外になるので、置けません'); return; }
     var horiz = dir === 'l' || dir === 'r', ax = 2 * (dir === 'l' ? F.minX : dir === 'r' ? F.maxX : dir === 't' ? F.minY : F.maxY);       // 鏡の位置（元の線の枠の、その側のはし）
-    if (gridOn && grid) { var cc = cellsOf(grp ? grp.items : [o]); ax = 2 * (dir === 'l' ? gX(cc.i0) : dir === 'r' ? gX(cc.i1 + 1) : dir === 't' ? gY(cc.j0) : gY(cc.j1 + 1)); }       // マス目の時：使っているマスの、外側の境目の線で、鏡に映す（コピーが、となりのマスに、ぴったり並ぶ）
+    if (gridOn && grid && !grid.fld) { var cc = cellsOf(grp ? grp.items : [o]); ax = 2 * (dir === 'l' ? gX(cc.i0) : dir === 'r' ? gX(cc.i1 + 1) : dir === 't' ? gY(cc.j0) : gY(cc.j1 + 1)); }       // マス目の時：使っているマスの、外側の境目の線で、鏡に映す（コピーが、となりのマスに、ぴったり並ぶ）
     var mir = function (st) { var mc = cloneStroke(st, st.p.map(function (q) { return horiz ? [ax - q[0], q[1]] : [q[0], ax - q[1]]; })); if (capable(mc) && mc.cap === 'c') mc.sl = mc.sl === -1 ? 1 : -1; return mc; };       // 斜めの向きも、鏡に映したように、反転
     var before = strokes.slice();
     if (grp) { var gm = {}, cpsG = grp.items.map(function (o) { var c = mir(o); if (o.gid) { gm[o.gid] = gm[o.gid] || newGid(); c.gid = gm[o.gid]; } return c; }); cpsG.forEach(function (c) { strokes.push(c); }); commit(before); grp.items = cpsG; grp.poly = grp.poly.map(function (q) { return horiz ? [ax - q[0], q[1]] : [q[0], ax - q[1]]; }); }
@@ -3417,8 +3639,9 @@
     addPoint(e);
     if (gridOn && grid && !gridInside(cur.p[0])) cur.free = true;       // 見つけたマス目の外から描き始めた：この線は、マス目に合わせない
     if (k !== 'p' && k !== 'e' && gridOn && grid && !cur.free) {               // マス目に合わせる時：直線は、はしを「マスの真ん中」へ。四角・円は、始まりのマスを、ふくむ形へ
-      if (k === 'l') { cur.sc = [gCellI(cur.p[0][0]), gCellJ(cur.p[0][1])]; cur.p[0] = gridCenterPt(cur.p[0]); }
-      else { cur.sc = [gCellI(cur.p[0][0]), gCellJ(cur.p[0][1])]; cur.p[0] = [gX(cur.sc[0]), gY(cur.sc[1])]; cur.p.push([gX(cur.sc[0] + 1), gY(cur.sc[1] + 1)]); requestDraw(false); return; }
+      var qg0 = gTo(cur.p[0]);                    // 傾き・曲がりのあるマス目は、線の通りの空間で、マスを決めて、画像の位置にもどす
+      if (k === 'l') { cur.sc = [gCellI(qg0[0]), gCellJ(qg0[1])]; cur.p[0] = gFrom(gridCenterPt(qg0)); }
+      else { cur.sc = [gCellI(qg0[0]), gCellJ(qg0[1])]; cur.p[0] = gFrom([gX(cur.sc[0]), gY(cur.sc[1])]); cur.p.push(gFrom([gX(cur.sc[0] + 1), gY(cur.sc[1] + 1)])); requestDraw(false); return; }
     }
     if (k !== 'p') cur.p.push(cur.p[0].slice());
     requestDraw(false);
@@ -3501,6 +3724,7 @@
       pinchLast = 0; midLast = null; viewer.classList.remove('dragging');
       if (tallyDown(e)) { dbg('  x tally'); return; }                      // かぞえる
       if (beginAction(e)) { dbg('  x action(move/handle)'); return; }
+      if (outsideImg(e)) { mode = 'ignore'; dbg('  x outside'); return; }       // 画像の外からは、描き始めない
       mode = 'paint'; dbgMv = 0; startPaint(e); dbg('  paint start'); return;
     }
     if (pts.size >= 2) {                             // 2本目：ピンチ（拡大縮小＋移動）
@@ -3518,6 +3742,7 @@
       mode = 'pan'; panStart = [e.clientX, e.clientY]; panT0 = Date.now(); panMove = 0; viewer.classList.add('dragging'); return;
     }
     if (beginAction(e)) return;
+    if (outsideImg(e)) { mode = 'ignore'; return; }       // 画像の外からは、描き始めない
     mode = 'paint'; startPaint(e);
   });
   viewer.addEventListener('pointermove', function (e) {
@@ -3813,6 +4038,7 @@
   }
   function d0r(d) { return d && d.r ? d.r : TALLY_R / scale; }
   function tallyTap(e) {                             // 印の上をタップ：その印を消す／何もない所：番号をつける
+    if (outsideImg(e)) return;                      // 画像の外には、印をつけない
     var tlBefore = tallySnap(), d = tallyGet(), i, best = -1, bd = Math.max(((d0r(tallyGet())) * scale) + 1, 6), dd;
     if (d) for (i = d.m.length - 1; i >= 0; i--) { dd = Math.hypot(d.m[i][0] * scale + offsetX - e.clientX, d.m[i][1] * scale + offsetY - e.clientY); if (dd <= bd) { bd = dd; best = i; } }
     if (best >= 0) d.m.splice(best, 1);
@@ -3881,7 +4107,7 @@
     var tg = selTarget(), memoPal = tg ? isInk(tg) : PEN.tool === 'memo';                          // メモの色（こげ茶・赤…）を使うか
     var showCol = tg ? tg.c : (PEN.tool === 'memo' ? PEN.memoColor : PEN.color), showAl = tg ? tg.a : (PEN.tool === 'memo' ? 1 : PEN.alpha);       // 選んだ線をさわっている間は、その線の色・濃さを見せる
     syncPalette(memoPal);
-    $('mk-label').textContent = tg ? '線を変更' : ({ pen: 'なぞる', line: '直線', rect: '四角', ellipse: '円', select: '選択', erase: '消しゴム', tally: 'かぞえる', memo: 'メモ' }[PEN.tool] || '');
+    $('mk-label').textContent = tg ? '線を変更' : ({ pen: 'なぞる', line: '直線', rect: '四角', ellipse: (PEN.ring ? '輪' : '円'), select: '選択', erase: '消しゴム', tally: 'かぞえる', memo: 'メモ' }[PEN.tool] || '');
     topbar.classList.toggle('editing', !!tg);
     if (typeof capSeg !== 'undefined' && capSeg) updateCapSeg();
     syncGridBtn();                                                                   // 道具を変えた時は、マス目のマークの「白抜き／ふつう」も切りかえる                     // 道具を変えた時も、「ペンの先」を、使える／使えないに切りかえる
@@ -3894,7 +4120,16 @@
     cl.title = cc ? '好きな色（使っている時に、もう一度押すと、色を変えられます）' : '好きな色を追加';
     $('mk-custom').value = showCol;
     var nowEl = $('mk-now'); nowEl.style.background = showCol; nowEl.style.opacity = showAl;
-    var nowSz = { 8: 8, 18: 14, 36: 22 }[PEN.tool === 'memo' ? PEN.memoW : PEN.width] || 14; nowEl.style.setProperty('--sz', nowSz + 'px'); $('tb-now').style.setProperty('--dm', ((24 - nowSz) / 2) + 'px');       // --dm：丸のまわりの、透明な余白（丸の見えている部分が、真ん中に来るように使う）
+    var nowShape = 'dot';                                                            // 色の見本の形：四角なら四角／円なら丸／輪なら輪（線を選んでいる時は、その線の形）
+    if (tg) { if (tg.k === 'r') nowShape = 'sq'; else if (tg.k === 'e') nowShape = tg.ring ? 'ring' : 'dot'; }
+    else if (PEN.tool === 'rect') nowShape = 'sq'; else if (PEN.tool === 'ellipse') nowShape = PEN.ring ? 'ring' : 'dot';
+    nowEl.classList.toggle('sq', nowShape === 'sq'); nowEl.classList.toggle('ring', nowShape === 'ring'); nowEl.style.setProperty('--nc', showCol);
+    var nowSz = { 8: 8, 18: 14, 36: 22 }[PEN.tool === 'memo' ? PEN.memoW : PEN.width] || 14;
+    var isShapeNow = tg ? (tg.k === 'r' || tg.k === 'e') : (PEN.tool === 'rect' || PEN.tool === 'ellipse');
+    if (isShapeNow) {                                                                // 図形：四角・円（塗りつぶし）は、太さと関係ないので、見本の大きさは、いつも同じ。輪は、輪の大きさは同じで、「ふちの太さ」だけが、太さ（細・中・太）で変わる
+      nowSz = 18; nowEl.style.setProperty('--bw', ({ 8: 2, 18: 3.5, 36: 5.5 }[PEN.width] || 3.5) + 'px');
+    }
+    nowEl.style.setProperty('--sz', nowSz + 'px'); $('tb-now').style.setProperty('--dm', ((24 - nowSz) / 2) + 'px');       // --dm：丸のまわりの、透明な余白（丸の見えている部分が、真ん中に来るように使う）
                // 太さ（細・中・太）に合わせて、点の大きさも変わる
     var noColor = (PEN.tool === 'erase' && !tg) || (PEN.tool === 'select' && !tg) || PEN.tool === 'tally';       // 色を使わない時（消しゴム・何も選んでいない選択・かぞえる）：色の点は出さず、道具の名前だけを、中央に
     nowEl.style.display = noColor ? 'none' : ''; $('tb-now').classList.toggle('nomark', noColor);
@@ -4287,6 +4522,8 @@
           var okGap = function (a, n) { return Array.isArray(a) && a.length && a.every(function (v) { return Number.isInteger(v) && v >= 0 && v < n; }); };
           if (okGap(it.ggi, gr.i1 - gr.i0)) gr.gapI = it.ggi;
           if (okGap(it.ggj, gr.j1 - gr.j0)) gr.gapJ = it.ggj;
+          var gf = it.gfl, okNum = function (a, n) { return Array.isArray(a) && a.length === n && a.every(function (v) { return typeof v === 'number' && isFinite(v); }); };
+          if (gf && okNum(gf.a, 4) && okNum(gf.vs, gr.xs.length) && okNum(gf.vc, gr.xs.length) && okNum(gf.hs, gr.ys.length) && okNum(gf.hc, gr.ys.length)) gr.fld = { vy0: gf.a[0], vy1: gf.a[1], hx0: gf.a[2], hx1: gf.a[3], vs: gf.vs, vc: gf.vc, hs: gf.hs, hc: gf.hc };       // 傾き・曲がり
         }
         return gr;
       }
@@ -4312,6 +4549,7 @@
     if (count > 0) it.n = count; else delete it.n;                                  // カウンターの数も、同じ記録に入れる
     if (grid) it.grid = [Math.round(grid.px * 10000) / 10000, Math.round(grid.ox * 100) / 100, Math.round(grid.py * 10000) / 10000, Math.round(grid.oy * 100) / 100, grid.i0, grid.i1, grid.j0, grid.j1, gridOn ? 1 : 0, gridShow ? 1 : 0]; else delete it.grid;       // 見つけたマス目と、使っているかどうかも
     if (grid && grid.xs && grid.ys) { var r1 = function (v) { return Math.round(v * 100) / 100; }; it.gxs = grid.xs.map(r1); it.gys = grid.ys.map(r1); } else { delete it.gxs; delete it.gys; }       // 線を1本ずつ追った、実際の位置
+    if (grid && grid.xs && grid.ys && grid.fld) { var rd5 = function (a) { return a.map(function (v) { return Math.round(v * 100000) / 100000; }); }, fl = grid.fld; it.gfl = { a: [fl.vy0, fl.vy1, fl.hx0, fl.hx1].map(function (v) { return Math.round(v * 100) / 100; }), vs: rd5(fl.vs), vc: rd5(fl.vc), hs: rd5(fl.hs), hc: rd5(fl.hc) }; } else delete it.gfl;       // 傾き・曲がり
     if (grid && grid.xs && grid.gapI && grid.gapI.length) it.ggi = grid.gapI; else delete it.ggi;       // 省略の隙間（線のない所）
     if (grid && grid.ys && grid.gapJ && grid.gapJ.length) it.ggj = grid.gapJ; else delete it.ggj;
     if (fixQ) { it.fix = fixQ.map(function (v) { return Math.round(v * 10) / 10; }); it.fixv = 2; if (fixC) it.fixc = fixC; else delete it.fixc; } else { delete it.fix; delete it.fixv; delete it.fixc; }       // 歪みを直した時の、4つの角（fixv：2＝写真全体を直す形。前の、マス目だけ切り出す形は、読み込まない）
