@@ -510,6 +510,7 @@
     #fix-cv { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
     #fix-head { position: absolute; left: 0; right: 0; top: 0; z-index: 2; padding: calc(8px + env(safe-area-inset-top, 0px)) 14px 10px; text-align: center; pointer-events: none; background: linear-gradient(to bottom, #CBDDE3 70%, rgba(203, 221, 227, 0)); }
     #fix-title { font-weight: 700; color: var(--text); font-size: 13px; letter-spacing: .06em; }
+    #fix-note { margin-top: 2px; font-size: 10.5px; color: var(--text-sub); letter-spacing: .02em; line-height: 1.4; opacity: .85; }
     #fix-sub { margin-top: 2px; font-size: 11px; color: var(--text-sub); letter-spacing: .03em; min-height: 1.3em; line-height: 1.4; }
     #fix-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 12px calc(10px + env(safe-area-inset-bottom, 0px)); pointer-events: none; background: linear-gradient(to top, #CBDDE3 72%, rgba(203, 221, 227, 0)); }
     #fix-foot .fix-link, #fix-foot #fix-grid, #fix-foot #fix-btns { pointer-events: auto; }
@@ -906,12 +907,23 @@
           <li>指やペンでなぞって塗ります。道具・太さ・色は、上の操作エリアで選びます。</li>
           <li>選んでいる線は、上からドラッグすると動かせます。近くに新しい線を描くときは、先に、何もない所を1回タップします。</li>
           <li>「選択」で線を囲むと、まとめて選んで、動かす・回転・色の変更、ができます。</li>
-          <li>直線・四角では、マスのマークで、マス目に合わせて、目数・段数をかぞえます。ずれていたら、そこから、合わせ直せます。</li>
+          <li>直線・四角では、マスのマークで、マス目に合わせて、目数・段数をかぞえます。デジタルの編み図（マスがすべて同じ大きさで、歪みのないもの）向けです。写真の編み図や、歪んだ編み図は、正確に合わないことがあります。省略（波線など）のある編み図は、数が実際と合わないので、マスのマーク →「数を隠す」で、数の表示だけを、消せます（ぴったり塗る機能は、そのまま使えます）。</li>
           <li>「メモ」は、編み図の上に、ペンで字を書いたり、文字（テキスト）を置いたりできます。</li>
           <li>「かぞえる」は、編み目記号を数えたいときに便利です。色を選んで、タップすると、番号がつきます（色ごとに99まで）。</li>
           <li>白黒モード（半分塗ってある円）で、編み図を白黒やうすい色にでき、蛍光ペンが見やすくなります。</li>
           <li>「画像で保存」（ダウンロードのマーク）で、蛍光ペンやメモを書いた編み図を、画像にして残せます。</li>
         </ul>
+      </div>
+    </div>
+
+    <div class="data-note" id="recoNote">
+      <button type="button" class="data-note-btn" aria-expanded="false"><span>✿ おすすめの編み図</span><span class="data-note-arrow">▼</span></button>
+      <div class="data-note-body">
+        <p>💡 おすすめは、デジタルの編み図です。マス目が、すべて同じ大きさで、歪みがなく、線がはっきりしている編み図なら、マス目の自動判定、目数・段数のかぞえ、直線がマスに合う動きを、正確に使えます。</p>
+        <p>📷 写真で撮った編み図や、マスが歪んでいる編み図でも、蛍光ペンは、ふつうに使えます。ただ、マス目モードは、写真の歪みで、点線や、目数・段数が、ずれることがあります（正確には引けない場合があります）。目安として、お使いください。</p>
+        <p>📝 省略（波線など）のある編み図は、描かれていない目や段があるので、「○目×○段」の数は、実際と合いません。マスのマーク →「数を隠す」で、数の表示だけを消せます。点線に合わせて、ぴったり塗る機能は、そのまま使えます。</p>
+        <p>🧶 減らし目・増やし目で、段ごとに、マスの数が違う編み図は、四隅を、いちばん、マスの多い段に合わせると、すべてのマスに合います。四隅の外にも、同じ間隔で線が続いていれば、自動で広げます（マスのない所には、点線を引きません）。</p>
+        <p>歪み方は、写真ごとにさまざまで、すべてに合わせることはできません。</p>
       </div>
     </div>
 
@@ -971,7 +983,7 @@
       </button>
       <!-- ここまで：共有マーク -->
     </div>
-    <div class="last-updated">最終更新：2026.11.03</div>
+    <div class="last-updated">最終更新：2026.11.07</div>
   </div>
   </div>
   </div>
@@ -989,7 +1001,7 @@
 </div>
 <div id="fix-overlay" hidden role="dialog" aria-modal="true" aria-label="編み図の歪みを直す">
   <div id="fix-stage"><canvas id="fix-cv"></canvas></div>
-  <div id="fix-head"><div id="fix-title">編み図の歪みを直す</div><div id="fix-sub">4つの丸を、編み図の角に合わせてください（2本指で、拡大・移動できます）</div></div>
+  <div id="fix-head"><div id="fix-title">編み図の歪みを直す</div><div id="fix-sub">4つの丸を、編み図の角に合わせてください（2本指で、拡大・移動できます）</div><div id="fix-note">写真の編み図は、歪みで、正確に合わないことがあります。デジタルの編み図が、おすすめです。</div></div>
   <div id="fix-foot">
     <button type="button" class="fix-link" id="fix-gridtoggle">マス目の数を入れる（わかる時だけ） ▾</button>
     <div id="fix-grid" hidden>
@@ -1202,20 +1214,24 @@
       var cv3 = document.createElement('canvas'); cv3.width = W; cv3.height = H;
       var c3 = cv3.getContext('2d', { willReadFrequently: true }); c3.fillStyle = '#FFFFFF'; c3.fillRect(0, 0, W, H); c3.drawImage(img, 0, 0, W, H);
       var d = c3.getImageData(0, 0, W, H).data, G = new Float32Array(W * H), colP = new Float32Array(W), rowP = new Float32Array(H), x, y, i = 0, g, v, o;
-      for (y = 0; y < H; y++) for (x = 0; x < W; x++, i += 4) { g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; G[y * W + x] = g; v = g < 245 ? (245 - g) / 245 : 0; colP[x] += v; rowP[y] += v; }
-      for (x = 0; x < W; x++) colP[x] /= H;
-      for (y = 0; y < H; y++) rowP[y] /= W;
+      var fr = img.fixRect, rx0 = 0, rx1 = W - 1, ry0 = 0, ry1 = H - 1;       // 四隅で囲んだ範囲（歪みを直した後の画像）があれば、その中だけで、線を探す（1ページに、マスの大きさが違う編み図が、いくつかあっても、まよわない）
+      if (fr) { rx0 = Math.max(0, Math.floor(fr.x * k) - 2); rx1 = Math.min(W - 1, Math.ceil((fr.x + fr.w) * k) + 2); ry0 = Math.max(0, Math.floor(fr.y * k) - 2); ry1 = Math.min(H - 1, Math.ceil((fr.y + fr.h) * k) + 2); if (rx1 - rx0 < 16 || ry1 - ry0 < 16) { rx0 = 0; rx1 = W - 1; ry0 = 0; ry1 = H - 1; } }
+      for (y = 0; y < H; y++) for (x = 0; x < W; x++, i += 4) { g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; G[y * W + x] = g; if (x < rx0 || x > rx1 || y < ry0 || y > ry1) continue; v = g < 245 ? (245 - g) / 245 : 0; colP[x] += v; rowP[y] += v; }
+      for (x = rx0; x <= rx1; x++) colP[x] /= (ry1 - ry0 + 1);
+      for (y = ry0; y <= ry1; y++) rowP[y] /= (rx1 - rx0 + 1);
       // 新しい方法（先に試す）：「まわりより、少し暗い細い線が、端から端まで続いている」列・行を、数える。薄いマス目の線でも、見つかる。記号の棒線は、短くて途中で切れるので、強く出ない
       var colR = new Float32Array(W), rowR = new Float32Array(H), T = 6, best, m, base;
-      var smp = [], stp = Math.max(1, Math.floor(Math.sqrt(W * H / 20000)));       // 「線」と見なす暗さの差の基準は、画像のざらざらの量から、決める（きれいな画像なら低く＝とても薄い線も拾う／ざらざらが多ければ高く）
-      for (y = 4; y < H - 4; y += stp) for (x = 4; x < W - 4; x += stp) { g = G[y * W + x]; best = 0; for (o = 2; o <= 4; o++) { m = (G[y * W + x - o] + G[y * W + x + o]) * 0.5 - g; if (m > best) best = m; } smp.push(best); }
+      var smp = [], stp = Math.max(1, Math.floor(Math.sqrt((rx1 - rx0 + 1) * (ry1 - ry0 + 1) / 20000)));       // 「線」と見なす暗さの差の基準は、画像のざらざらの量から、決める（きれいな画像なら低く＝とても薄い線も拾う／ざらざらが多ければ高く）
+      for (y = Math.max(4, ry0); y < Math.min(H - 4, ry1 + 1); y += stp) for (x = Math.max(4, rx0); x < Math.min(W - 4, rx1 + 1); x += stp) { g = G[y * W + x]; best = 0; for (o = 2; o <= 4; o++) { m = (G[y * W + x - o] + G[y * W + x + o]) * 0.5 - g; if (m > best) best = m; } smp.push(best); }
+      if (!smp.length) smp.push(0);
       smp.sort(function (a1, b1) { return a1 - b1; });
       var med = smp[smp.length >> 1], dv = smp.map(function (v1) { return Math.abs(v1 - med); }).sort(function (a1, b1) { return a1 - b1; });
       T = Math.max(2.5, Math.min(8, med + 4.5 * dv[dv.length >> 1]));
-      for (y = 0; y < H; y++) { base = y * W; for (x = 4; x < W - 4; x++) { g = G[base + x]; best = 0; for (o = 2; o <= 4; o++) { m = (G[base + x - o] + G[base + x + o]) * 0.5 - g; if (m > best) best = m; } if (best > T) colR[x]++; } }
-      for (y = 4; y < H - 4; y++) for (x = 0; x < W; x++) { g = G[y * W + x]; best = 0; for (o = 2; o <= 4; o++) { m = (G[(y - o) * W + x] + G[(y + o) * W + x]) * 0.5 - g; if (m > best) best = m; } if (best > T) rowR[y]++; }
-      for (x = 0; x < W; x++) colR[x] /= H;
-      for (y = 0; y < H; y++) rowR[y] /= W;
+      T = Math.max(T, Math.min(9, 0.2 * smp[Math.floor(smp.length * 0.95)]));       // 斑点の多い（古い印刷物を撮った）画像：線らしさの上位5％の、2割まで、基準を上げる（斑点を、線と見なさないため。上限9）
+      for (y = ry0; y <= ry1; y++) { base = y * W; for (x = Math.max(4, rx0); x <= Math.min(W - 5, rx1); x++) { g = G[base + x]; best = 0; for (o = 2; o <= 4; o++) { m = (G[base + x - o] + G[base + x + o]) * 0.5 - g; if (m > best) best = m; } if (best > T) colR[x]++; } }
+      for (y = Math.max(4, ry0); y <= Math.min(H - 5, ry1); y++) for (x = rx0; x <= rx1; x++) { g = G[y * W + x]; best = 0; for (o = 2; o <= 4; o++) { m = (G[(y - o) * W + x] + G[(y + o) * W + x]) * 0.5 - g; if (m > best) best = m; } if (best > T) rowR[y]++; }
+      for (x = rx0; x <= rx1; x++) colR[x] /= (ry1 - ry0 + 1);
+      for (y = ry0; y <= ry1; y++) rowR[y] /= (rx1 - rx0 + 1);
       ggCache = { img: img, G: G, W: W, H: H, T: T, k: k };       // 灰色の画像と、「線」と見なす暗さの差（帯ごとに線を測る時に、使いまわす）
       return { colR: colR, rowR: rowR, colP: colP, rowP: rowP, k: k };
     } catch (e) { return null; }
@@ -1226,7 +1242,7 @@
     var pr = gridProfiles(); if (!pr) return null;
     return gridFromProfiles(pr.colR, pr.rowR, pr.k) || gridFromProfiles(pr.colP, pr.rowP, pr.k);       // 見つからなければ、これまでの方法（黒っぽさの山）
   }
-  function trackLines(P, P2, exp, pitch) {          // 線を1本ずつ、順に追う：いちばんはっきりした線から、左右（上下）へ、「前の線の位置＋いまの間隔」を予想して、その近く（前後0.35間隔）の、いちばん強い山を、次の線とする。間隔が、場所で少しずつ変わっても、追える。予想の場所に線がない時は、先へ探して、見つけ直す（①弱くて見えなかった線＝等間隔で補う ②省略で、白い隙間＝線を引かず、「隙間」として覚える）。P：線らしさの山／P2：黒っぽさの山（隙間が、空白かを、見るため）。うまく追えなければ null。結果：{ pos：線の位置（小さい順）、gap：線と線の間が、省略の隙間かどうか }
+  function trackLines(P, P2, exp, pitch, extra) {          // 線を1本ずつ、順に追う：いちばんはっきりした線から、左右（上下）へ、「前の線の位置＋いまの間隔」を予想して、その近く（前後0.35間隔）の、いちばん強い山を、次の線とする。間隔が、場所で少しずつ変わっても、追える。予想の場所に線がない時は、先へ探して、見つけ直す（①弱くて見えなかった線＝等間隔で補う ②省略で、白い隙間＝線を引かず、「隙間」として覚える）。P：線らしさの山／P2：黒っぽさの山（隙間が、空白かを、見るため）。うまく追えなければ null。結果：{ pos：線の位置（小さい順）、gap：線と線の間が、省略の隙間かどうか }
     var n = exp.length, N = P.length, i, q;
     function sm(t) { return (P[t - 1] + 2 * P[t] + P[t + 1]) / 4; }
     function meanOf(A, a0, b0) { var s0 = 0, m = 0; for (var t = Math.max(0, Math.round(a0)); t <= Math.min(A.length - 1, Math.round(b0)); t++) { s0 += A[t]; m++; } return m ? s0 / m : 0; }
@@ -1263,9 +1279,18 @@
       if (bt >= 0 && bv2 >= thr) { var f0 = peakAt(bt, 2); if (f0) { items.push({ x: f0.x, gap: false, s: f0.s }); lp = Math.abs(f0.x - last); hist.push(lp); last = f0.x; } }
       for (var guard = 0; guard < 4000; guard++) {
         var e = last + dir * lp * (miss + 1);
-        if (dir > 0 ? e > hi + lp * 0.5 : e < lo - lp * 0.5) break;
+        var beyond = dir > 0 ? e > hi + lp * 0.5 : e < lo - lp * 0.5;       // 四隅で囲んだ範囲の外か
+        if (beyond && (!extra || miss > 0 || (dir > 0 ? last > hi + lp * 0.5 + extra * pit : last < lo - lp * 0.5 - extra * pit))) break;       // 範囲の外は、extra 本ぶんまで。途切れたら、そこで止める（隙間・補いは、しない）
         var f2 = peakAt(e, lp * 0.35);
-        if (f2 && f2.s >= thr) {                    // 予想の場所に、線があった
+        if (beyond) {                               // 範囲の外：減らし目・増やし目で、段によって、マスの数が違う編み図のため、直接見つかる線だけを、追う
+          if (f2 && f2.s >= thr * 0.6) {            // 一部の段にしか、ない線は、弱いので、基準を、少しゆるめる
+            items.push({ x: f2.x, gap: false, s: f2.s }); hist.push(Math.abs(f2.x - last)); if (hist.length > 3) hist.shift();
+            lp = hist.reduce(function (x, y) { return x + y; }, 0) / hist.length; last = f2.x; miss = 0; continue;
+          }
+          break;
+        }
+        var lastSlot = dir > 0 ? e > hi - lp * 0.5 : e < lo + lp * 0.5;       // 四隅で囲んだ範囲の、いちばん端の線か（減らし目・増やし目で、一部の段にしか、ない線のことが多い）
+        if (f2 && (f2.s >= thr || (lastSlot && f2.s >= thr * 0.6))) {                    // 予想の場所に、線があった
           var gapHere = false;
           if (miss >= 1) {                          // 間に、見つからなかった予想の場所がある：間が、空白なら、省略の隙間。空白でなければ、弱くて見えなかった線
             var a2 = Math.min(last, f2.x), b2 = Math.max(last, f2.x);
@@ -1297,13 +1322,13 @@
       }
       return items;
     }
-    var R = walk(1), Lf = walk(-1), pos = [], G = [], good = 1;
-    for (q = Lf.length - 1; q >= 0; q--) { pos.push(Lf[q].x); G.push(Lf[q].gap); if (Lf[q].s > 0) good++; }       // 小さい側から並べる。G[k]＝pos[k] と pos[k+1] の間が、隙間か
-    pos.push(cand[best].x);
-    for (q = 0; q < R.length; q++) { G.push(R[q].gap); pos.push(R[q].x); if (R[q].s > 0) good++; }
+    var R = walk(1), Lf = walk(-1), pos = [], G = [], str = [], good = 1;
+    for (q = Lf.length - 1; q >= 0; q--) { pos.push(Lf[q].x); G.push(Lf[q].gap); str.push(Lf[q].s); if (Lf[q].s > 0) good++; }       // 小さい側から並べる。G[k]＝pos[k] と pos[k+1] の間が、隙間か
+    pos.push(cand[best].x); str.push(cand[best].s);
+    for (q = 0; q < R.length; q++) { G.push(R[q].gap); pos.push(R[q].x); str.push(R[q].s); if (R[q].s > 0) good++; }
     if (good < Math.max(4, n * 0.4)) return null;       // 見つかった線が、少なすぎる：追えていない
     for (i = 1; i < pos.length; i++) { var dd = pos[i] - pos[i - 1]; if (!(dd >= pitch * 0.4) || (!G[i - 1] && dd > pitch * 1.8)) return null; }       // 順番が入れかわる・近すぎる・（隙間でないのに）遠すぎる
-    return { pos: pos, gap: G };
+    return { pos: pos, gap: G, str: str };
   }
   /* ---------- 編み図の、斜め・曲がりに、点線を合わせる：縦線も横線も、画像を帯に分けて、帯ごとに、線の位置を測り、「傾き」と「曲がり」を割り出す。画像は、動かさない ---------- */
   function findPeak(P, e, hw) {                     // 山 P の、位置 e の前後 hw で、いちばん強い山（位置は、小数まで）
@@ -1406,11 +1431,47 @@
       if (pts.length < 4) continue;
       var f1 = lsqFit(pts, v2, false), f2 = pts.length >= 5 ? lsqFit(pts, v2, true) : null, ch = (f2 && f1 && f2.rss < f1.rss * 0.6) ? f2 : f1;       // 曲がりは、はっきり良くなる時だけ
       if (!ch) continue;
+      for (var it2 = 0; it2 < 2; it2++) {            // 予想から大きくはずれた測定（波線の輪郭線などを、拾ったもの）は、除いて、測り直す
+        var res2 = pts.map(function (q) { return q[1] - (ch.m + ch.s * q[0] + ch.c * (q[0] * q[0] - v2)); }), ar2 = res2.map(Math.abs).sort(function (a1, b1) { return a1 - b1; }), cut2 = Math.max(1.5, 3 * ar2[ar2.length >> 1]);
+        var keep2 = pts.filter(function (q, qi) { return Math.abs(res2[qi]) <= cut2; });
+        if (keep2.length === pts.length || keep2.length < 4) break;
+        var f3 = lsqFit(keep2, v2, ch.c !== 0 && keep2.length >= 5); if (!f3) break;
+        ch = f3; pts = keep2;
+      }
       var mean = 0; pts.forEach(function (q) { mean += q[1]; }); mean /= pts.length;
       var flat = 0; pts.forEach(function (q) { flat += (q[1] - mean) * (q[1] - mean); });
       fm[i] = ch.m; fs[i] = ch.s; fc[i] = ch.c; flatSS += flat; fitSS += ch.rss; nObs += pts.length; okLines++;
     }
     if (okLines < Math.max(3, nl * 0.5) || nObs < 1) return null;
+    // 線どうしの、つじつま合わせ：となりあう線は、傾き・曲がりが、なめらかに変わる。1本だけ、まるで違う向きの線は、省略の波線など、別のものを拾った可能性が高いので、傾き・曲がりを、まわりの線から借りて、位置だけを、測り直す
+    var idxs = []; for (i = 0; i < nl; i++) if (fs[i] !== null) idxs.push(i);
+    if (idxs.length >= 5) {
+      var tsFit = function (vals) {                  // 線の番号に対する、直線（テイル・セン法：飛び離れた値に、ひきずられない）
+        var sl = [], q, r2, ic = [];
+        for (q = 0; q < idxs.length; q++) for (r2 = q + 1; r2 < idxs.length; r2++) sl.push((vals[r2] - vals[q]) / (idxs[r2] - idxs[q]));
+        sl.sort(function (a1, b1) { return a1 - b1; });
+        var ms = sl[sl.length >> 1];
+        for (q = 0; q < idxs.length; q++) ic.push(vals[q] - ms * idxs[q]);
+        ic.sort(function (a1, b1) { return a1 - b1; });
+        return { s: ms, i: ic[ic.length >> 1] };
+      };
+      var svv = idxs.map(function (ii) { return fs[ii]; }), cvv = idxs.map(function (ii) { return fc[ii]; }), tS = tsFit(svv), tC = tsFit(cvv);
+      var rS = svv.map(function (v, q) { return Math.abs(v - (tS.s * idxs[q] + tS.i)); }).sort(function (a1, b1) { return a1 - b1; }), rC = cvv.map(function (v, q) { return Math.abs(v - (tC.s * idxs[q] + tC.i)); }).sort(function (a1, b1) { return a1 - b1; });
+      var madS = rS[rS.length >> 1], madC = rC[rC.length >> 1], endS = L / 2, endC = L * L / 4;       // 端での、ずれの大きさ（px）で、ちがいを見る
+      idxs.forEach(function (ii, q) {
+        var pS = tS.s * ii + tS.i, pC = tC.s * ii + tC.i;
+        if (Math.abs(svv[q] - pS) * endS > Math.max(2.5, 4 * madS * endS) || Math.abs(cvv[q] - pC) * endC > Math.max(2.5, 4 * madC * endC)) {
+          var devs = []; for (b = 0; b < nb; b++) if (isFinite(obs[ii][b])) { var tt = tcs[b] - mid; devs.push(obs[ii][b] - pS * tt - pC * (tt * tt - v2)); }
+          if (devs.length) { devs.sort(function (a1, b1) { return a1 - b1; }); fm[ii] = devs[devs.length >> 1]; fs[ii] = pS; fc[ii] = pC; }       // 位置は、残った測定の中央値で
+        }
+      });
+      flatSS = 0; fitSS = 0; nObs = 0;               // つじつまを合わせたあとの、ずれの大きさで、もう一度、数える
+      idxs.forEach(function (ii) {
+        var mean2 = 0, n2 = 0, ps = []; for (b = 0; b < nb; b++) if (isFinite(obs[ii][b])) { ps.push([tcs[b] - mid, obs[ii][b]]); mean2 += obs[ii][b]; n2++; }
+        if (!n2) return; mean2 /= n2;
+        ps.forEach(function (pq) { var e0 = pq[1] - mean2, e1 = pq[1] - (fm[ii] + fs[ii] * pq[0] + fc[ii] * (pq[0] * pq[0] - v2)); flatSS += Math.min(e0 * e0, 16); fitSS += Math.min(e1 * e1, 16); nObs++; });       // 飛び離れた測定（波線を拾ったものなど）は、どちらも、1点あたり、4px分までしか、数えない（比べる時に、ひきずられないため）
+      });
+    }
     var rmsFlat = Math.sqrt(flatSS / nObs);
     if (rmsFlat < 1.0 || fitSS > flatSS * 0.6) return null;       // もともと、まっすぐ（測ったずれが小さい）／あてはめても、良くならない：使わない
     for (i = 0; i < nl; i++) {                      // 測れなかった線は、いちばん近い、測れた線の、傾き・曲がりを、借りる（位置は、そのまま）
@@ -1449,37 +1510,223 @@
   function gToXY(gr, x, y) { var u = x, v = y, i, d; for (i = 0; i < 4; i++) { d = fldD(gr, u, v); u = x - d[0]; v = y - d[1]; } return [u, v]; }       // 画像の位置 → 線の通りの空間
   function gTo(q) { return (grid && grid.fld) ? gToXY(grid, q[0], q[1]) : q; }       // いまのマス目で、画像の位置を、線の通りの空間へ（傾き・曲がりがなければ、そのまま）
   function gFrom(q) { return (grid && grid.fld) ? gFromXY(grid, q[0], q[1]) : q; }
+  function detectBand(blk, nx, ny) {                 // 「ふさがれたマス」が、つながって、編み図の端から端まで（幅・高さの6割以上）続き、その上下（左右）に、ふつうのマスがある時、省略の帯（波線など）と見なす
+    var seen = [], j, i, q;
+    for (j = 0; j < ny; j++) seen.push(new Array(nx).fill(false));
+    for (j = 0; j < ny; j++) for (i = 0; i < nx; i++) {
+      if (!blk[j][i] || seen[j][i]) continue;
+      var st = [[i, j]], minI = i, maxI = i, minJ = j, maxJ = j, n = 0; seen[j][i] = true;
+      while (st.length) {
+        var c = st.pop(); n++; minI = Math.min(minI, c[0]); maxI = Math.max(maxI, c[0]); minJ = Math.min(minJ, c[1]); maxJ = Math.max(maxJ, c[1]);
+        [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(function (d) { var a2 = c[0] + d[0], b2 = c[1] + d[1]; if (a2 >= 0 && b2 >= 0 && a2 < nx && b2 < ny && blk[b2][a2] && !seen[b2][a2]) { seen[b2][a2] = true; st.push([a2, b2]); } });
+      }
+      var wRatio = (maxI - minI + 1) / nx, hRatio = (maxJ - minJ + 1) / ny;
+      if (wRatio >= 0.6 && n >= nx * 0.5 && minJ > 0 && maxJ < ny - 1) return true;       // 横に走る帯（上下に、ふつうのマスがある）
+      if (hRatio >= 0.6 && n >= ny * 0.5 && minI > 0 && maxI < nx - 1) return true;       // 縦に走る帯（左右に、ふつうのマスがある）
+    }
+    return false;
+  }
+  function detectCurves(gr) {                       // 省略の帯（波線など）があるか。帯の中では、グリッド線が、内側で、1マスぶん近く途切れる。ほとんどの線（縦・横いずれか）が、途切れ、その位置が、隣の線と、なめらかにつながっている時、帯と見なす
+    var gg = gridGray(); if (!gg || !gr.xs || !gr.ys) return false;
+    var k = gg.k, G = gg.G, W = gg.W, H = gg.H, T = gg.T, xs = gr.xs, ys = gr.ys;
+    function map(u, v) { return gr.fld ? gFromXY(gr, u, v) : [u, v]; }
+    function ridge(px, py, vert) {                  // その点に、細い線があるか（前後2画素は許す）
+      var ix = Math.round(px * k), iy = Math.round(py * k), d, x, y, g0, best, m, o;
+      for (d = -2; d <= 2; d++) {
+        x = vert ? ix + d : ix; y = vert ? iy : iy + d;
+        if (x < 4 || y < 4 || x >= W - 4 || y >= H - 4) continue;
+        g0 = G[y * W + x]; best = 0;
+        for (o = 2; o <= 4; o++) { m = vert ? (G[y * W + x - o] + G[y * W + x + o]) * 0.5 - g0 : (G[(y - o) * W + x] + G[(y + o) * W + x]) * 0.5 - g0; if (m > best) best = m; }
+        if (best > T) return true;
+      }
+      return false;
+    }
+    function check(vert) {                          // vert：縦線を調べる（帯が横に走る）／false：横線を調べる（帯が縦に走る）
+      var lines = vert ? xs : ys, other = vert ? ys : xs, unit = vert ? gr.py : gr.px, a0 = other[0], a1 = other[other.length - 1], len = a1 - a0;
+      if (!(len > unit * 3)) return false;
+      var step = Math.max(1, 1 / k), cs = [], q;
+      for (q = 0; q < lines.length; q++) {
+        var n = Math.floor(len / step), cov = new Array(n), t, y;
+        for (t = 0; t < n; t++) { y = a0 + t * step; var p = vert ? map(lines[q], y) : map(y, lines[q]); cov[t] = ridge(p[0], p[1], vert) ? 1 : 0; }
+        // 短い途切れ（3画素以下）は、うめる
+        var runStart = -1; for (t = 0; t <= n; t++) { if (t < n && !cov[t]) { if (runStart < 0) runStart = t; } else if (runStart >= 0) { if ((t - runStart) * step <= 3) for (var z = runStart; z < t; z++) cov[z] = 1; runStart = -1; } }
+        // 内側の、いちばん長い途切れ（両側に、線がある）を探す
+        var best = 0, bc = -1; runStart = -1; var firstOn = -1, lastOn = -1; for (t = 0; t < n; t++) if (cov[t]) { if (firstOn < 0) firstOn = t; lastOn = t; }
+        if (firstOn >= 0) for (t = firstOn; t <= lastOn + 1; t++) { if (t <= lastOn && !cov[t]) { if (runStart < 0) runStart = t; } else if (runStart >= 0) { var L2 = (t - runStart) * step; if (L2 > best) { best = L2; bc = (runStart + t) / 2 * step + a0; } runStart = -1; } }
+        cs.push(best >= unit * 0.55 ? bc : null);
+      }
+      var withGap = cs.filter(function (v) { return v !== null; }).length;
+      if (withGap < lines.length * 0.6) return false;
+      var pairs = 0, smooth = 0; for (q = 1; q < cs.length; q++) if (cs[q] !== null && cs[q - 1] !== null) { pairs++; if (Math.abs(cs[q] - cs[q - 1]) <= unit * 0.7) smooth++; }
+      return pairs >= 3 && smooth >= pairs * 0.8;       // 途切れる位置が、隣の線と、なめらかにつながっている
+    }
+    return check(true) || check(false);
+  }
+  function computePresence(gr) {                    // マスごとに、「編み図のマスが、そこにあるか」を調べる（首まわりの切り欠きのような、マスのない所には、点線を引かない）。各行を '1'（ある）・'0'（ない）の文字にした配列。全部ある時は null
+    var gg = gridGray(); if (!gg || !gr.xs || !gr.ys) return null;
+    var xs = gr.xs, ys = gr.ys, nx = xs.length - 1, ny = ys.length - 1, k = gg.k, G = gg.G, W = gg.W, H = gg.H, T = gg.T, i, j, o, q;
+    function ridge(px, py, vert) {                  // その点に、細い線（縦線なら、左右より暗い・横線なら、上下より暗い）があるか（前後1画素は、許す）
+      var ix = Math.round(px * k), iy = Math.round(py * k), d, x, y, g, best, m;
+      for (d = -1; d <= 1; d++) {
+        x = vert ? ix + d : ix; y = vert ? iy : iy + d;
+        if (x < 4 || y < 4 || x >= W - 4 || y >= H - 4) continue;
+        g = G[y * W + x]; best = 0;
+        for (o = 2; o <= 4; o++) { m = vert ? (G[y * W + x - o] + G[y * W + x + o]) * 0.5 - g : (G[(y - o) * W + x] + G[(y + o) * W + x]) * 0.5 - g; if (m > best) best = m; }
+        if (best > T) return true;
+      }
+      return false;
+    }
+    function map(u, v) { return gr.fld ? gFromXY(gr, u, v) : [u, v]; }
+    function edgeCov(u0, v0, u1, v1, vert) {        // 線分（線の通りの空間）の上で、線が見える割合
+      var len = Math.hypot(u1 - u0, v1 - v0) * k, n = Math.max(4, Math.min(40, Math.ceil(len / 3))), hit = 0, t, p;
+      for (t = 0; t < n; t++) { p = map(u0 + (u1 - u0) * (t + 0.5) / n, v0 + (v1 - v0) * (t + 0.5) / n); if (ridge(p[0], p[1], vert)) hit++; }
+      return hit / n;
+    }
+    function ink(u0, v0, u1, v1) {                  // マスの中（まわりを、2割ずつ、のぞく）の、黒っぽさの平均
+      var s0 = 0, c = 0, a, b, p, ix, iy, g;
+      for (a = 0; a < 5; a++) for (b = 0; b < 5; b++) {
+        p = map(u0 + (u1 - u0) * (0.2 + 0.6 * a / 4), v0 + (v1 - v0) * (0.2 + 0.6 * b / 4)); ix = Math.round(p[0] * k); iy = Math.round(p[1] * k);
+        if (ix < 0 || iy < 0 || ix >= W || iy >= H) continue;
+        g = G[iy * W + ix]; s0 += Math.max(0, 235 - g) / 235; c++;
+      }
+      return c ? s0 / c : 0;
+    }
+    var pm = [], absent = 0, blk = [];                // blk：4辺のうち、線が見えるのが、1辺以下のマス（波線の帯などが、線を、かくしている所）
+    for (j = 0; j < ny; j++) {
+      var row = [], brow = [];
+      for (i = 0; i < nx; i++) {
+        var isGap = (gr.gapI && gr.gapI.indexOf(i) >= 0) || (gr.gapJ && gr.gapJ.indexOf(j) >= 0), ok = false, cv0 = 4;
+        if (!isGap) {
+          var cv = [edgeCov(xs[i], ys[j], xs[i], ys[j + 1], true), edgeCov(xs[i + 1], ys[j], xs[i + 1], ys[j + 1], true), edgeCov(xs[i], ys[j], xs[i + 1], ys[j], false), edgeCov(xs[i], ys[j + 1], xs[i + 1], ys[j + 1], false)], nOk = 0;
+          for (q = 0; q < 4; q++) if (cv[q] >= 0.5) nOk++;
+          cv0 = nOk;
+          var inkV = ink(xs[i], ys[j], xs[i + 1], ys[j + 1]);
+          ok = nOk >= 3 || (nOk >= 2 && inkV >= 0.02) || inkV >= 0.04;       // 線が3辺以上ある／線が2辺で、中に少し、黒い所がある／中に、記号や文字が、はっきりある（切り欠きの角のマスは、となりのマスと、2辺を共有するだけなので、ここで、はずれる）
+        }
+        row.push(ok ? 1 : 0); if (!ok) absent++;
+        brow.push(!isGap && cv0 <= 1 ? 1 : 0);
+      }
+      pm.push(row); blk.push(brow);
+    }
+    gr.omit = detectBand(blk, nx, ny);                 // 省略の帯（波線など）があるか
+    if (!absent) return null;
+    for (var pass = 0; pass < 2; pass++) {          // まわりを、マスに囲まれた穴（上下左右の3つ以上が、ある）は、あるものとする（薄くて、見つからなかった所を、消さないため）
+      var fill = [];
+      for (j = 0; j < ny; j++) for (i = 0; i < nx; i++) {
+        if (pm[j][i]) continue;
+        var nb = (j > 0 && pm[j - 1][i] ? 1 : 0) + (j < ny - 1 && pm[j + 1][i] ? 1 : 0) + (i > 0 && pm[j][i - 1] ? 1 : 0) + (i < nx - 1 && pm[j][i + 1] ? 1 : 0);
+        if (nb >= 3 && !((gr.gapI && gr.gapI.indexOf(i) >= 0) || (gr.gapJ && gr.gapJ.indexOf(j) >= 0))) fill.push([i, j]);
+      }
+      fill.forEach(function (f) { pm[f[1]][f[0]] = 1; });
+    }
+    var any0 = false; pm.forEach(function (r2) { if (r2.indexOf(0) >= 0) any0 = true; });
+    return any0 ? pm.map(function (r2) { return r2.join(''); }) : null;
+  }
   function refineGridObj(g) {                        // 同じ間隔のマス目を、実際の線の位置を、1本ずつ追ったものに、直す（遠近やレンズの歪みで、間隔が場所によって違っても、点線が、本物の線に乗る。省略の隙間には、線を引かない）。うまく追えなければ、そのまま
     try {
       if (!img || !g || g.xs) return g;
       var pr = gridProfiles(); if (!pr) return g;
-      var k = pr.k, nx = g.i1 - g.i0, ny = g.j1 - g.j0, ex = [], ey = [], i, j;
-      for (i = 0; i <= nx; i++) ex.push((g.ox + (g.i0 + i) * g.px) * k);
-      for (j = 0; j <= ny; j++) ey.push((g.oy + (g.j0 + j) * g.py) * k);
+      var k = pr.k, gg = gridGray(), i, j, gOrig = g;
+      var latOf = function (gl) { var nx = gl.i1 - gl.i0, ny = gl.j1 - gl.j0, lx = [], ly = []; for (i = 0; i <= nx; i++) lx.push(gl.ox + (gl.i0 + i) * gl.px); for (j = 0; j <= ny; j++) ly.push(gl.oy + (gl.j0 + j) * gl.py); return { lx: lx, ly: ly }; };       // 同じ間隔のマス目の、線の位置（画像の座標）
       var meanAt = function (P, a) { var sm = 0, m = 0; a.forEach(function (v) { var ii = Math.round(v); if (ii >= 0 && ii < P.length) { sm += P[ii]; m++; } }); return m ? sm / m : 0; };
-      var lx = [], ly = [];                          // 同じ間隔のマス目の、線の位置（画像の座標）
-      for (i = 0; i <= nx; i++) lx.push(g.ox + (g.i0 + i) * g.px);
-      for (j = 0; j <= ny; j++) ly.push(g.oy + (g.j0 + j) * g.py);
-      var gg = gridGray();
-      var cBand = gg ? deskewProfile(gg, true, lx, [ly[0], ly[ly.length - 1]], g.px, g.py) : null, rBand = gg ? deskewProfile(gg, false, ly, [lx[0], lx[lx.length - 1]], g.py, g.px) : null;       // 縦線用・横線用の、ずれをそろえた山
-      var tryWith = function (PX, PY) {
-        var tx = trackLines(PX, pr.colP, ex, g.px * k), ty = trackLines(PY, pr.rowP, ey, g.py * k);
-        if (!tx || !ty) return null;
-        if (meanAt(PX, tx.pos) < meanAt(PX, ex) * 0.98 || meanAt(PY, ty.pos) < meanAt(PY, ey) * 0.98) return null;       // 追った位置のほうが、線らしくなければ、使わない
-        return { tx: tx, ty: ty };
+      var L0 = latOf(g), ext = { x: [L0.lx[0], L0.lx[L0.lx.length - 1]], y: [L0.ly[0], L0.ly[L0.ly.length - 1]] };       // 四隅で囲んだ範囲
+      var cBand = gg ? deskewProfile(gg, true, L0.lx, ext.y, g.px, g.py) : null, rBand = gg ? deskewProfile(gg, false, L0.ly, ext.x, g.py, g.px) : null;       // 縦線用・横線用の、ずれをそろえた山
+      var attempt = function (gl) {                 // 同じ間隔のマス目 gl を出発点に、線を追う
+        var L = latOf(gl), ex = L.lx.map(function (v) { return v * k; }), ey = L.ly.map(function (v) { return v * k; });
+        var tryWith = function (PX, PY) {
+          var tx = trackLines(PX, pr.colP, ex, gl.px * k, Math.min(40, Math.max(3, Math.round((gl.i1 - gl.i0) * 0.5)))), ty = trackLines(PY, pr.rowP, ey, gl.py * k, Math.min(40, Math.max(3, Math.round((gl.j1 - gl.j0) * 0.5))));       // 四隅で囲んだ範囲の外にも、線が続いていれば、そこまで広げる（段ごとに、マスの数が違う編み図）
+          if (!tx || !ty) return null;
+          var inRange = function (pos, e0) { var lo2 = e0[0] - (e0.length > 1 ? (e0[1] - e0[0]) * 0.6 : 0), hi2 = e0[e0.length - 1] + (e0.length > 1 ? (e0[e0.length - 1] - e0[e0.length - 2]) * 0.6 : 0); return pos.filter(function (v) { return v >= lo2 && v <= hi2; }); };       // 四隅で囲んだ範囲の中の線だけ（範囲の外へ広げた線は、一部の段にしか、ないので、弱い）
+          if (meanAt(PX, inRange(tx.pos, ex)) < meanAt(PX, ex) * 0.98 || meanAt(PY, inRange(ty.pos, ey)) < meanAt(PY, ey) * 0.98) return null;       // 追った位置のほうが、線らしくなければ、使わない
+          return { tx: tx, ty: ty, PX: PX, PY: PY };
+        };
+        return (cBand && rBand && tryWith(cBand, rBand)) || tryWith(pr.colR, pr.rowR) || tryWith(pr.colP, pr.rowP);       // 帯で追う（傾きに強い）→ 画像全体で追う → これまでの方法
       };
-      var r = (cBand && rBand && tryWith(cBand, rBand)) || tryWith(pr.colR, pr.rowR) || tryWith(pr.colP, pr.rowP);       // 帯で追う（傾きに強い）→ 画像全体で追う → これまでの方法
-      if (!r) return g;
+      var periodLattice = function (gl, isCol, P, a0, a1) {       // 山 P の、範囲（a0〜a1・画像の座標）だけで、周期を探して、その間隔の、マス目にする。探せなければ null
+        var cur = isCol ? gl.px : gl.py, Q = new Float32Array(P.length), t;
+        for (t = Math.max(0, Math.floor((a0 - cur * 0.5) * k)); t <= Math.min(P.length - 1, Math.ceil((a1 + cur * 0.5) * k)); t++) Q[t] = P[t];
+        var f = periodicPeaks(Q); if (!f) return null;
+        var T = f.period / k; if (T < 4 || Math.abs(T / cur - 1) < 0.15) return null;
+        var e = isCol ? ext.x : ext.y, o = (f.offset + 0.5) / k, in0 = Math.ceil((e[0] - T * 0.35 - o) / T), in1 = Math.floor((e[1] + T * 0.35 - o) / T);
+        if (in1 - in0 < 3) return null;
+        return isCol ? { px: T, ox: o, py: gl.py, oy: gl.oy, i0: in0, i1: in1, j0: gl.j0, j1: gl.j1 } : { px: gl.px, ox: gl.ox, py: T, oy: o, i0: gl.i0, i1: gl.i1, j0: in0, j1: in1 };
+      };
+      var peakLattice = function (gl, isCol, P, a0, a1, medS) {       // 強い山（線らしい山）どうしの、隣との間隔の、中央値から、間隔を決める。周期を探す処理は、「1つおきに、高さが違う」時に、2倍の間隔と、取りちがえることがあるため、先に、これを試す。a0〜a1：山の座標（縮めた後）
+        var cur = isCol ? gl.px : gl.py, pk = [], t, v;
+        for (t = Math.max(3, Math.floor(a0)); t <= Math.min(P.length - 4, Math.ceil(a1)); t++) {
+          v = (P[t - 1] + 2 * P[t] + P[t + 1]) / 4;
+          if (v >= medS * 0.6 && v >= (P[t - 2] + 2 * P[t - 1] + P[t]) / 4 && v >= (P[t] + 2 * P[t + 1] + P[t + 2]) / 4) { if (pk.length && t - pk[pk.length - 1] <= 3) { if (v > (P[pk[pk.length - 1] - 1] + 2 * P[pk[pk.length - 1]] + P[pk[pk.length - 1] + 1]) / 4) pk[pk.length - 1] = t; } else pk.push(t); }
+        }
+        if (pk.length < 4) return null;
+        var sp = []; for (t = 1; t < pk.length; t++) sp.push((pk[t] - pk[t - 1]) / k);
+        sp.sort(function (a2, b2) { return a2 - b2; });
+        var T = sp[sp.length >> 1]; if (T < 4 || Math.abs(T / cur - 1) < 0.15) return null;
+        var e = isCol ? ext.x : ext.y, o = pk[0] / k, in0 = Math.ceil((e[0] - T * 0.35 - o) / T), in1 = Math.floor((e[1] + T * 0.35 - o) / T);
+        if (in1 - in0 < 3) return null;
+        return isCol ? { px: T, ox: o, py: gl.py, oy: gl.oy, i0: in0, i1: in1, j0: gl.j0, j1: gl.j1 } : { px: gl.px, ox: gl.ox, py: T, oy: o, i0: gl.i0, i1: gl.i1, j0: in0, j1: in1 };
+      };
+      var suggest = function (res, gl) {            // 入れた数（や、先に探した間隔）が、実際の線の間隔と、大きくちがう時（粗すぎる＝追った線の間に、強い山が、たくさん残っている／細かすぎる＝追った線の、半分以上が、弱くて補った線）は、画像の山から、実際の間隔のマス目を作る。縦棒の記号は、線より弱いので、数えない
+        var alt = gl, changed = false;
+        [true, false].forEach(function (isCol) {
+          var t = isCol ? res.tx : res.ty, P = isCol ? res.PX : res.PY, pos = t.pos, strs = [], q, tt;
+          t.str.forEach(function (v) { if (v > 0) strs.push(v); });
+          if (strs.length < 3) return;
+          strs.sort(function (a1, b1) { return a1 - b1; });
+          var medS = strs[strs.length >> 1], sp = [];
+          for (q = 1; q < pos.length; q++) if (!t.gap[q - 1]) sp.push(pos[q] - pos[q - 1]);
+          sp.sort(function (a1, b1) { return a1 - b1; });
+          var medSp = sp.length ? sp[sp.length >> 1] : (isCol ? gl.px : gl.py) * k, a0 = pos[0] - medSp * 0.5, a1 = pos[pos.length - 1] + medSp * 0.5, extra = 0;
+          for (tt = Math.max(3, Math.floor(a0)); tt <= Math.min(P.length - 4, Math.ceil(a1)); tt++) {
+            var v = (P[tt - 1] + 2 * P[tt] + P[tt + 1]) / 4;
+            if (v < medS * 0.6 || v < (P[tt - 2] + 2 * P[tt - 1] + P[tt]) / 4 || v < (P[tt] + 2 * P[tt + 1] + P[tt + 2]) / 4) continue;       // 強い山だけ（まわりより高い）
+            var near = false; for (q = 0; q < pos.length; q++) if (Math.abs(pos[q] - tt) <= Math.max(3, medSp * 0.3)) { near = true; break; }
+            if (!near) extra++;
+          }
+          var nStrong = strs.length, coarse = extra >= Math.max(2, nStrong * 0.3), fine = nStrong < pos.length * 0.65;
+          if (!coarse && !fine) return;
+          var lt = peakLattice(alt, isCol, P, a0, a1, medS) || periodLattice(alt, isCol, P, a0 / k, a1 / k); if (!lt) return;
+          alt = lt; changed = true;
+        });
+        return changed ? alt : null;
+      };
+      var res = attempt(g), alt0;
+      if (res) {
+        alt0 = suggest(res, g);
+        if (alt0) {                                 // 実際の間隔に合わせた結果が、前より、良くなった（強い線の本数が、へらず、強さも、落ちない）軸だけ、採用する（縦棒の記号に、引きずられた結果は、採用しない）
+          var res2 = attempt(alt0);
+          if (res2) {
+            var qa = function (rs, isCol) { var t = isCol ? rs.tx : rs.ty, arr = []; t.str.forEach(function (v) { if (v > 0) arr.push(v); }); arr.sort(function (a1, b1) { return a1 - b1; }); return { n: arr.length, m: arr.length ? arr[Math.floor(arr.length * 0.25)] : 0 }; };       // 強い線の本数と、下から4分の1の位置の強さ（弱い線が混ざると、落ちる）
+            var okAx = function (isCol) { var a = qa(res, isCol), b = qa(res2, isCol); return b.n >= a.n * 0.8 && b.m >= a.m * 0.75; };
+            var useC = alt0.px !== g.px && okAx(true), useR = alt0.py !== g.py && okAx(false);
+            if (useC || useR) {
+              var gF = { px: useC ? alt0.px : g.px, ox: useC ? alt0.ox : g.ox, py: useR ? alt0.py : g.py, oy: useR ? alt0.oy : g.oy, i0: useC ? alt0.i0 : g.i0, i1: useC ? alt0.i1 : g.i1, j0: useR ? alt0.j0 : g.j0, j1: useR ? alt0.j1 : g.j1 };
+              var res3 = (useC && useR) ? res2 : attempt(gF);
+              if (res3) { res = res3; g = gF; }
+            }
+          }
+        }
+      }
+      else {                                        // 追えなかった：数が、実際と、大きくちがうのかもしれない。画像の山から、間隔を探して、もう一度
+        var gx2 = cBand ? periodLattice(g, true, cBand, ext.x[0], ext.x[1]) : null, base = gx2 || g, gy2 = rBand ? periodLattice(base, false, rBand, ext.y[0], ext.y[1]) : null, g3 = gy2 || base;
+        if (g3 !== g) { res = attempt(g3); if (res) g = g3; }
+      }
+      var r = res;
+      if (!r) return gOrig;
       var xs = r.tx.pos.map(function (v) { return v / k; }), ys = r.ty.pos.map(function (v) { return v / k; });
       var mp = function (arr, gp) { var sm = 0, m = 0; for (var q = 1; q < arr.length; q++) if (!gp[q - 1]) { sm += arr[q] - arr[q - 1]; m++; } return m ? sm / m : (arr[arr.length - 1] - arr[0]) / Math.max(1, arr.length - 1); };       // 隙間をのぞいた、ふつうのマスの大きさ
       var pxm = mp(xs, r.tx.gap), pym = mp(ys, r.ty.gap), gi = [], gj = [];
       r.tx.gap.forEach(function (v, q) { if (v) gi.push(q); }); r.ty.gap.forEach(function (v, q) { if (v) gj.push(q); });
-      var out = { px: pxm, ox: xs[0] - g.i0 * pxm, py: pym, oy: ys[0] - g.j0 * pym, i0: g.i0, i1: g.i0 + xs.length - 1, j0: g.j0, j1: g.j0 + ys.length - 1, xs: xs, ys: ys };
+      var Lg = latOf(g), addL = 0, addT = 0;         // 範囲の左（上）に、広がった線の本数（番号の始まりを、ずらすため）
+      while (addL < xs.length - 1 && xs[addL] < Lg.lx[0] - 0.6 * pxm) addL++;
+      while (addT < ys.length - 1 && ys[addT] < Lg.ly[0] - 0.6 * pym) addT++;
+      var out = { px: pxm, ox: xs[0] - (g.i0 - addL) * pxm, py: pym, oy: ys[0] - (g.j0 - addT) * pym, i0: g.i0 - addL, i1: g.i0 - addL + xs.length - 1, j0: g.j0 - addT, j1: g.j0 - addT + ys.length - 1, xs: xs, ys: ys };
       if (gi.length) out.gapI = gi;
       if (gj.length) out.gapJ = gj;
       var ff = fitGridField(out);                   // 線が、斜め・曲がっている時は、その傾き・曲がりを、足す（まっすぐなら、足さない）
       if (ff) { out.xs = ff.xs; out.ys = ff.ys; out.fld = ff.fld; out.ox = ff.xs[0] - out.i0 * out.px; out.oy = ff.ys[0] - out.j0 * out.py; }
-      return out;
+      var pmk = computePresence(out); if (pmk) out.pm = pmk;       // マスのない所（切り欠きなど）が、あれば、覚える
+      if (!out.omit && detectCurves(out)) out.omit = true;       // 長くて曲がった線（省略の波線など）が、あるか
+      return out;       // out.omit：省略の帯（波線など）が、見つかったか
     } catch (e) { return g; }
   }
   function gClamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -1511,6 +1758,11 @@
     return c;
   }
   function isGapCell(isX, idx) { return gapN(isX, idx, idx) > 0; }
+  function cellPresent(i, j) {                        // そのマスに、編み図のマスがあるか（マスのない所＝切り欠きなどは false。調べていない時は、いつも true）
+    if (!grid.pm) return true;
+    var r = grid.pm[j - grid.j0]; if (!r) return false;
+    return r.charAt(i - grid.i0) === '1';
+  }
   function skipGapCell(isX, idx, start) {            // 隙間のマスなら、始めのマスのほうへ、1つずつもどして、ふつうのマスにする
     var guard = 0; while (isGapCell(isX, idx) && idx !== start && guard++ < 1000) idx += idx < start ? 1 : -1;
     return idx;
@@ -1526,6 +1778,13 @@
      gb.setAttribute('data-tip', tip); gb.setAttribute('aria-label', tip);
   }
   var gridHideTimer = null, gridHideNoted = false;
+  function autoCountVisibility() {                    // 省略（波線の帯・線のない隙間）が見つかったら、目数・段数の表示を、自動で隠す（描かれていない目・段があり、数が実際と合わないため）。「ぴったり」に塗る機能は、そのまま
+    if (!grid || !gridCount) return;
+    if (grid.omit || (grid.gapI && grid.gapI.length) || (grid.gapJ && grid.gapJ.length)) {
+      gridCount = false; scheduleSave(); updateGridMeasure();
+      showNote('省略（波線や隙間）がありそうなので、数の表示を隠しました（マスのマーク →「数を出す」で、表示できます）');
+    }
+  }
   function upgradeGrid() {                          // 前の版で保存した、同じ間隔のマス目を、線を1本ずつ追ったものに、直す（直せなければ、そのまま。何度も試さない）
     if (!img || !grid || grid.xs || grid.rf) return;
     var g2 = refineGridObj(grid);
@@ -1544,7 +1803,7 @@
     return (g.i1 - g.i0) * g.px < bw * 0.5 || (g.j1 - g.j0) * g.py < bh * 0.5;
   }
   function guideNoGrid() {                          // マス目が、自動で見つからなかった：手動（四隅を合わせて、数を入れる）を、案内
-    showModal('マス目が見つかりませんでした。\n四隅を合わせて、横の目数・縦の段数を入れると、マス目を合わせられます', 'マス目を合わせる', startFix, true, 'やめる');
+    showModal('マス目が見つかりませんでした。\n四隅を合わせて、横の目数・縦の段数を入れると、マス目を合わせられます\n※写真の編み図は、正確に合わないことがあります（デジタルの編み図が、おすすめです）', 'マス目を合わせる', startFix, true, 'やめる');
   }
   function showGridSheet(msg, btns) {                // 画面の下に、小さな選択の枠を出す。btns：[{ label, main, fn }]
     $('grid-sheet-msg').textContent = msg;
@@ -1570,6 +1829,7 @@
     var g = detectGrid();
     if (!g) { grid = null; gridOn = false; syncGridBtn(); requestDraw(); guideNoGrid(); return false; }
     grid = refineGridObj(g); gridOn = true; gridShow = true; scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw();       // 線を、1本ずつ追って、実際の位置に合わせる
+    autoCountVisibility();
     confirmGrid(gridPartial(g));
     return true;
   }
@@ -1586,6 +1846,7 @@
       if (a1 - a0 >= 3 && b1 - b0 >= 3) { g.i0 = a0; g.i1 = a1; g.j0 = b0; g.j1 = b1; }
     }
     grid = refineGridObj(g); gridOn = true; gridShow = true; scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw();       // 線を、1本ずつ追って、実際の位置に合わせる
+    autoCountVisibility();
     confirmGrid(gridPartial(g));
   }
   $('grid-btn').addEventListener('click', function () {      // マス目に合わせる：編み図ごとの「入／切」（かぎ針の記号図などは、切のままで使う）
@@ -1597,6 +1858,7 @@
       showGridSheet('マス目モードは「入」です', [
         { label: '閉じる', main: true, fn: function () { autoHideGrid(); } },
         { label: '合わせ直す', fn: function () { startFix(); } },
+        { label: gridCount ? '数を隠す' : '数を出す', fn: function () { gridCount = !gridCount; scheduleSave(); updateGridMeasure(); requestDraw(false); } },       // 目数・段数の表示だけを、隠す・出す（「ぴったり」は、そのまま）
         { label: '切にする', fn: gridOffNow }
       ]);
       return;
@@ -1656,7 +1918,10 @@
     var low = a.bottom + 8;
     selBar.style.top = (low + b.height <= window.innerHeight - 8 ? low : Math.max(topInset() + 4, a.top - 8 - b.height)) + 'px';
   }
+  var gridCount = true;                              // 目数・段数の表示（マス目モードの「○目」「○段」のバッジ）を出すか。省略（波線など）のある編み図は、数が実際と合わないので、隠せる。「ぴったり」に塗る機能は、数の表示とは、別
+  function loadGridCount(id) { if (!storageOk) return true; try { var it = readAll().items[id]; return !(it && it.gcn === 0); } catch (e) {} return true; }
   function updateGridMeasure() {                    // 直線：かかっているマスの数（目／段）。四角・円：目×段。はしが、マスの真ん中・線から外れていたら、「約」
+    if (!gridCount) { if (!measBtn.hidden) measBtn.hidden = true; return; }       // 数を隠している
     var t = measTarget(), st = t && t.st; if (!st) { if (!measBtn.hidden) measBtn.hidden = true; return; }
     var a = st.p[0], b = st.p[st.p.length - 1], txt = null, mid, below, ga = gTo(a), gb = gTo(b);       // バッジの位置は、画像の位置（a, b）／マスを数えるのは、線の通りの空間（ga, gb）
     var u = function (x, o, pxv) { return (x - o) / pxv; };
@@ -1869,6 +2134,7 @@
           xg = gX(gq);
           for (jj = grid.j0; jj < grid.j1; jj++) {
             if (grid.gapJ && isGapCell(false, jj)) continue;
+            if (grid.pm && !cellPresent(gq - 1, jj) && !cellPresent(gq, jj)) continue;       // 両どなりに、マスがない線は、引かない
             p0 = gFrom([xg, gY(jj)]); pm = gFrom([xg, gY(jj + 0.5)]); p1 = gFrom([xg, gY(jj + 1)]);
             if (Math.max(p0[1], p1[1]) < vy0 - padV || Math.min(p0[1], p1[1]) > vy1 + padV || Math.max(p0[0], p1[0]) < vx0 - padV || Math.min(p0[0], p1[0]) > vx1 + padV) continue;
             ctx.moveTo(p0[0], p0[1]); ctx.lineTo(pm[0], pm[1]); ctx.lineTo(p1[0], p1[1]);
@@ -1878,6 +2144,7 @@
           yg = gY(gq);
           for (ii = grid.i0; ii < grid.i1; ii++) {
             if (grid.gapI && isGapCell(true, ii)) continue;
+            if (grid.pm && !cellPresent(ii, gq - 1) && !cellPresent(ii, gq)) continue;       // 上下に、マスがない線は、引かない
             p0 = gFrom([gX(ii), yg]); pm = gFrom([gX(ii + 0.5), yg]); p1 = gFrom([gX(ii + 1), yg]);
             if (Math.max(p0[1], p1[1]) < vy0 - padV || Math.min(p0[1], p1[1]) > vy1 + padV || Math.max(p0[0], p1[0]) < vx0 - padV || Math.min(p0[0], p1[0]) > vx1 + padV) continue;
             ctx.moveTo(p0[0], p0[1]); ctx.lineTo(pm[0], pm[1]); ctx.lineTo(p1[0], p1[1]);
@@ -2132,6 +2399,12 @@
     var dist = function (a, b) { return Math.hypot(q[a * 2] - q[b * 2], q[a * 2 + 1] - q[b * 2 + 1]); };
     var Wr = (dist(0, 1) + dist(3, 2)) / 2, Hr = (dist(0, 3) + dist(1, 2)) / 2;
     if (!(Wr > 8 && Hr > 8)) return null;
+    var xL = (q[0] + q[6]) / 2, xR = (q[2] + q[4]) / 2, yT = (q[1] + q[3]) / 2, yB = (q[5] + q[7]) / 2, tolR = 0.015 * Math.max(xR - xL, yB - yT);
+    if (xR - xL > 8 && yB - yT > 8 && Math.abs(q[0] - xL) <= tolR && Math.abs(q[6] - xL) <= tolR && Math.abs(q[2] - xR) <= tolR && Math.abs(q[4] - xR) <= tolR && Math.abs(q[1] - yT) <= tolR && Math.abs(q[3] - yT) <= tolR && Math.abs(q[5] - yB) <= tolR && Math.abs(q[7] - yB) <= tolR) {       // 四隅が、ほぼ長方形（デジタルの編み図など）：画像は、変形せず、全体を、そのまま残す（マス目の四角だけを、覚える）
+      var ic = document.createElement('canvas'); ic.width = iw; ic.height = ih; ic.getContext('2d').drawImage(im, 0, 0);
+      ic.naturalWidth = iw; ic.naturalHeight = ih; ic.fixRect = { x: xL, y: yT, w: xR - xL, h: yB - yT };
+      return ic;
+    }
     var kk = Math.min(1, 4096 / Math.max(Wr, Hr)), tries = 0, Wc, Hc, h, hi, padL, padT, CW, CH;
     for (;;) {
       Wc = Math.max(16, Math.round(Wr * kk)); Hc = Math.max(16, Math.round(Hr * kk));
@@ -2141,12 +2414,12 @@
       var minU = 0, maxU = Wc, minV = 0, maxV = Hc, cs = [0, 0, iw, 0, iw, ih, 0, ih], ok = true, i;
       for (i = 0; i < 4; i++) {                                         // 写真の4つの角が、直した画像の、どこに来るか（これで、写真全体が入る大きさが決まる）
         var den = hi[6] * cs[i * 2] + hi[7] * cs[i * 2 + 1] + 1;
-        if (!(den > 1e-6)) { ok = false; break; }
+        if (!(den > 1e-6)) { ok = false; continue; }
         var cu = (hi[0] * cs[i * 2] + hi[1] * cs[i * 2 + 1] + hi[2]) / den, cv = (hi[3] * cs[i * 2] + hi[4] * cs[i * 2 + 1] + hi[5]) / den;
         minU = Math.min(minU, cu); maxU = Math.max(maxU, cu); minV = Math.min(minV, cv); maxV = Math.max(maxV, cv);
       }
-      if (!ok) { minU = 0; maxU = Wc; minV = 0; maxV = Hc; }           // 角が、うまく移らない（強い斜め）時は、マス目の四角だけ
-      minU = Math.max(minU, -Wc); maxU = Math.min(maxU, 2 * Wc); minV = Math.max(minV, -Hc); maxV = Math.min(maxV, 2 * Hc);
+      if (!ok) { minU = Math.min(minU, -3 * Wc); maxU = Math.max(maxU, 4 * Wc); minV = Math.min(minV, -3 * Hc); maxV = Math.max(maxV, 4 * Hc); }           // 写真の角が、うまく移らない（強い斜め）時も、四角のまわりを、広く（上下左右に、3〜4倍）残す
+      minU = Math.max(minU, -12 * Wc); maxU = Math.min(maxU, 13 * Wc); minV = Math.max(minV, -12 * Hc); maxV = Math.min(maxV, 13 * Hc);       // 画像全体が入るように、広く取る（広すぎる時は、画素数の上限で、縮める）
       padL = Math.ceil(-minU); padT = Math.ceil(-minV); CW = padL + Math.ceil(maxU); CH = padT + Math.ceil(maxV);
       if (CW * CH <= 9e6 || tries++ > 4) break;
       kk *= Math.sqrt(9e6 / (CW * CH)) * 0.98;                          // 大きすぎる時は、縮める（900万画素まで）
@@ -2234,9 +2507,40 @@
     }
     return ok;
   }
+  function guessChartRect() {                         // 編み図の、線が集まっている範囲（階段状でも、いちばん広い所まで）を、画像から探す。{ x, y, w, h }（もとの画像の座標）。見つからなければ null。最初の四隅のつまみを、置くための、目安
+    if (!imgOrig) return null;
+    var save = img, res = null;
+    try {
+      img = imgOrig; ggCache = null;
+      var gg = gridGray(); if (!gg) return null;
+      var k = gg.k, G = gg.G, W = gg.W, H = gg.H, T = gg.T, B = Math.max(8, Math.round(Math.max(W, H) / 70)), bw = Math.ceil(W / B), bh = Math.ceil(H / B), cnt = new Float32Array(bw * bh), x, y, o, g0, b1, b2, m, i;
+      for (y = 4; y < H - 4; y++) for (x = 4; x < W - 4; x++) {
+        g0 = G[y * W + x]; b1 = 0; b2 = 0;
+        for (o = 2; o <= 4; o++) { m = (G[y * W + x - o] + G[y * W + x + o]) * 0.5 - g0; if (m > b1) b1 = m; m = (G[(y - o) * W + x] + G[(y + o) * W + x]) * 0.5 - g0; if (m > b2) b2 = m; }
+        if (b1 > T || b2 > T) cnt[((y / B) | 0) * bw + ((x / B) | 0)]++;       // 細い線が、ある画素を、ブロックごとに、数える
+      }
+      var dens = new Float32Array(bw * bh), sorted = [];
+      for (i = 0; i < bw * bh; i++) { dens[i] = cnt[i] / (B * B); sorted.push(dens[i]); }
+      sorted.sort(function (a1, b3) { return a1 - b3; });
+      var thr = Math.max(0.03, 0.35 * sorted[Math.floor(sorted.length * 0.9)]), seen = new Uint8Array(bw * bh), best = null, bestN = 0;       // 線の多いブロック
+      for (i = 0; i < bw * bh; i++) {
+        if (dens[i] < thr || seen[i]) continue;
+        var st = [i], n = 0, mnX = 1e9, mxX = -1, mnY = 1e9, mxY = -1; seen[i] = 1;
+        while (st.length) {
+          var c = st.pop(), cx = c % bw, cy = (c - cx) / bw; n++; if (cx < mnX) mnX = cx; if (cx > mxX) mxX = cx; if (cy < mnY) mnY = cy; if (cy > mxY) mxY = cy;
+          for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) { var nx2 = cx + dx, ny2 = cy + dy; if ((dx || dy) && nx2 >= 0 && ny2 >= 0 && nx2 < bw && ny2 < bh) { var ni = ny2 * bw + nx2; if (dens[ni] >= thr && !seen[ni]) { seen[ni] = 1; st.push(ni); } } }
+        }
+        if (n > bestN) { bestN = n; best = { x0: mnX, x1: mxX, y0: mnY, y1: mxY }; }       // いちばん大きい、線の多い塊
+      }
+      if (best && bestN >= 6) res = { x: best.x0 * B / k, y: best.y0 * B / k, w: (best.x1 - best.x0 + 1) * B / k, h: (best.y1 - best.y0 + 1) * B / k };
+    } finally { img = save; ggCache = null; }
+    return res;
+  }
   function fixInitialQuad() {                      // 最初の丸の位置：マス目が見つかっていれば、その四隅／なければ、画像のふちから、少し内側
     var iw = imgOrig.naturalWidth, ih = imgOrig.naturalHeight;
     if (grid && img === imgOrig) { var c0 = gFrom([gX(grid.i0), gY(grid.j0)]), c1 = gFrom([gX(grid.i1), gY(grid.j0)]), c2 = gFrom([gX(grid.i1), gY(grid.j1)]), c3 = gFrom([gX(grid.i0), gY(grid.j1)]); return [c0[0], c0[1], c1[0], c1[1], c2[0], c2[1], c3[0], c3[1]]; }
+    var gr = guessChartRect();                       // マス目が、まだ見つかっていない時：編み図の、線が集まっている範囲全体（階段状なら、いちばん広い段まで）に、つまみを置く
+    if (gr && gr.w < iw * 0.97 && gr.h < ih * 0.97 && gr.w > 40 && gr.h > 40) { var gx0 = Math.max(0, gr.x), gy0 = Math.max(0, gr.y), gx1 = Math.min(iw, gr.x + gr.w), gy1 = Math.min(ih, gr.y + gr.h); return [gx0, gy0, gx1, gy0, gx1, gy1, gx0, gy1]; }
     var mx = iw * 0.06, my = ih * 0.06;
     return [mx, my, iw - mx, my, iw - mx, ih - my, mx, ih - my];
   }
@@ -2265,7 +2569,7 @@
       { label: '横' + c2 + '×縦' + r2 + 'にする', main: true, fn: function () {
         var f2 = img.fixRect; if (!f2) return;
         grid = refineGridObj({ px: f2.w / c2, ox: f2.x, py: f2.h / r2, oy: f2.y, i0: 0, i1: c2, j0: 0, j1: r2 }); gridOn = true; gridShow = true; fixC = [c2, r2];
-        scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw(); autoHideGrid();
+        scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw(); autoCountVisibility(); autoHideGrid();
       } },
       { label: 'このまま' }
     ]);
@@ -2279,7 +2583,7 @@
     if (manual) { var fr = nimg.fixRect || { x: 0, y: 0, w: nimg.naturalWidth, h: nimg.naturalHeight }; grid = refineGridObj({ px: fr.w / cols, ox: fr.x, py: fr.h / rows, oy: fr.y, i0: 0, i1: cols, j0: 0, j1: rows }); gridOn = true; gridShow = true; }       // 4つの角で囲んだ四角が、マス目ちょうど：1マス＝その四角の幅（高さ）÷数。外側の番号やメモは、そのまま残る
     scheduleSave(); syncGridBtn(); syncBtns(); fitImage(); dirtyChart = true; requestDraw();
     fixC = manual ? [cols, rows] : null;
-    if (manual) { autoHideGrid(); setTimeout(function () { checkManualCounts(cols, rows); }, 150); } else setTimeout(function () { autoGridFirst(true); }, 80);       // 数が入っていなければ、直した画像で、マス目を、探す
+    if (manual) { autoCountVisibility(); autoHideGrid(); setTimeout(function () { checkManualCounts(cols, rows); }, 150); } else setTimeout(function () { autoGridFirst(true); }, 80);       // 数が入っていなければ、直した画像で、マス目を、探す
   }
   function startFix() {                            // 歪み補正の画面を開く（塗りや印があれば、消えることを、先に確認）
     if (!imgOrig) return;
@@ -2365,7 +2669,7 @@
   function loadFix(id) {                           // 保存してあった、直した時の4つの角
     if (!storageOk) return null;
     try {
-      var it = readAll().items[id], f = it && it.fixv === 2 && it.fix;
+      var it = readAll().items[id], f = it && it.fixv === 3 && it.fix;
       if (Array.isArray(f) && f.length === 8 && f.every(function (v) { return typeof v === 'number' && isFinite(v); })) return f;
     } catch (e) {}
     return null;
@@ -2383,7 +2687,7 @@
     chartId = cid;
     chartName = file.name; tallyNoted = false;       // かぞえるのヒントは、編み図を開くたびに、また1回
     strokes = loadFor(chartId).filter(function (o) { var Fo = frameOf(o); return Fo.maxX >= 0 && Fo.minX <= img.naturalWidth && Fo.maxY >= 0 && Fo.minY <= img.naturalHeight; });       // 画像の外にある線（見えないのに、選べてしまう）は、取り除く
-    count = loadCount(chartId); grid = loadGrid(chartId); gridOn = !!(grid && grid.on); gridShow = !grid || grid.show !== false; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
+    count = loadCount(chartId); grid = loadGrid(chartId); gridCount = loadGridCount(chartId); gridOn = !!(grid && grid.on); gridShow = !grid || grid.show !== false; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
     if (strokes.length || count || grid) scheduleSave();       // 「最近使った画像」として、保存の日時を更新しておく
     syncGridBtn(); syncBtns(); autoHideGrid();
     if (grid && !grid.xs) setTimeout(upgradeGrid, 300);       // 前の版で保存した、同じ間隔のマス目は、開いた直後に、線を追い直す
@@ -2400,7 +2704,7 @@
   function closeImage() {
     cancelPaint(); mode = 'idle'; pts.clear(); pinchLast = 0; midLast = null; editing = null; selStroke = null; grp = null; cancelLasso();
     flush(); hideGridSheet();
-    img = null; imgOrig = null; fixQ = null; fixC = null; monoSrc = null; fadeSrc = null; chartId = null; grid = null; gridOn = false; gridShow = true; strokes = []; count = 0; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
+    gridCount = true; img = null; imgOrig = null; fixQ = null; fixC = null; monoSrc = null; fadeSrc = null; chartId = null; grid = null; gridOn = false; gridShow = true; strokes = []; count = 0; hist = []; redoH = []; cur = null; ver++; cacheKey = '';
     syncBtns();
     placeholder.hidden = false;
     viewer.classList.add('empty'); viewer.classList.remove('dragging');
@@ -2542,8 +2846,8 @@
     }
     if (cur.k === 'l') {
       var dx = q[0] - a[0], dy = q[1] - a[1];
-      if (Math.abs(dy) < Math.abs(dx) * 0.0875) dy = 0;
-      else if (Math.abs(dx) < Math.abs(dy) * 0.0875) dx = 0;
+      if (Math.abs(dy) < Math.abs(dx) * AXIS_TAN) dy = 0;       // 水平から、約1.5度以内なら、水平に（斜めの編み図の、1〜4度の傾きは、そのまま残す）
+      else if (Math.abs(dx) < Math.abs(dy) * AXIS_TAN) dx = 0;
       q = [a[0] + dx, a[1] + dy];
     }
     if (cur.k === 'e') {                            // 縦横がほぼ同じなら、正円にそろえる
@@ -2555,7 +2859,7 @@
   function gridInside(q0) {                        // その点が、見つけたマス目の中（まわり半マスまで）か。外なら、マス目に合わせずに、ふつうに描く（見つけられなかった部分も、塗れるように）
     if (!grid) return false;
     var q = gTo(q0);                                 // 傾き・曲がりのあるマス目は、線の通りの空間で、見る
-    return !!grid && q[0] >= gX(grid.i0) - grid.px * 0.5 && q[0] <= gX(grid.i1) + grid.px * 0.5 && q[1] >= gY(grid.j0) - grid.py * 0.5 && q[1] <= gY(grid.j1) + grid.py * 0.5 && !(grid.gapI && isGapCell(true, gCellI(q[0]))) && !(grid.gapJ && isGapCell(false, gCellJ(q[1])));       // 省略の隙間の中は、マス目の外とする
+    return !!grid && q[0] >= gX(grid.i0) - grid.px * 0.5 && q[0] <= gX(grid.i1) + grid.px * 0.5 && q[1] >= gY(grid.j0) - grid.py * 0.5 && q[1] <= gY(grid.j1) + grid.py * 0.5 && !(grid.gapI && isGapCell(true, gCellI(q[0]))) && !(grid.gapJ && isGapCell(false, gCellJ(q[1]))) && (!grid.pm || cellPresent(gCellI(q[0]), gCellJ(q[1])));       // 省略の隙間・マスのない所（切り欠きなど）は、マス目の外とする
   }
   function penFitCells(st) {                       // 「ぴったり」でなぞった線（マス目がある時）：始まりと終わりを、マスのふちにそろえる（始まり＝最初のマスの手前のふち／終わり＝最後のマスの向こうのふち）
     if (!st || st.k !== 'p' || st.cap !== 'f' || !gridOn || !grid || st.free || st.p.length < 2) return st;
@@ -2973,8 +3277,8 @@
       grp.poly = ed.changed ? ed.poly0.map(mapS) : ed.poly0;
       ver++; requestDraw(false); return;
     }
-    if (ed.group && h.type === 'rotate') {          // まとまりを回す：5度ごとに止まる。全部の線を、まとまりの中心のまわりに回す
-      var stG = Math.PI / 36, aG = Math.atan2(e.clientY - ed.cs[1], e.clientX - ed.cs[0]) - ed.a0;
+    if (ed.group && h.type === 'rotate') {          // まとまりを回す：1度ごとに止まる。全部の線を、まとまりの中心のまわりに回す
+      var stG = Math.PI / 180, aG = Math.atan2(e.clientY - ed.cs[1], e.clientX - ed.cs[0]) - ed.a0;
       aG = Math.round(aG / stG) * stG; aG = Math.atan2(Math.sin(aG), Math.cos(aG));
       ed.angle = aG; ed.changed = Math.abs(aG) > 1e-9;
       grp.items = ed.items.map(function (o2, k) {
@@ -3000,8 +3304,8 @@
       ns = cloneStroke(o); ns.w = nw; ed.changed = Math.abs(nw - o.w) > 1e-6;
       strokes[ed.idx] = ns; selStroke = ns; ver++; requestDraw(false); return;
     }
-    if (h.type === 'rotate') {                      // 回転：5度ごとに、ぴたっと止まる
-      var step = Math.PI / 36, ang = Math.atan2(e.clientY - ed.cs[1], e.clientX - ed.cs[0]) - ed.a0;
+    if (h.type === 'rotate') {                      // 回転：1度ごとに、ぴたっと止まる（斜めの編み図に、合わせやすいように。前は、5度ごと）
+      var step = Math.PI / 180, ang = Math.atan2(e.clientY - ed.cs[1], e.clientX - ed.cs[0]) - ed.a0;
       ang = Math.round(ang / step) * step; ang = Math.atan2(Math.sin(ang), Math.cos(ang));
       ed.angle = ang; ed.changed = Math.abs(ang) > 1e-9;
       ns = ed.changed ? rotateStroke(o, ang) : o;
@@ -3012,7 +3316,7 @@
         pts = o.p.map(function (q) { return [q[0] + cm1[0], q[1] + cm1[1]]; });
       } else if (h.type === 'end') {                // 直線の端：もう一方の端を中心に、長さ・向きを変える（水平・垂直に近ければ、そろえる）
         pts = o.p.map(function (q) { return [q[0], q[1]]; });
-        pts[h.i] = axisFix(o.p[1 - h.i], [o.p[h.i][0] + dx, o.p[h.i][1] + dy]);
+        pts[h.i] = axisFix(o.p[1 - h.i], [o.p[h.i][0] + dx, o.p[h.i][1] + dy], AXIS_TAN_EDIT);       // 両端のつまみ：行の、わずかな傾きに合わせられるように、そろえる幅は、ほぼ0
       } else {                                      // 角・辺のドラッグ：反対側を固定して、大きさを変える
         var pd = padOf(o), B = strokeBox(o), F = { minX: B.minX - pd, minY: B.minY - pd, maxX: B.maxX + pd, maxY: B.maxY + pd };
         if (h.type === 'corner' && (pd > 0 || o.k === 'e' || o.k === 'x')) {        // 太さのある線・円：四隅のつまみは、反対側の角を支点に、同じ比率で拡大縮小（線の太さも、同じ比率で変わる）。円は、正円のまま（楕円は、縦横の比のまま）。楕円にしたい時は、辺のつまみを使う
@@ -3301,11 +3605,13 @@
 
   /* ---------- 形の補正：なぞったあと、止めると、直線・半円（円弧）・円・四角にととのえる（編み図ルーラーと同じ判定） ---------- */
   var snapTimer = null, snapped = null, snapAnchor = null;
+  var AXIS_TAN = Math.tan(1.0 * Math.PI / 180);       // 直線を引く時に、水平・垂直に、そろえる幅（約1度）。前は、約5度で、写真の編み図の、わずかな傾きが、消えていた
+  var AXIS_TAN_EDIT = Math.tan(0.3 * Math.PI / 180);   // 両端のつまみで、角度を合わせる時の、そろえる幅（約0.3度）。広いと、行の、わずかな傾きに、合わせられない（水平に、吸い寄せられる）
   var SNAP_MS = 550, SNAP_MOVE = 5;                 // 止めて約0.55秒で補正。5px以内の小さな揺れは、止まっているとみなす
   function resetSnap() { clearTimeout(snapTimer); snapTimer = null; snapped = null; snapAnchor = null; }
-  function axisFix(a, q) {                          // 水平・垂直に近ければ、そろえる
-    var dx = q[0] - a[0], dy = q[1] - a[1];
-    if (Math.abs(dy) < Math.abs(dx) * 0.0875) dy = 0; else if (Math.abs(dx) < Math.abs(dy) * 0.0875) dx = 0;
+  function axisFix(a, q, tol) {                     // 水平・垂直に近ければ、そろえる（tol：そろえる幅。省略すると、直線を引く時の幅）
+    var dx = q[0] - a[0], dy = q[1] - a[1], tn = tol === undefined ? AXIS_TAN : tol;
+    if (Math.abs(dy) < Math.abs(dx) * tn) dy = 0; else if (Math.abs(dx) < Math.abs(dy) * tn) dx = 0;
     return [a[0] + dx, a[1] + dy];
   }
   function simplify(p, eps) {                       // 震えをならして、点を減らす
@@ -4522,6 +4828,7 @@
           var okGap = function (a, n) { return Array.isArray(a) && a.length && a.every(function (v) { return Number.isInteger(v) && v >= 0 && v < n; }); };
           if (okGap(it.ggi, gr.i1 - gr.i0)) gr.gapI = it.ggi;
           if (okGap(it.ggj, gr.j1 - gr.j0)) gr.gapJ = it.ggj;
+          if (typeof it.gpm === 'string') { var pmr = it.gpm.split(','); if (pmr.length === gr.ys.length - 1 && pmr.every(function (r3) { return /^[01]+$/.test(r3) && r3.length === gr.xs.length - 1; })) gr.pm = pmr; }       // マスがある所・ない所
           var gf = it.gfl, okNum = function (a, n) { return Array.isArray(a) && a.length === n && a.every(function (v) { return typeof v === 'number' && isFinite(v); }); };
           if (gf && okNum(gf.a, 4) && okNum(gf.vs, gr.xs.length) && okNum(gf.vc, gr.xs.length) && okNum(gf.hs, gr.ys.length) && okNum(gf.hc, gr.ys.length)) gr.fld = { vy0: gf.a[0], vy1: gf.a[1], hx0: gf.a[2], hx1: gf.a[3], vs: gf.vs, vc: gf.vc, hs: gf.hs, hc: gf.hc };       // 傾き・曲がり
         }
@@ -4550,9 +4857,11 @@
     if (grid) it.grid = [Math.round(grid.px * 10000) / 10000, Math.round(grid.ox * 100) / 100, Math.round(grid.py * 10000) / 10000, Math.round(grid.oy * 100) / 100, grid.i0, grid.i1, grid.j0, grid.j1, gridOn ? 1 : 0, gridShow ? 1 : 0]; else delete it.grid;       // 見つけたマス目と、使っているかどうかも
     if (grid && grid.xs && grid.ys) { var r1 = function (v) { return Math.round(v * 100) / 100; }; it.gxs = grid.xs.map(r1); it.gys = grid.ys.map(r1); } else { delete it.gxs; delete it.gys; }       // 線を1本ずつ追った、実際の位置
     if (grid && grid.xs && grid.ys && grid.fld) { var rd5 = function (a) { return a.map(function (v) { return Math.round(v * 100000) / 100000; }); }, fl = grid.fld; it.gfl = { a: [fl.vy0, fl.vy1, fl.hx0, fl.hx1].map(function (v) { return Math.round(v * 100) / 100; }), vs: rd5(fl.vs), vc: rd5(fl.vc), hs: rd5(fl.hs), hc: rd5(fl.hc) }; } else delete it.gfl;       // 傾き・曲がり
+    if (grid && grid.pm) it.gpm = grid.pm.join(','); else delete it.gpm;       // マスがある所・ない所
+    if (!gridCount) it.gcn = 0; else delete it.gcn;       // 目数・段数の表示を、隠しているか
     if (grid && grid.xs && grid.gapI && grid.gapI.length) it.ggi = grid.gapI; else delete it.ggi;       // 省略の隙間（線のない所）
     if (grid && grid.ys && grid.gapJ && grid.gapJ.length) it.ggj = grid.gapJ; else delete it.ggj;
-    if (fixQ) { it.fix = fixQ.map(function (v) { return Math.round(v * 10) / 10; }); it.fixv = 2; if (fixC) it.fixc = fixC; else delete it.fixc; } else { delete it.fix; delete it.fixv; delete it.fixc; }       // 歪みを直した時の、4つの角（fixv：2＝写真全体を直す形。前の、マス目だけ切り出す形は、読み込まない）
+    if (fixQ) { it.fix = fixQ.map(function (v) { return Math.round(v * 10) / 10; }); it.fixv = 3; if (fixC) it.fixc = fixC; else delete it.fixc; } else { delete it.fix; delete it.fixv; delete it.fixc; }       // 歪みを直した時の、4つの角（fixv：2＝写真全体を直す形。前の、マス目だけ切り出す形は、読み込まない）
     delete it.cal;                                                                  // （前の版の、合わせた目の大きさは、もう使わないので、消す）
     delete it.cnt;                                                                  // （前の版の、「記号を数える」の記録は、もう使わないので、消す）
     it.t = Date.now();
