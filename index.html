@@ -453,6 +453,8 @@
     .data-note.open .data-note-body { display: block; }
     .data-note-body p { margin: 0 0 6px; }
     .data-note-body p:last-child { margin-bottom: 0; }
+    .data-note-body .note-ic { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin: 0 2px; vertical-align: middle; position: relative; top: -1.5px; border: 1.5px solid var(--edge); border-radius: 50%; background: var(--surface); color: var(--text); box-sizing: border-box; }       /* 説明の中に出す、実際のボタンと同じ絵（丸い枠つき） */
+    .data-note-body .note-sub { font-weight: 700; letter-spacing: .06em; margin: 10px 0 2px; }       /* 項目の中の、小見出し（例：マス目機能の中の「おすすめの編み図」） */
     .data-note-body ol { margin: 0 0 6px; padding-left: 1.4em; }
     .data-note-body ul { margin: 0 0 6px; padding-left: 1.1em; list-style: none; }       /* 使い方：番号をやめて、小さくうすい点の箇条書き（文字より、目立たせない） */
     .data-note-body ul li { position: relative; }
@@ -759,7 +761,7 @@
       </div>
     </div>
     <button type="button" class="tb-now" id="tb-now" aria-label="操作パネルを開く"><i class="mk-now" id="mk-now"></i><span class="mk-label" id="mk-label"></span></button>
-    <button type="button" class="tb-circle" id="menu-head" aria-expanded="false" aria-controls="menu-body" aria-label="メニュー（ファイル・使い方・このアプリについて・データについて）">
+    <button type="button" class="tb-circle" id="menu-head" aria-expanded="false" aria-controls="menu-body" aria-label="メニュー（ファイル・基本的な使い方・マス目機能・このアプリについて・データについて）">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>
     </button>
   </header>
@@ -899,7 +901,7 @@
   <div class="acc-list">
 
     <div class="data-note" id="howNote">
-      <button type="button" class="data-note-btn" aria-expanded="false"><span>✿ 使い方</span><span class="data-note-arrow">▼</span></button>
+      <button type="button" class="data-note-btn" aria-expanded="false"><span>✿ 基本的な使い方</span><span class="data-note-arrow">▼</span></button>
       <div class="data-note-body">
         <ul>
           <li>フォルダのマーク（メニューの中にもあります）で、編み図の画像を開きます。</li>
@@ -907,7 +909,6 @@
           <li>指やペンでなぞって塗ります。道具・太さ・色は、上の操作エリアで選びます。</li>
           <li>選んでいる線は、上からドラッグすると動かせます。近くに新しい線を描くときは、先に、何もない所を1回タップします。</li>
           <li>「選択」で線を囲むと、まとめて選んで、動かす・回転・色の変更、ができます。</li>
-          <li>直線・四角では、マスのマークで、マス目に合わせて、目数・段数をかぞえます。デジタルの編み図（マスがすべて同じ大きさで、歪みのないもの）向けです。写真の編み図や、歪んだ編み図は、正確に合わないことがあります。省略（波線など）のある編み図は、数が実際と合わないので、マスのマーク →「数を隠す」で、数の表示だけを、消せます（ぴったり塗る機能は、そのまま使えます）。</li>
           <li>「メモ」は、編み図の上に、ペンで字を書いたり、文字（テキスト）を置いたりできます。</li>
           <li>「かぞえる」は、編み目記号を数えたいときに便利です。色を選んで、タップすると、番号がつきます（色ごとに99まで）。</li>
           <li>白黒モード（半分塗ってある円）で、編み図を白黒やうすい色にでき、蛍光ペンが見やすくなります。</li>
@@ -916,14 +917,16 @@
       </div>
     </div>
 
-    <div class="data-note" id="recoNote">
-      <button type="button" class="data-note-btn" aria-expanded="false"><span>✿ おすすめの編み図</span><span class="data-note-arrow">▼</span></button>
+    <div class="data-note" id="gridNote">
+      <button type="button" class="data-note-btn" aria-expanded="false"><span>✿ マス目機能</span><span class="data-note-arrow">▼</span></button>
       <div class="data-note-body">
-        <p>💡 おすすめは、デジタルの編み図です。マス目が、すべて同じ大きさで、歪みがなく、線がはっきりしている編み図なら、マス目の自動判定、目数・段数のかぞえ、直線がマスに合う動きを、正確に使えます。</p>
-        <p>📷 写真で撮った編み図や、マスが歪んでいる編み図でも、蛍光ペンは、ふつうに使えます。ただ、マス目モードは、写真の歪みで、点線や、目数・段数が、ずれることがあります（正確には引けない場合があります）。目安として、お使いください。</p>
-        <p>📝 省略（波線など）のある編み図は、描かれていない目や段があるので、「○目×○段」の数は、実際と合いません。マスのマーク →「数を隠す」で、数の表示だけを消せます。点線に合わせて、ぴったり塗る機能は、そのまま使えます。</p>
-        <p>🧶 減らし目・増やし目で、段ごとに、マスの数が違う編み図は、四隅を、いちばん、マスの多い段に合わせると、すべてのマスに合います。四隅の外にも、同じ間隔で線が続いていれば、自動で広げます（マスのない所には、点線を引きません）。</p>
-        <p>歪み方は、写真ごとにさまざまで、すべてに合わせることはできません。</p>
+        <ul>
+          <li>編み図を開き、直線もしくは四角モードの時に、マス目のマーク<span class="note-ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="0"/><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"/></svg></span>を押して使います。</li>
+          <li>マス目機能の点線のマス目と編み図のマス目の位置を合わせることで、編み図のマス目に沿って綺麗に線や四角のマーカーが塗れます。目数・段数を表示することもできます。</li>
+          <li>デジタル編み図のように、歪んでいない、マス目がすべて同じ大きさの編み図を推奨しています。</li>
+          <li>写真で撮った歪んでいる編み図では、蛍光マーカーの位置がずれたり、正しい目数、段数が表示されないことがあります。</li>
+          <li>正しい目数、段数は必ず編み図でご確認ください。</li>
+        </ul>
       </div>
     </div>
 
@@ -1001,12 +1004,12 @@
 </div>
 <div id="fix-overlay" hidden role="dialog" aria-modal="true" aria-label="編み図の歪みを直す">
   <div id="fix-stage"><canvas id="fix-cv"></canvas></div>
-  <div id="fix-head"><div id="fix-title">編み図の歪みを直す</div><div id="fix-sub">4つの丸を、編み図の角に合わせてください（2本指で、拡大・移動できます）</div><div id="fix-note">写真の編み図は、歪みで、正確に合わないことがあります。デジタルの編み図が、おすすめです。</div></div>
+  <div id="fix-head"><div id="fix-title">編み図の歪みを直す</div><div id="fix-sub">4つの丸を、編み図の角に合わせてください（2本指で、拡大・移動できます）</div><div id="fix-note">デジタルの編み図がおすすめです（マス目が、歪みなく、すべて同じ大きさのもの）。目数・段数は、参考です。</div></div>
   <div id="fix-foot">
     <button type="button" class="fix-link" id="fix-gridtoggle">マス目の数を入れる（わかる時だけ） ▾</button>
     <div id="fix-grid" hidden>
       <div id="fix-gridrow"><label>横の目数<input type="number" id="fix-cols" min="3" max="500" inputmode="numeric" placeholder="例 25"></label><span class="fix-x">×</span><label>縦の段数<input type="number" id="fix-rows" min="3" max="500" inputmode="numeric" placeholder="例 30"></label></div>
-      <div id="fix-gridnote">入れると、マス目が、ぴったり合います（空なら、自動で探します）</div>
+      <div id="fix-gridnote">入れた数どおりに、線を編み図へ寄せます（空なら、自動で探します）</div>
     </div>
     <div id="fix-btns"><button type="button" class="fix-b" id="fix-fit" hidden>全体を見る</button><button type="button" class="fix-b" id="fix-cancel">やめる</button><button type="button" class="fix-b" id="fix-reset" hidden>もとにもどす</button><button type="button" class="fix-b main" id="fix-go">直す</button></div>
   </div>
@@ -1276,10 +1279,10 @@
       var items = [], last = cand[best].x, lp = pit, hist = [], miss = 0;
       var sA = last + dir * pit * 0.55, sB = last + dir * pit * 1.5, bt = -1, bv2 = -1;       // 追い始め：いちばん近い、強い線を探して、そこから、本当の間隔を決める（四隅と数から作った、同じ間隔のマス目の間隔が、ずれていても、まちがえないため）
       for (var t0 = Math.round(sA); dir > 0 ? t0 <= sB : t0 >= sB; t0 += dir) { if (t0 < 3 || t0 > N - 4) break; var sv0 = sm(t0); if (sv0 > bv2) { bv2 = sv0; bt = t0; } }
-      if (bt >= 0 && bv2 >= thr) { var f0 = peakAt(bt, 2); if (f0) { items.push({ x: f0.x, gap: false, s: f0.s }); lp = Math.abs(f0.x - last); hist.push(lp); last = f0.x; } }
+      if (bt >= 0 && bv2 >= thr) { var f0 = peakAt(bt, 2); if (f0 && (extra || !(dir > 0 ? f0.x > hi + pit * 0.25 : f0.x < lo - pit * 0.25))) { items.push({ x: f0.x, gap: false, s: f0.s }); lp = Math.abs(f0.x - last); hist.push(lp); last = f0.x; } }
       for (var guard = 0; guard < 4000; guard++) {
         var e = last + dir * lp * (miss + 1);
-        var beyond = dir > 0 ? e > hi + lp * 0.5 : e < lo - lp * 0.5;       // 四隅で囲んだ範囲の外か
+        var beyond = dir > 0 ? e > hi + lp * (extra ? 0.5 : 0.25) : e < lo - lp * (extra ? 0.5 : 0.25);       // 四隅で囲んだ範囲の外か（外へ広げない時は、ゆるさを、せまくする）
         if (beyond && (!extra || miss > 0 || (dir > 0 ? last > hi + lp * 0.5 + extra * pit : last < lo - lp * 0.5 - extra * pit))) break;       // 範囲の外は、extra 本ぶんまで。途切れたら、そこで止める（隙間・補いは、しない）
         var f2 = peakAt(e, lp * 0.35);
         if (beyond) {                               // 範囲の外：減らし目・増やし目で、段によって、マスの数が違う編み図のため、直接見つかる線だけを、追う
@@ -1622,9 +1625,73 @@
     var any0 = false; pm.forEach(function (r2) { if (r2.indexOf(0) >= 0) any0 = true; });
     return any0 ? pm.map(function (r2) { return r2.join(''); }) : null;
   }
+  function snapManualGrid(g) {                      // 手で数を入れたマス目：線の本数は、入れた数のまま。各線を、すぐ近く（1マスの約3割まで）の、はっきりした、実際の線へ寄せる。近くに線がない所は、両隣の寄り方に合わせて、なめらかにつなぐ（点の列・記号・空白に、引きずられない）。寄せられなければ null（等分のまま）
+    try {
+      var pr = gridProfiles(); if (!pr) return null;
+      var k = pr.k, nx = g.i1 - g.i0, ny = g.j1 - g.j0, gg = gridGray(), i, j, lx0 = [], ly0 = [];
+      for (i = 0; i <= nx; i++) lx0.push(g.ox + (g.i0 + i) * g.px);
+      for (j = 0; j <= ny; j++) ly0.push(g.oy + (g.j0 + j) * g.py);
+      var shiftAxis = function (P, nom, pitch, lim) {       // 先に、全体を、ずらして、いちばん多くの線に乗る位置を探す（四隅が、半マスほど、ずれていても、合わせられるように。1本ずつ寄せる幅は、約3割なので、それより大きいずれは、ここで直す）。線の太さ・記号に、まどわされないよう、「細い線が続いている」山で、見る。ずらしても、あまり良くならない時は、ずらさない（0を返す）
+        if (!P) return 0;
+        var n = nom.length, N = P.length, hs = pitch * k * 0.5;
+        var score = function (sh) { var sum = 0, q, t; for (q = 0; q < n; q++) { t = Math.round(nom[q] * k + sh); if (t < 2 || t > N - 3) continue; sum += (P[t - 1] + 2 * P[t] + P[t + 1]) / 4; } return sum; };
+        var cs = [], mx = -1, sh;
+        for (sh = -hs; sh <= hs; sh += 1) {
+          if (nom[0] + sh / k < 0 || nom[n - 1] + sh / k > lim) continue;       // 画像の外に、はみ出す位置は、使わない
+          var v = score(sh); cs.push([sh, v]); if (v > mx) mx = v;
+        }
+        if (!cs.length || mx <= 0) return 0;
+        var pick = 0, pa = 1e9;
+        cs.forEach(function (c) { if (c[1] >= mx * 0.97 && Math.abs(c[0]) < pa) { pa = Math.abs(c[0]); pick = c[0]; } });       // ほとんど同じ良さなら、動かす量が少ない方
+        return score(pick) >= score(0) * 1.15 ? pick / k : 0;       // 1割5分以上、良くならなければ、ずらさない
+      };
+      if (gg) {
+        var sx = shiftAxis(bandCol(gg, ly0[0], ly0[ny]), lx0, g.px, img.naturalWidth), sy = shiftAxis(bandRow(gg, lx0[0], lx0[nx]), ly0, g.py, img.naturalHeight);
+        if (sx) for (i = 0; i <= nx; i++) lx0[i] += sx;
+        if (sy) for (j = 0; j <= ny; j++) ly0[j] += sy;
+      }
+      var num = function (a1, b1) { return a1 - b1; };
+      var attempt = function (P, nom, pitch) {       // 山 P で、各線の近くの、いちばん強い山を探す。寄せられた線が、少なすぎれば null
+        if (!P) return null;
+        var n = nom.length, hw = Math.max(3, pitch * k * 0.3), c = [], ss = [], q, d;
+        for (q = 0; q < n; q++) { var e = nom[q] * k, f = findPeak(P, e, hw); if (f && Math.abs(f.x - e) < hw - 1) { c.push(f); ss.push(f.s); } else c.push(null); }       // 探す幅の端にある山は、となりの山の、すそ野なので、のぞく
+        if (ss.length < Math.max(4, n * 0.3)) return null;
+        ss.sort(num);
+        var thr = ss[Math.floor(ss.length * 0.75)] * 0.4, off = [];       // 強い山の4割に届かない山は、「線がない」とする（いちばん端の線は、少しゆるめる）
+        for (q = 0; q < n; q++) off.push(c[q] && c[q].s >= thr * ((q === 0 || q === n - 1) ? 0.6 : 1) ? c[q].x / k - nom[q] : null);
+        for (var pass = 0; pass < 2; pass++) {       // となりの線たちと、大きく違う寄り方（記号などに、引きずられた）は、のぞく
+          var nxt = off.slice();
+          for (q = 0; q < n; q++) {
+            if (off[q] === null) continue;
+            var nb = []; for (d = -4; d <= 4; d++) if (d && off[q + d] != null) nb.push(off[q + d]);
+            if (nb.length < 2) continue;
+            nb.sort(num); if (Math.abs(off[q] - nb[nb.length >> 1]) > pitch * 0.12) nxt[q] = null;
+          }
+          off = nxt;
+        }
+        var okN = 0; for (q = 0; q < n; q++) if (off[q] !== null) okN++;
+        if (okN < Math.max(4, n * 0.4)) return null;
+        var pos = [];
+        for (q = 0; q < n; q++) {                    // 寄せられなかった線：両隣の寄り方で、なめらかにつなぐ（片側しかなければ、その寄り方のまま）
+          var o = off[q];
+          if (o === null) { var a2 = q - 1, b2 = q + 1; while (a2 >= 0 && off[a2] === null) a2--; while (b2 < n && off[b2] === null) b2++; o = (a2 >= 0 && b2 < n) ? off[a2] + (off[b2] - off[a2]) * (q - a2) / (b2 - a2) : (a2 >= 0 ? off[a2] : off[b2]); }
+          pos.push(nom[q] + o);
+        }
+        for (q = 1; q < n; q++) if (pos[q] < pos[q - 1] + pitch * 0.5) pos[q] = pos[q - 1] + pitch * 0.5;       // 線の順番が、入れかわらないように
+        return { pos: pos, n: okN };
+      };
+      var bestOf = function (Ps, nom, pitch) { var bst = null; Ps.forEach(function (P) { var r = attempt(P, nom, pitch); if (r && (!bst || r.n > bst.n)) bst = r; }); return bst; };       // 帯ごとにそろえた山・細い線の山・黒っぽさの山：いちばん多くの線を、寄せられたもの
+      var cB = gg ? deskewProfile(gg, true, lx0, [ly0[0], ly0[ny]], g.px, g.py) : null, rB = gg ? deskewProfile(gg, false, ly0, [lx0[0], lx0[nx]], g.py, g.px) : null;
+      var cx = bestOf([cB, pr.colR, pr.colP], lx0, g.px), cy = bestOf([rB, pr.rowR, pr.rowP], ly0, g.py);
+      if (!cx && !cy) return null;
+      var xs = cx ? cx.pos : lx0, ys = cy ? cy.pos : ly0;
+      return { px: (xs[nx] - xs[0]) / nx, ox: xs[0] - g.i0 * (xs[nx] - xs[0]) / nx, py: (ys[ny] - ys[0]) / ny, oy: ys[0] - g.j0 * (ys[ny] - ys[0]) / ny, i0: g.i0, i1: g.i1, j0: g.j0, j1: g.j1, xs: xs, ys: ys };
+    } catch (e) { return null; }
+  }
   function refineGridObj(g) {                        // 同じ間隔のマス目を、実際の線の位置を、1本ずつ追ったものに、直す（遠近やレンズの歪みで、間隔が場所によって違っても、点線が、本物の線に乗る。省略の隙間には、線を引かない）。うまく追えなければ、そのまま
     try {
       if (!img || !g || g.xs) return g;
+      if (fixC && g.i0 === 0 && g.j0 === 0 && g.i1 === fixC[0] && g.j1 === fixC[1]) return snapManualGrid(g) || g;       // 手で数を入れた：本数は、入れた数のまま（線を追って、増やしたり、減らしたりしない。マスのない所にも、線を引く）。線の位置だけ、近くの実際の線へ寄せる。寄せられなければ、等分のまま
       var pr = gridProfiles(); if (!pr) return g;
       var k = pr.k, gg = gridGray(), i, j, gOrig = g;
       var latOf = function (gl) { var nx = gl.i1 - gl.i0, ny = gl.j1 - gl.j0, lx = [], ly = []; for (i = 0; i <= nx; i++) lx.push(gl.ox + (gl.i0 + i) * gl.px); for (j = 0; j <= ny; j++) ly.push(gl.oy + (gl.j0 + j) * gl.py); return { lx: lx, ly: ly }; };       // 同じ間隔のマス目の、線の位置（画像の座標）
@@ -1634,7 +1701,7 @@
       var attempt = function (gl) {                 // 同じ間隔のマス目 gl を出発点に、線を追う
         var L = latOf(gl), ex = L.lx.map(function (v) { return v * k; }), ey = L.ly.map(function (v) { return v * k; });
         var tryWith = function (PX, PY) {
-          var tx = trackLines(PX, pr.colP, ex, gl.px * k, Math.min(40, Math.max(3, Math.round((gl.i1 - gl.i0) * 0.5)))), ty = trackLines(PY, pr.rowP, ey, gl.py * k, Math.min(40, Math.max(3, Math.round((gl.j1 - gl.j0) * 0.5))));       // 四隅で囲んだ範囲の外にも、線が続いていれば、そこまで広げる（段ごとに、マスの数が違う編み図）
+          var tx = trackLines(PX, pr.colP, ex, gl.px * k, 0), ty = trackLines(PY, pr.rowP, ey, gl.py * k, 0);       // 四隅で囲んだ範囲の中だけで、線を追う（範囲の外へは、広げない。0＝外の線は、追わない）
           if (!tx || !ty) return null;
           var inRange = function (pos, e0) { var lo2 = e0[0] - (e0.length > 1 ? (e0[1] - e0[0]) * 0.6 : 0), hi2 = e0[e0.length - 1] + (e0.length > 1 ? (e0[e0.length - 1] - e0[e0.length - 2]) * 0.6 : 0); return pos.filter(function (v) { return v >= lo2 && v <= hi2; }); };       // 四隅で囲んだ範囲の中の線だけ（範囲の外へ広げた線は、一部の段にしか、ないので、弱い）
           if (meanAt(PX, inRange(tx.pos, ex)) < meanAt(PX, ex) * 0.98 || meanAt(PY, inRange(ty.pos, ey)) < meanAt(PY, ey) * 0.98) return null;       // 追った位置のほうが、線らしくなければ、使わない
@@ -2445,6 +2512,7 @@
     }
     ox.putImageData(od, 0, 0); oc.naturalWidth = CW; oc.naturalHeight = CH;       // img は、naturalWidth / naturalHeight だけを使うので、canvas を、そのまま画像として使う
     oc.fixRect = { x: padL, y: padT, w: Wc, h: Hc };
+    oc.warped = true;                                  // 写真を、まっすぐに直した画像：もとの画像と、座標が変わる（デジタルの編み図の、変形しない画像には、つけない）
     return oc;
   }
   var fixOv = $('fix-overlay'), fixCv = $('fix-cv'), fixCtx = fixCv.getContext('2d'), fixPts = null, fixDrag = -1, fixOff = [0, 0], fixV = { s: 1, ox: 0, oy: 0, w: 1, h: 1, d: 1 };
@@ -2568,18 +2636,24 @@
     showGridSheet('入れた数（横' + cols + '×縦' + rows + '）と、線の間隔が、合わないようです。\n横' + c2 + '×縦' + r2 + 'ではありませんか？', [
       { label: '横' + c2 + '×縦' + r2 + 'にする', main: true, fn: function () {
         var f2 = img.fixRect; if (!f2) return;
-        grid = refineGridObj({ px: f2.w / c2, ox: f2.x, py: f2.h / r2, oy: f2.y, i0: 0, i1: c2, j0: 0, j1: r2 }); gridOn = true; gridShow = true; fixC = [c2, r2];
+        fixC = [c2, r2]; grid = refineGridObj({ px: f2.w / c2, ox: f2.x, py: f2.h / r2, oy: f2.y, i0: 0, i1: c2, j0: 0, j1: r2 }); gridOn = true; gridShow = true;
         scheduleSave(); syncGridBtn(); dirtyChart = true; requestDraw(); autoCountVisibility(); autoHideGrid();
       } },
       { label: 'このまま' }
     ]);
   }
-  function applyShownImage(nimg, cols, rows) {     // 直した画像（またはもとの画像）に入れかえる。座標が変わるので、塗り・かぞえた印・マス目は、消す（段数カウンターは、そのまま）。cols・rows（横の目数・縦の段数）が入っていれば、マス目は、探さずに、ぴったり決める
+  function isWarped(im) { return !!(im && im.warped); }       // 写真を、まっすぐに直した画像か（座標が、もとの画像と、ちがう）
+  function hasMarksNow() { var tl = (typeof tallyAll === 'object') ? tallyAll[chartId] : null; return !!(strokes.length || (tl && tl.m && tl.m.length)); }       // 塗りや、かぞえた印が、あるか
+  function applyShownImage(nimg, cols, rows, keepMarks) {     // 直した画像（またはもとの画像）に入れかえる。座標が変わるので、塗り・かぞえた印・マス目は、消す（段数カウンターは、そのまま）。cols・rows（横の目数・縦の段数）が入っていれば、マス目は、探さずに、ぴったり決める
     cancelPaint(); mode = 'idle'; pts.clear(); editing = null; selStroke = null; grp = null; cancelLasso();
     img = nimg; monoSrc = null; fadeSrc = null; if (mono) buildMono(); if (fade) buildFade();
-    strokes = []; hist = []; redoH = []; cur = null; grid = null; gridOn = false; gridShow = true; ver++; cacheKey = '';
-    if (typeof tallyAll === 'object' && tallyAll[chartId]) { delete tallyAll[chartId]; tallySave(); tallySync(); }
+    cur = null; grid = null; gridOn = false; gridShow = true; ver++; cacheKey = '';
+    if (!keepMarks) {                                // 座標が変わる時（写真を、まっすぐに直す）だけ、塗り・かぞえた印・もどす履歴を、消す。座標が変わらない時（デジタルの編み図）は、残す（同じページの、ほかの編み図の、四隅を測り直しても、前の塗りが残る）
+      strokes = []; hist = []; redoH = [];
+      if (typeof tallyAll === 'object' && tallyAll[chartId]) { delete tallyAll[chartId]; tallySave(); tallySync(); }
+    }
     var manual = !!(cols && rows);
+    fixC = manual ? [cols, rows] : null;             // （マス目を作る前に、手で入れた数を、記録しておく：入れた数どおりに、等分するため）
     if (manual) { var fr = nimg.fixRect || { x: 0, y: 0, w: nimg.naturalWidth, h: nimg.naturalHeight }; grid = refineGridObj({ px: fr.w / cols, ox: fr.x, py: fr.h / rows, oy: fr.y, i0: 0, i1: cols, j0: 0, j1: rows }); gridOn = true; gridShow = true; }       // 4つの角で囲んだ四角が、マス目ちょうど：1マス＝その四角の幅（高さ）÷数。外側の番号やメモは、そのまま残る
     scheduleSave(); syncGridBtn(); syncBtns(); fitImage(); dirtyChart = true; requestDraw();
     fixC = manual ? [cols, rows] : null;
@@ -2587,8 +2661,7 @@
   }
   function startFix() {                            // 歪み補正の画面を開く（塗りや印があれば、消えることを、先に確認）
     if (!imgOrig) return;
-    var tl = (typeof tallyAll === 'object') ? tallyAll[chartId] : null, hasTl = !!(tl && tl.m && tl.m.length);
-    if (strokes.length || hasTl) showModal('歪みを直すと、塗った内容と、かぞえた印は、消えます。\n※画面を閉じた場合は、もどせません', '続ける', openFixDialog);
+    if (isWarped(img) && hasMarksNow()) showModal('歪みを直すと、塗った内容と、かぞえた印は、消えます。\n※画面を閉じた場合は、もどせません', '続ける', openFixDialog);       // いまが、写真を直した画像の時だけ（座標が変わるので、前の塗りは、残せない）。デジタルの編み図は、塗りが、残る
     else openFixDialog();
   }
   $('fix-cancel').addEventListener('click', closeFixDialog);
@@ -2604,13 +2677,16 @@
     var w = null; try { w = warpImage(imgOrig, fixPts); } catch (e) { w = null; }
     if (!w) { $('fix-sub').textContent = '直せませんでした。丸の位置を変えて、もう一度お試しください'; return; }
     if (cols && (w.fixRect.w / cols <= 2 || w.fixRect.h / rows <= 2)) { $('fix-sub').textContent = '目数・段数が多すぎて、1マスが小さくなりすぎます。数を確かめてください'; return; }
-    fixQ = fixPts.slice(); closeFixDialog(); applyShownImage(w, cols, rows);
+    var keep = !isWarped(img) && !isWarped(w), go = function () { fixQ = fixPts.slice(); closeFixDialog(); applyShownImage(w, cols, rows, keep); };
+    if (!keep && !isWarped(img) && hasMarksNow()) showModal('この四隅は、写真の歪みを直す形になるので、塗った内容と、かぞえた印は、消えます。\n※画面を閉じた場合は、もどせません', '続ける', go);
+    else go();       // デジタルの編み図（変形しない）なら、前の塗りは、そのまま残る
   });
-  $('fix-reset').addEventListener('click', function () { fixQ = null; closeFixDialog(); applyShownImage(imgOrig); });
+  $('fix-reset').addEventListener('click', function () { var keep = !isWarped(img); fixQ = null; closeFixDialog(); applyShownImage(imgOrig, 0, 0, keep); });
   var fixPtrs = {}, fixMode = '', fixPinch = null, fixLast = null;       // 触れている指／いまの動き（''・handle＝丸を動かす・pan＝画面を動かす・pinch＝2本指）
   function fixPos(e) { var r = fixCv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
   fixCv.addEventListener('pointerdown', function (e) {
     var pt = fixPos(e), ids, best = -1, bd = 46, i;
+    if (e.isPrimary) { fixPtrs = {}; fixMode = ''; fixPinch = null; fixLast = null; fixDrag = -1; }       // 最初の1本が触れた：前の指の記録は、すべて消す（消えずに残ると、1本指でも、2本指のあつかいになって、移動できず、拡大になってしまう）
     fixPtrs[e.pointerId] = pt; try { fixCv.setPointerCapture(e.pointerId); } catch (err) {}
     e.preventDefault(); ids = Object.keys(fixPtrs);
     if (ids.length >= 2) {                           // 2本指：拡大・移動
@@ -2654,9 +2730,12 @@
     fixDraw();
   }
   fixCv.addEventListener('pointerup', fixPointerEnd); fixCv.addEventListener('pointercancel', fixPointerEnd);
-  fixCv.addEventListener('wheel', function (e) {     // パソコン：ホイール（トラックパッドの、2本指の広げ縮めも）で、拡大・縮小
-    e.preventDefault(); var pt = fixPos(e);
-    fixZoomAt(pt.x, pt.y, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015))); fixDraw();
+  fixCv.addEventListener('wheel', function (e) {     // パソコン：Ctrl（⌘）つき（トラックパッドの、2本指の広げ縮めも）＝拡大・縮小／ふつうの、2本指のなぞり・ホイール＝移動（メイン画面と同じ）
+    e.preventDefault(); var pt = fixPos(e), dx = e.deltaX, dy = e.deltaY;
+    if (e.deltaMode === 1) { dx *= 20; dy *= 20; } else if (e.deltaMode === 2) { dx *= 400; dy *= 400; }
+    if (e.ctrlKey || e.metaKey) { var d = Math.max(-60, Math.min(60, dy)); fixZoomAt(pt.x, pt.y, Math.exp(-d * 0.008)); fixDraw(); return; }
+    fixView.cx += dx / fixV.s; fixView.cy += dy / fixV.s;       // なぞった向きに、編み図が、ついてくる
+    fixClampView(); fixApplyView(fixV.w, fixV.h, fixV.d); fixDraw();
   }, { passive: false });
   $('fix-fit').addEventListener('click', function () { fixLayout(false); });
   window.addEventListener('resize', function () { if (!fixOv.hidden) fixLayout(true); });
