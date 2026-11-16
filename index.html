@@ -253,6 +253,7 @@
       #mk-bar.shp .cb-edit { gap: 4px; }
     }
     .mk-wa { display: contents; }       /* 太さ・濃さのまとまり（スマホで、図形のときだけ、たてに2段にする） */
+    .mk-cap.arch-off { opacity: .38; }                                                      /* アーチを選んでいる時の「斜め」：うす色（押せない） */
     #mk-row-cap.off { opacity: .38; }                                                       /* なぞる・直線のとき以外は、使えない */
     .mk-cap { position: relative; padding: 0 8px; }
     .mk-cap svg { display: block; width: 24px; height: 12px; flex: none; }
@@ -284,6 +285,7 @@
     }
     #mk-row-a .mk-a { font-size: 12.5px; }       /* 「うすい・ふつう・こい」は、一回り小さく */
     #mk-tseg .mk-seg-b { flex: 1; padding: 0 4px; font-size: 15px; letter-spacing: .1em; }
+    #mk-shapeseg .mk-shape.mk-inlist { display: none !important; }       /* 小メニューには出さない形（楕円・二等辺三角・矢印）。図形一覧の絵に使うので、ボタン自体は残す */
     #mk-shapeseg.hol .mk-shape:not([data-shape="arrow"]) svg { transform: scale(.86); }       /* くりぬき：図形ボタンを、ふちだけの形に */
     #mk-shapeseg.hol .mk-shape:not([data-shape="arrow"]) svg * { fill: none; stroke: currentColor; stroke-width: 4.6px; stroke-linejoin: round; }
     #mk-ringseg .mk-seg-b { font-size: 12px; letter-spacing: .04em; }       /* 「塗りつぶし／くり抜き」は、少し小さく */
@@ -782,6 +784,13 @@
     .data-note-body .fmt-line .fmt-ic { flex: none; }
     #mode-badges { position: fixed; right: 10px; top: 120px; z-index: 5; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }       /* いまのモードの表示（右上）：さわれない（塗りの邪魔にならない） */
     #mode-badges .mb { padding: 3px 10px; border-radius: 999px; background: rgba(191, 220, 230, .82); border: 1px solid var(--sel-line); color: var(--text); font-size: 11px; font-weight: 500; letter-spacing: .06em; line-height: 1.4; }
+    #mk-tseg .mk-seg-b { padding-bottom: 2px; }       /* 大メニュー（なぞる〜かぞえる）の文字を、1px上へ（下の余白を2px足すと、中央が1px上がる） */
+    .mk-w .cb-txt { position: relative; top: -1px; }       /* 太さの文字（細・中・太）を、1px上へ（丸は、そのまま） */
+    #mk-aseg .mk-a { padding-bottom: 2px; }       /* 濃さの文字（うすい・ふつう・こい）を、1px上へ */
+    #undo-btn svg, #redo-btn svg { position: relative; top: -1px; }       /* もどす・やりなおすの絵だけ、1px上へ */
+    #menu-head .mi-x { display: none; }       /* メニューを開いている間は、「≡」を「✕」に変える（同じ場所を押せば、閉じる） */
+    body.menu-open #menu-head .mi-x { display: inline; }
+    body.menu-open #menu-head .mi-bars { display: none; }
   </style>
 </head>
 <body>
@@ -818,7 +827,7 @@
     </div>
     <button type="button" class="tb-now" id="tb-now" aria-label="操作パネルを開く"><i class="mk-now" id="mk-now"></i><span class="mk-label" id="mk-label"></span></button>
     <button type="button" class="tb-circle" id="menu-head" aria-expanded="false" aria-controls="menu-body" aria-label="メニュー（ファイル・基本的な使い方・マス目機能・このアプリについて・データについて）">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path class="mi-bars" d="M5 7h14M5 12h14M5 17h14"/><path class="mi-x" d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>
     </button>
   </header>
 
@@ -846,7 +855,7 @@
           <button type="button" class="cb-pill cb-round" id="export-btn" aria-label="画像で保存" data-tip="画像で保存" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg></button>
           <button type="button" class="cb-pill cb-round" id="mono-btn" aria-pressed="false" aria-label="白黒モード（白黒にする）" data-tip="白黒モード（白黒にする）"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg></button>
           <button type="button" class="cb-pill cb-round" id="grid-btn" aria-pressed="false" aria-label="マス目の目数・段数をかぞえる" data-tip="マス目の目数・段数をかぞえる"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="0"/><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"/></svg></button>
-          <button type="button" class="cb-pill cb-round" id="flip-chart-btn" aria-pressed="false" aria-label="編み図を左右反転" data-tip="編み図を左右反転" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.2v17h-8z"/><path d="M13.5 2.2v17h8z" fill="currentColor" fill-opacity=".3"/></svg></button>
+          <button type="button" class="cb-pill cb-round" id="flip-chart-btn" aria-pressed="false" aria-label="編み図を左右反転" data-tip="編み図を左右反転" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.4v15.5h-9.2z"/><path d="M13.5 2.4v15.5h9.2z" fill="currentColor" fill-opacity=".3"/></svg></button>
         </div>
       </div>
       <div class="cb-line2">
@@ -872,10 +881,10 @@
           </div><div class="mk-seg" id="mk-shapeseg" hidden>
             <button type="button" class="mk-seg-b mk-cap mk-ring mk-shape" data-shape="rect" aria-label="四角" data-tip="四角"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" fill="currentColor"/></svg></button>
             <button type="button" class="mk-seg-b mk-cap mk-ring mk-shape" data-shape="fill" aria-label="円" data-tip="円"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="currentColor"/></svg></button>
-            <button type="button" class="mk-seg-b mk-cap mk-ring mk-shape" data-shape="oval" aria-label="楕円" data-tip="楕円"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="6" fill="currentColor"/></svg></button>
-            <button type="button" class="mk-seg-b mk-cap mk-ring mk-shape" data-shape="tri-iso" aria-label="二等辺三角形" data-tip="二等辺三角形"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4L19.5 19.5h-15z" fill="currentColor"/></svg></button>
+            <button type="button" class="mk-seg-b mk-cap mk-ring mk-shape mk-inlist" data-shape="oval" aria-label="楕円" data-tip="楕円"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="6" fill="currentColor"/></svg></button>
+            <button type="button" class="mk-seg-b mk-cap mk-ring mk-shape mk-inlist" data-shape="tri-iso" aria-label="二等辺三角形" data-tip="二等辺三角形"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4L19.5 19.5h-15z" fill="currentColor"/></svg></button>
             <button type="button" class="mk-seg-b mk-cap mk-ring mk-shape" data-shape="tri-equi" aria-label="正三角形" data-tip="正三角形"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5L20.5 18.2h-17z" fill="currentColor"/></svg></button>
-            <button type="button" class="mk-seg-b mk-cap mk-ring mk-shape" data-shape="arrow" aria-label="矢印" data-tip="矢印"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12h10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M13.5 5.5L20.5 12l-7 6.5z" fill="currentColor"/></svg></button>
+            <button type="button" class="mk-seg-b mk-cap mk-ring mk-shape mk-inlist" data-shape="arrow" aria-label="矢印" data-tip="矢印"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12h10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M13.5 5.5L20.5 12l-7 6.5z" fill="currentColor"/></svg></button>
             <button type="button" class="mk-seg-b mk-cap mk-ring mk-shape" data-shape="more" aria-label="図形一覧" data-tip="図形一覧（ほかの形）"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.1" fill="currentColor"/><circle cx="12" cy="12" r="2.1" fill="currentColor"/><circle cx="18" cy="12" r="2.1" fill="currentColor"/></svg></button>
           </div><div class="mk-seg" id="mk-memoseg" hidden>
             <button type="button" class="mk-seg-b mk-cap mk-ring mk-memo" data-memo="pen" aria-label="メモペン（ペンで字を書く）" data-tip="メモペン（ペンで字を書く）"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 19.5l1-4L16.2 4.8a1.8 1.8 0 0 1 2.6 0l.4.4a1.8 1.8 0 0 1 0 2.6L8.5 18.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 7l3 3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
@@ -2139,10 +2148,10 @@
     Array.prototype.forEach.call($('mk-memoseg').querySelectorAll('.mk-memo'), function (b) { b.classList.toggle('on', b.getAttribute('data-memo') === PEN.memo); b.disabled = !img; });
     Array.prototype.forEach.call($('mk-shapeseg').querySelectorAll('.mk-shape'), function (b) {
       var v = b.getAttribute('data-shape');
-      b.classList.toggle('on', v === 'more' ? PEN.tool === 'arch' : v === 'rect' ? PEN.tool === 'rect' : (v === 'arrow' ? PEN.tool === 'arrow' : (v === 'tri-iso' || v === 'tri-equi') ? (PEN.tool === 'tri' && PEN.tri === v.slice(4)) : (PEN.tool === 'ellipse' && (v === 'oval') === !!PEN.oval)));
+      b.classList.toggle('on', v === 'more' ? (PEN.tool === 'arch' || PEN.tool === 'arrow' || (PEN.tool === 'tri' && PEN.tri === 'iso') || (PEN.tool === 'ellipse' && !!PEN.oval)) : v === 'rect' ? PEN.tool === 'rect' : (v === 'arrow' ? PEN.tool === 'arrow' : (v === 'tri-iso' || v === 'tri-equi') ? (PEN.tool === 'tri' && PEN.tri === v.slice(4)) : (PEN.tool === 'ellipse' && (v === 'oval') === !!PEN.oval)));
       b.disabled = !img;
     });
-    Array.prototype.forEach.call(capSeg.querySelectorAll('.mk-cap'), function (b) { b.classList.toggle('on', b.getAttribute('data-cap') === cap); b.disabled = !enabled; });
+    Array.prototype.forEach.call(capSeg.querySelectorAll('.mk-cap'), function (b) { var cv = b.getAttribute('data-cap'); b.classList.toggle('on', cv === cap); var archOff = cv === 'c' && !!tc && isArchStroke(tc); b.disabled = !enabled || archOff; b.classList.toggle('arch-off', archOff); });       // アーチを選んでいる時は、「斜め」は押せない（左右対称でなくなるため）
     var isRing = (lt && PEN.tool === 'select') ? lt.k === 'p' : ((tr && PEN.tool === 'select') ? holOf(tr) : PEN.ring);
     $('mk-bar').classList.toggle('shp', ringMode || cutMode);       $('mk-bar').classList.toggle('shpm', shapeMode && !cutMode);       // スマホ：図形の時は、太さ・濃さを、2段に
     $('mk-shapeseg').classList.toggle('hol', false);       // くりぬきの時は、図形のボタンも、ふちだけの形に
@@ -2150,7 +2159,7 @@
   }
   capSeg.addEventListener('click', function (e) {
     var b = e.target.closest('.mk-cap'); if (!b || b.disabled) return;
-    var v = b.getAttribute('data-cap'); PEN.cap = v; saveSt();
+    var v = b.getAttribute('data-cap'); if (v === 'c' && capTarget() && isArchStroke(capTarget())) return; PEN.cap = v; saveSt();
     if (capTarget()) applyToSel({ cap: v }, true);
     updateCapSeg(); requestDraw(false);
   });
@@ -4079,7 +4088,12 @@
     if (F.maxX + sh <= img.naturalWidth) return -sh;
     return null;
   }
-  var ARC_DUP_EXTRA = 0;                            // アーチの複製：両はしがつながる位置から、さらに重ねる量（線の太さの何倍か）。0なら、足と足が、ちょうど重なる。大きいほど、よく重なる
+  var ARC_DUP_EXTRA = -0.5;                         // アーチの複製：両はしがつながる位置から、さらに重ねる量（線の太さの何倍か）。0なら、足と足が、ちょうど重なる。マイナスなら、はなれる（-0.5＝足の太さの半分ずつ重なる）。大きいほど、よく重なる
+  function isArchStroke(st) {                            // アーチ（円の一部：半円・浅いアーチ）か。「斜め」のペン先は、左右対称でなくなるので、アーチでは使えなくする
+    if (!st || st.k !== 'p' || !st.p || st.p.length < 8) return false;
+    var f = circleFit(st.p), as = f ? Math.abs(f.span) : 0;
+    return !(!f || f.er > 0.08 || as < 1.4 || as > 3.6 || f.sumAbs > as * 1.15 + 0.2);
+  }
   function arcDupVec(st, want) {                          // アーチ（円の一部：半円・浅いアーチ）の時だけ：複製の、すべらせる向きと長さ（左向き）。両はしがつながって、足が重なる。アーチでなければ、null
     if (st.k !== 'p' || st.p.length < 8) return null;
     var P = st.p, a = P[0], b = P[P.length - 1], d = Math.hypot(b[0] - a[0], b[1] - a[1]);
